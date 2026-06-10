@@ -1,0 +1,98 @@
+[
+  {
+    "id": 1,
+    "mh_num": 1,
+    "name_vi": "Càn",
+    "name_han": "乾",
+    "unicode": "☰",
+    "bits": "111",
+    "element": "Kim",
+    "basic_symbol": "Trời",
+    "family_role": "Cha",
+    "keywords": ["kiện", "trời", "mạnh", "chủ động", "sáng"]
+  },
+  {
+    "id": 2,
+    "mh_num": 2,
+    "name_vi": "Đoài",
+    "name_han": "兌",
+    "unicode": "☱",
+    "bits": "110",
+    "element": "Kim",
+    "basic_symbol": "Đầm",
+    "family_role": "Con gái út",
+    "keywords": ["duệ", "vui", "nói", "cảm thông"]
+  },
+  {
+    "id": 3,
+    "mh_num": 3,
+    "name_vi": "Ly",
+    "name_han": "離",
+    "unicode": "☲",
+    "bits": "101",
+    "element": "Hỏa",
+    "basic_symbol": "Lửa",
+    "family_role": "Con gái giữa",
+    "keywords": ["lệ", "sáng", "mắt", "văn minh"]
+  },
+  {
+    "id": 4,
+    "mh_num": 4,
+    "name_vi": "Chấn",
+    "name_han": "震",
+    "unicode": "☳",
+    "bits": "100",
+    "element": "Mộc",
+    "basic_symbol": "Sấm",
+    "family_role": "Con trai trưởng",
+    "keywords": ["chấn", "động", "kinh", "bắt đầu"]
+  },
+  {
+    "id": 5,
+    "mh_num": 5,
+    "name_vi": "Tốn",
+    "name_han": "巽",
+    "unicode": "☴",
+    "bits": "011",
+    "element": "Mộc",
+    "basic_symbol": "Gió",
+    "family_role": "Con gái trưởng",
+    "keywords": ["tấn", "vào", "gió", "mềm mại"]
+  },
+  {
+    "id": 6,
+    "mh_num": 6,
+    "name_vi": "Khảm",
+    "name_han": "坎",
+    "unicode": "☵",
+    "bits": "010",
+    "element": "Thủy",
+    "basic_symbol": "Nước",
+    "family_role": "Con trai giữa",
+    "keywords": ["khảm", "hiểm", "tai", "nghe"]
+  },
+  {
+    "id": 7,
+    "mh_num": 7,
+    "name_vi": "Cấn",
+    "name_han": "艮",
+    "unicode": "☶",
+    "bits": "001",
+    "element": "Thổ",
+    "basic_symbol": "Núi",
+    "family_role": "Con trai út",
+    "keywords": ["cấn", "dừng", "núi", "chắc"]
+  },
+  {
+    "id": 8,
+    "mh_num": 8,
+    "name_vi": "Khôn",
+    "name_han": "坤",
+    "unicode": "☷",
+    "bits": "000",
+    "element": "Thổ",
+    "basic_symbol": "Đất",
+    "family_role": "Mẹ",
+    "keywords": ["thuận", "đất", "nhu", "nhận"]
+  }
+]

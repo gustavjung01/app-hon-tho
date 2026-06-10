@@ -1,0 +1,6 @@
+Suggested folder: apps/web/public/images/nguthuat/y/
+Files:
+ui-y-hero-bg-yhoc.png
+ui-y-yhoc-co-hoc-card.png
+ui-y-tang-phu-ngu-hanh-panel.png
+ui-y-kinh-lac-duong-sinh-panel.png

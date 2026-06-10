@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm -rf \"d:/Wep_Yhocnhanai/Web_Goc_Binh_Yen/app-hontho/apps/web/public/nguthuat/y/yhoc/\"*)",
+      "Bash(cp -r \"d:/Wep_Yhocnhanai/Web_Goc_Binh_Yen/app-hontho/ngu-thuat/y/yhoc/dist/\"* \"d:/Wep_Yhocnhanai/Web_Goc_Binh_Yen/app-hontho/apps/web/public/nguthuat/y/yhoc/\")",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(ssh -i \"C:/Users/PC/.ssh/app_hontho_vps\" -o StrictHostKeyChecking=no root@103.77.173.213 \"hostname && whoami && pwd\")",
+      "Bash(ssh -i \"C:/Users/PC/.ssh/app_hontho_vps\" -o StrictHostKeyChecking=no root@103.77.173.213 \"cd /opt/hontho-app-vps-starter && git status --short && git branch --show-current && git log --oneline -5 && git remote -v\")",
+      "Bash(ssh -i \"C:/Users/PC/.ssh/app_hontho_vps\" -o StrictHostKeyChecking=no root@103.77.173.213 \"find / -maxdepth 5 -name 'app-hon-tho' -o -name 'app-hontho' -o -name 'hontho-app-vps-starter' 2>/dev/null | head -20\")",
+      "Bash(ssh -i \"C:/Users/PC/.ssh/app_hontho_vps\" -o StrictHostKeyChecking=no root@103.77.173.213 \"find /opt /var /root /home -maxdepth 6 -name '.git' -type d 2>/dev/null | head -20\")",
+      "Bash(ssh -i \"C:/Users/PC/.ssh/app_hontho_vps\" -o StrictHostKeyChecking=no root@103.77.173.213 \"cd /opt/hontho-app && git status --short && git branch --show-current && git log --oneline -5 && git remote -v\")",
+      "Bash(ssh -i \"C:/Users/PC/.ssh/app_hontho_vps\" -o StrictHostKeyChecking=no root@103.77.173.213 \"cd /opt/hontho-app && git pull origin main 2>&1\")",
+      "Bash(ssh -i \"C:/Users/PC/.ssh/app_hontho_vps\" -o StrictHostKeyChecking=no root@103.77.173.213 \"cd /opt/hontho-app && git log --oneline -5\")",
+      "Bash(ssh -i \"C:/Users/PC/.ssh/app_hontho_vps\" -o StrictHostKeyChecking=no root@103.77.173.213 \"cd /opt/hontho-app/apps/web && npm install 2>&1 | tail -5 && npm run build 2>&1\")",
+      "Bash(ssh -i \"C:/Users/PC/.ssh/app_hontho_vps\" -o StrictHostKeyChecking=no root@103.77.173.213 \"pm2 list 2>/dev/null || echo 'PM2_NOT_FOUND'; systemctl status caddy --no-pager 2>/dev/null | head -5 || echo 'CADDY_NOT_FOUND'; systemctl status nginx --no-pager 2>/dev/null | head -5 || echo 'NGINX_NOT_FOUND'\")",
+      "Bash(ssh -i \"C:/Users/PC/.ssh/app_hontho_vps\" -o StrictHostKeyChecking=no root@103.77.173.213 \"cp -r /opt/hontho-app/apps/web/dist/* /var/www/hontho-app/ && echo 'web shell copy done'\")"
+    ]
+  }
+}

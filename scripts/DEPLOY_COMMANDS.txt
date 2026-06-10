@@ -1,0 +1,86 @@
+======================================================
+DEPLOY MAI HOA LÊN VPS - HƯỚNG DẪN THỦ CÔNG
+======================================================
+
+VPS Info:
+- IP: 103.77.173.213
+- User: root
+- Pass: @Binh2401
+
+======================================================
+BƯỚC 1: SSH VÀO VPS
+======================================================
+
+Mở PowerShell hoặc Command Prompt, chạy:
+
+ssh root@103.77.173.213
+
+Nhập password khi được hỏi: @Binh2401
+
+======================================================
+BƯỚC 2: CHẠY SCRIPT DEPLOY
+======================================================
+
+Sau khi SSH thành công, copy và paste từng lệnh sau:
+
+--- Lệnh 1: Vào thư mục app ---
+cd /opt/hontho-app-vps-starter
+
+--- Lệnh 2: Kiểm tra commit hiện tại ---
+git log --oneline -3
+
+--- Lệnh 3: Pull code mới ---
+git pull origin main
+
+--- Lệnh 4: Kiểm tra lại commit ---
+git log --oneline -3
+(Kiểm tra có b530540 và 56c9750)
+
+--- Lệnh 5: Build web app ---
+cd apps/web
+npm run build
+
+--- Lệnh 6: Kiểm tra build output ---
+ls -la public/nguthuat/boc/maihoa/
+
+--- Lệnh 7: Tạo thư mục đích ---
+mkdir -p /var/www/html/nguthuat/boc/maihoa
+
+--- Lệnh 8: Copy files ---
+cp -r public/nguthuat/boc/maihoa/* /var/www/html/nguthuat/boc/maihoa/
+
+--- Lệnh 9: Restart Caddy ---
+systemctl restart caddy
+systemctl status caddy --no-pager
+
+--- Lệnh 10: Kiểm tra kết quả ---
+echo "Deploy hoàn tất!"
+echo "Kiểm tra URL:"
+echo "  - https://app.hontho.com/nguthuat/boc/maihoa"
+echo "  - http://103.77.173.213/nguthuat/boc/maihoa"
+
+======================================================
+BƯỚC 3: THOÁT SSH
+======================================================
+
+exit
+
+======================================================
+KIỂM TRA SAU DEPLOY
+======================================================
+
+Mở browser kiểm tra:
+- https://app.hontho.com/nguthuat/boc/maihoa
+
+Kiểm tra các điểm:
+✅ Không 404
+✅ Không trắng trang  
+✅ CSS/JS load đủ
+✅ Form lập quẻ theo thời gian hiện đúng
+✅ Form lập quẻ bằng 3 số hiện đúng
+✅ Khởi quẻ ra kết quả
+✅ Có quẻ chủ, quẻ hỗ, quẻ biến, động hào
+✅ Có cảnh báo an toàn
+✅ Hard refresh không lỗi
+
+======================================================

@@ -1,0 +1,766 @@
+/* Mai Hoa Dich So - Styles */
+
+:root {
+  --bg-primary: #0f0c08;
+  --bg-secondary: #1a1610;
+  --bg-tertiary: #252018;
+  --text-primary: #f5f0e8;
+  --text-secondary: #c9bfa8;
+  --text-muted: #8a7f6b;
+  --gold: #c9a050;
+  --gold-light: #e0b860;
+  --gold-dark: #9a7a3a;
+  --accent: #8b4513;
+  --border: #3a3225;
+  --warning: #d4a020;
+  --error: #c04040;
+  --success: #40a040;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Noto Serif", "Georgia", serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+/* Navigation */
+.top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gold);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.brand-icon {
+  font-size: 24px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.nav-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.nav-links a:hover {
+  color: var(--gold);
+}
+
+/* Hero */
+.mai-hoa-hero {
+  padding: 40px 24px;
+  text-align: center;
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+  border-bottom: 1px solid var(--border);
+}
+
+.breadcrumb {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.breadcrumb a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  color: var(--gold);
+}
+
+.mai-hoa-hero h1 {
+  margin: 0 0 8px 0;
+  font-size: 32px;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.hero-subtitle {
+  margin: 0 0 16px 0;
+  color: var(--gold-dark);
+  font-size: 16px;
+  letter-spacing: 0.1em;
+}
+
+.hero-desc {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 15px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Safety Banner */
+.safety-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: rgba(212, 160, 32, 0.1);
+  border: 1px solid var(--warning);
+  border-radius: 4px;
+  margin: 16px 24px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.safety-icon {
+  font-size: 16px;
+}
+
+/* Main Content */
+.mai-hoa-main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Method Selector */
+.method-selector {
+  margin-bottom: 32px;
+}
+
+.method-selector h2 {
+  font-size: 18px;
+  color: var(--gold);
+  margin: 0 0 16px 0;
+}
+
+.method-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.method-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.method-btn:hover {
+  border-color: var(--gold);
+  color: var(--text-primary);
+}
+
+.method-btn.active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--bg-primary);
+  font-weight: 600;
+}
+
+.method-icon {
+  font-size: 18px;
+}
+
+/* Input Section */
+.input-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.input-section h3 {
+  font-size: 16px;
+  color: var(--gold);
+  margin: 0 0 20px 0;
+}
+
+.question-input {
+  margin-bottom: 20px;
+}
+
+.question-input label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.question-input input {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.question-input input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+/* Question Type Selector */
+.question-type-selector {
+  margin-bottom: 20px;
+}
+
+.question-type-selector label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.question-type-selector select {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.question-type-selector select:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+.risk-badge {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  display: inline-block;
+}
+
+.risk-high {
+  background: rgba(192, 64, 64, 0.2);
+  color: #e07070;
+  border-left: 3px solid var(--error);
+}
+
+.risk-medium {
+  background: rgba(212, 160, 32, 0.2);
+  color: #e0c060;
+  border-left: 3px solid var(--warning);
+}
+
+.risk-low {
+  background: rgba(64, 160, 64, 0.2);
+  color: #60c060;
+  border-left: 3px solid var(--success);
+}
+
+.input-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.input-group {
+  flex: 1;
+  min-width: 140px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.input-group input,
+.input-group select {
+  width: 100%;
+  padding: 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+.auto-fill-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--text-muted);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.auto-fill-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.calculate-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--gold);
+  border: none;
+  border-radius: 8px;
+  color: var(--bg-primary);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: all 0.2s;
+}
+
+.calculate-btn:hover {
+  background: var(--gold-light);
+}
+
+/* Results Section */
+.results-section {
+  margin-bottom: 32px;
+}
+
+.results-section h2 {
+  font-size: 20px;
+  color: var(--gold);
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+/* Hexagram Display */
+.hexagram-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.hexagram-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  min-width: 140px;
+}
+
+.hexagram-card.primary {
+  border-color: var(--gold);
+  background: rgba(201, 160, 80, 0.1);
+}
+
+.hexagram-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.hexagram-unicode {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.hexagram-name {
+  font-size: 16px;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.hexagram-han {
+  font-size: 20px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.hexagram-meaning {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.hexagram-arrow {
+  font-size: 24px;
+  color: var(--gold);
+}
+
+/* Trigram Details */
+.trigram-details {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.trigram-details h3 {
+  font-size: 16px;
+  color: var(--gold);
+  margin: 0 0 16px 0;
+}
+
+.trigram-cards {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.trigram-card {
+  flex: 1;
+  min-width: 140px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.trigram-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.trigram-unicode {
+  font-size: 36px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.trigram-name {
+  font-size: 14px;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.trigram-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.moving-line-display {
+  text-align: center;
+  padding: 12px;
+  background: var(--bg-primary);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.moving-line-display strong {
+  color: var(--gold);
+  font-size: 20px;
+}
+
+/* Derivation Section */
+.derivation-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.derivation-section h3 {
+  font-size: 16px;
+  color: var(--gold);
+  margin: 0 0 16px 0;
+}
+
+.derivation-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.derivation-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.step-number {
+  width: 28px;
+  height: 28px;
+  background: var(--gold);
+  color: var(--bg-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex: 1;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.step-title {
+  font-size: 14px;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.step-formula {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-bottom: 4px;
+}
+
+.step-calc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.step-result {
+  font-size: 14px;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+/* Interpretation Section */
+.interpretation-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.interpretation-section h3 {
+  font-size: 16px;
+  color: var(--gold);
+  margin: 0 0 16px 0;
+}
+
+.interpretation-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.interpretation-item {
+  margin: 0;
+  padding: 12px;
+  background: var(--bg-primary);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Reflection Section */
+.reflection-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.reflection-section h3 {
+  font-size: 16px;
+  color: var(--gold);
+  margin: 0 0 16px 0;
+}
+
+.reflection-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.reflection-list li {
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Warnings Section */
+.warnings-section {
+  background: rgba(192, 64, 64, 0.1);
+  border: 1px solid var(--error);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.warnings-section h3 {
+  font-size: 16px;
+  color: var(--error);
+  margin: 0 0 12px 0;
+}
+
+.warnings-list {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.warnings-list li {
+  margin-bottom: 4px;
+}
+
+/* Info Section */
+.info-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.info-section h3 {
+  font-size: 16px;
+  color: var(--gold);
+  margin: 0 0 12px 0;
+}
+
+.info-section p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.info-section p:last-child {
+  margin-bottom: 0;
+}
+
+/* Footer */
+.mai-hoa-footer {
+  text-align: center;
+  padding: 32px 24px;
+  border-top: 1px solid var(--border);
+  margin-top: 32px;
+}
+
+.back-link {
+  display: inline-block;
+  margin: 0 12px 16px 0;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.back-link:hover {
+  color: var(--gold);
+}
+
+.footer-note {
+  margin: 16px 0 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .mai-hoa-hero {
+    padding: 24px 16px;
+  }
+  
+  .mai-hoa-hero h1 {
+    font-size: 24px;
+  }
+  
+  .mai-hoa-main {
+    padding: 16px;
+  }
+  
+  .hexagram-display {
+    flex-direction: column;
+  }
+  
+  .hexagram-arrow {
+    transform: rotate(90deg);
+  }
+  
+  .trigram-cards {
+    flex-direction: column;
+  }
+  
+  .input-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .method-buttons {
+    flex-direction: column;
+  }
+  
+  .method-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .top-nav {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+  
+  .nav-links {
+    gap: 16px;
+  }
+}

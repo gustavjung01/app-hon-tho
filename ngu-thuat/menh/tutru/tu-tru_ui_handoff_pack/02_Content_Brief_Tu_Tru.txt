@@ -1,0 +1,260 @@
+BỐI CẢNH DỰ ÁN
+
+Đây là kế hoạch cho nhánh:
+Hồn Thơ / Cổ học → Ngũ thuật → Mệnh → Tứ trụ
+
+Mục tiêu không phải làm chatbot bói toán, không luận số giật gân, không phán định mệnh tuyệt đối.
+
+Hướng đúng là xây một module Tứ trụ nghiêm túc theo cổ học:
+- Có công cụ tính Tứ trụ.
+- Có kho tri thức cổ học.
+- Có luận giải có cấu trúc.
+- Có dẫn nguồn / đối chiếu.
+- Có thể mở rộng thành thư viện nghiên cứu Cổ học.
+
+Ở đoạn chat này chỉ làm NỘI DUNG / KẾ HOẠCH / COPY / CẤU TRÚC TRI THỨC.
+Không code, không sửa repo, không build, không push.
+
+MỤC TIÊU PHASE 1
+
+Phase 1 cần mô tả rõ module Tứ trụ cơ bản:
+- Nhập ngày, tháng, năm, giờ, phút sinh.
+- Chọn dương lịch hoặc âm lịch.
+- Có giới tính.
+- Có múi giờ.
+- Nơi sinh có thể để optional.
+- Tính Can Chi năm, tháng, ngày, giờ.
+- Dựng 4 trụ.
+- Tính ngũ hành.
+- Tính thập thần.
+- Tính vượng suy cơ bản.
+- Tính đại vận cơ bản.
+- Tính lưu niên cơ bản.
+- Xuất kết quả JSON có cấu trúc.
+- Có UI xem nhanh trên web.
+
+NGUYÊN TẮC KIẾN TRÚC
+
+Không nhét logic Tứ trụ trực tiếp vào giao diện web.
+
+Phải tách 4 lớp:
+
+1. Core engine
+- Lịch pháp
+- Can Chi
+- Tứ trụ
+- Ngũ hành
+- Thập thần
+- Đại vận / lưu niên cơ bản
+
+2. Knowledge / Data
+- Bảng quy tắc cứng
+- Dữ liệu sách
+- Snippet luận giải
+- Case mẫu
+
+3. API adapter
+- Nhận input
+- Validate
+- Trả output JSON chuẩn
+- Có version engine và data
+
+4. UI / Web integration
+- Form nhập liệu
+- Màn hình kết quả
+- Tab tổng quan / chi tiết / dẫn nguồn / nghiên cứu
+
+Kết luận kiến trúc:
+Làm công cụ Tứ trụ độc lập trước, test ổn rồi mới tích hợp vào web.
+
+PHẠM VI PHASE 1
+
+Có làm:
+- Engine tính Tứ trụ cơ bản.
+- API calculate.
+- UI nhập ngày giờ sinh.
+- Màn hình xem kết quả cơ bản.
+- JSON output ổn định.
+- Data core cơ bản cho ngũ hành, thập thần, tàng can, hợp xung.
+
+Chưa làm:
+- Luận giải quá sâu theo nhiều trường phái.
+- AI tự luận tự do.
+- So sánh nhiều hệ sách cùng lúc.
+- Đa tài khoản.
+- Lưu hồ sơ người dùng phức tạp.
+- Dashboard lớn.
+- Đẩy production khi chưa test logic.
+
+PHẠM VI PHASE 2
+
+Tập trung xây kho tri thức có nguồn:
+- Books
+- Chapters
+- Rules core
+- Glossary terms
+- Chart patterns
+- Interpretation snippets
+- Case studies
+- Cross references
+
+Nguồn sách cần xử lý theo pipeline:
+- Scan / ảnh sách
+- OCR
+- Làm sạch
+- Chia đoạn
+- Gắn tag
+- Gắn nguồn
+- Kiểm duyệt thủ công
+- Đưa vào DB
+
+AI chỉ được diễn giải dựa trên:
+- Kết quả engine
+- Data đã kiểm duyệt
+- Rule có nguồn
+
+Không cho AI tự bịa luận đoán.
+
+PHẠM VI PHASE 3
+
+Tích hợp sâu vào web Cổ học:
+- Route chính: Cổ học → Ngũ thuật → Mệnh → Tứ trụ
+- Có các tab:
+  1. Tổng quan
+  2. Chi tiết
+  3. Vận hạn
+  4. Dẫn nguồn
+  5. Nghiên cứu sâu
+
+Lưu ý:
+Repo hiện tại có thể đang dùng route /huyen-mon-tham-khao thay vì /co-hoc.
+Khi đưa cho dev code phải đối chiếu route thật trong repo, không tự đổi route lung tung.
+
+INPUT SCHEMA GỢI Ý
+
+{
+  "birthDate": "1990-10-12",
+  "birthTime": "14:30",
+  "calendarType": "solar",
+  "gender": "male",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "birthPlace": "Tien Giang, Vietnam"
+}
+
+OUTPUT SCHEMA GỢI Ý
+
+{
+  "engine_version": "1.0.0",
+  "rule_set_version": "core-v1",
+  "book_data_version": "kb-v1",
+  "input": {},
+  "pillars": {
+    "year": {
+      "stem": "Canh",
+      "branch": "Ngọ"
+    },
+    "month": {
+      "stem": "Bính",
+      "branch": "Tuất"
+    },
+    "day": {
+      "stem": "Tân",
+      "branch": "Mão"
+    },
+    "hour": {
+      "stem": "Ất",
+      "branch": "Mùi"
+    }
+  },
+  "analysis": {
+    "ngu_hanh": {},
+    "thap_than": {},
+    "vuong_suy": {},
+    "dai_van": [],
+    "luu_nien": []
+  },
+  "explanations": {
+    "summary": [],
+    "details": [],
+    "source_refs": []
+  }
+}
+
+GIỌNG ĐIỆU NỘI DUNG
+
+Vì nằm trong nhánh Cổ học của Hồn Thơ, giọng văn phải:
+- Trang nhã
+- Điềm tĩnh
+- Có tính nghiên cứu
+- Không giật gân
+- Không mê tín hóa
+- Không phán chắc đời người
+
+Không dùng:
+- “xem số chuẩn 100%”
+- “định mệnh đời bạn”
+- “biết trước tất cả”
+- “luận cực chuẩn”
+- “vận hạn chắc chắn”
+- “giàu nghèo, sống chết, hôn nhân chắc chắn”
+
+Nên dùng:
+- “công cụ tham khảo”
+- “gợi mở theo cổ học”
+- “đối chiếu theo quy tắc”
+- “dẫn nguồn / cách hiểu”
+- “nghiên cứu / học thuật”
+- “một cách nhìn để tự quan sát”
+
+RANH GIỚI AN TOÀN
+
+Tứ trụ trong dự án này không được dùng để:
+- Hù dọa người dùng.
+- Kết luận vận mệnh tuyệt đối.
+- Khuyên bỏ quyết định thực tế.
+- Phán bệnh tật, sống chết, giàu nghèo, hôn nhân theo kiểu chắc chắn.
+- Làm chatbot bói toán tự do.
+
+Tứ trụ chỉ là:
+- Công cụ học cổ học.
+- Công cụ quan sát cấu trúc Can Chi.
+- Công cụ tham khảo ngũ hành, thập thần, đại vận, lưu niên.
+- Nền cho nghiên cứu và đối chiếu tri thức cổ học.
+
+VIỆC CẦN LÀM Ở CHAT NÀY
+
+Hãy làm nội dung cho module Tứ trụ, gồm:
+
+1. Viết lại plan sản phẩm cho rõ ràng, dễ giao dev.
+2. Viết nội dung giới thiệu trang Tứ trụ.
+3. Viết nội dung disclaimer/cảnh báo an toàn.
+4. Viết nội dung các tab:
+   - Tổng quan
+   - Chi tiết
+   - Vận hạn
+   - Dẫn nguồn
+   - Nghiên cứu sâu
+5. Viết microcopy cho form nhập liệu.
+6. Viết nội dung giải thích các khái niệm:
+   - Tứ trụ
+   - Can Chi
+   - Thiên Can
+   - Địa Chi
+   - Ngũ hành
+   - Thập thần
+   - Tàng can
+   - Đại vận
+   - Lưu niên
+   - Vượng suy
+7. Viết bộ nguyên tắc wording để dev không dùng ngôn ngữ bói toán giật gân.
+8. Không code, không sửa file, không triển khai kỹ thuật nếu chưa được yêu cầu.
+
+KẾT LUẬN
+
+Nhánh Tứ trụ phải đi theo hướng:
+- Công cụ trước
+- Dữ liệu sách sau
+- Web chỉ là lớp hiển thị
+- AI chỉ diễn giải trên dữ liệu đã kiểm duyệt
+
+Mục tiêu là làm một module Cổ học nghiêm túc, có cấu trúc, có nguồn, không mê tín hóa.

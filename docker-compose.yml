@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hontho_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hontho_app}
+      POSTGRES_USER: ${POSTGRES_USER:-hontho}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/db:/schema:ro
+
+  api:
+    build:
+      context: ./apps/api
+    container_name: hontho_api
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    volumes:
+      - ./media:/data/hontho-media
+
+  web:
+    build:
+      context: ./apps/web
+    container_name: hontho_web_build
+    command: sh -c "npm run build && cp -r dist/* /web-dist/"
+    volumes:
+      - web_dist:/web-dist
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: hontho_caddy
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - api
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - web_dist:/srv/app:ro
+      - ./media:/data/hontho-media:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  postgres_data:
+  web_dist:
+  caddy_data:
+  caddy_config:

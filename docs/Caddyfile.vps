@@ -1,0 +1,43 @@
+app.hontho.com {
+	encode gzip zstd
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		-Content-Disposition
+	}
+
+	# Mai Hoa
+	@maihoa path /nguthuat/boc/maihoa /nguthuat/boc/maihoa/*
+	handle @maihoa {
+		root * /var/www/hontho-app/nguthuat/boc/maihoa
+		uri strip_prefix /nguthuat/boc/maihoa
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Tu Tru
+	@tutru path /nguthuat/menh/tutru /nguthuat/menh/tutru/*
+	handle @tutru {
+		root * /var/www/hontho-app/nguthuat/menh/tutru
+		uri strip_prefix /nguthuat/menh/tutru
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Y Hoc
+	@yhoc path /nguthuat/y/yhoc /nguthuat/y/yhoc/*
+	handle @yhoc {
+		root * /var/www/hontho-app/nguthuat/y/yhoc
+		uri strip_prefix /nguthuat/y/yhoc
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Main app SPA fallback
+	handle {
+		root * /var/www/hontho-app
+		try_files {path} /index.html
+		file_server
+	}
+}

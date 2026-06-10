@@ -1,0 +1,53 @@
+NHIỆM VỤ DUY NHẤT:
+Chuyển gói nghiên cứu data Tứ Trụ này thành bộ data seed có kiểm soát cho phase 1.
+
+Không gom thêm nguồn mới trừ khi cần bổ sung thiếu cực kỳ rõ.
+Không code UI.
+Không viết luận giải người dùng.
+Không đưa data vào production.
+Không copy dài sách/tài liệu bản quyền.
+
+Đầu vào:
+- 00_deep-research-report-original.md
+- 01_source_inventory_priority.json
+- 02_topic_map.md
+- 03_license_review.md
+- 04_data_filter_rules.md
+- 05_glossary_seed.json
+- 06_rules_candidate.json
+
+Việc cần làm:
+1. Tạo thư mục data/tu-tru/raw/ để giữ nguồn thô đã trích.
+2. Tạo thư mục data/tu-tru/curated/ cho dữ liệu đã lọc.
+3. Từ source_inventory, tách ra 4 file:
+   - engine_sources.json
+   - reference_sources.json
+   - license_review_sources.json
+   - rejected_sources.json
+4. Từ glossary_seed.json tạo glossary_terms.json, giữ status = candidate nếu chưa kiểm duyệt.
+5. Từ rules_candidate.json tạo rules_candidate.normalized.json, không đổi status thành approved_core nếu chưa có người duyệt.
+6. Tạo README_DATA_POLICY.md ghi rõ:
+   - Core là rule nền có thể dùng cho engine sau kiểm duyệt.
+   - Reference chỉ để đối chiếu.
+   - Quote chỉ dùng trích ngắn khi đủ quyền.
+   - Rejected không được dùng.
+7. Tạo TODO_REVIEW.md liệt kê các việc cần người duyệt:
+   - nguồn cần kiểm tra license
+   - rule còn mâu thuẫn
+   - thuật ngữ cần xác minh
+   - nguồn chỉ dùng nội bộ
+
+Quy tắc bắt buộc:
+- Mọi item phải có id.
+- Mọi item phải có source_candidates hoặc source_id.
+- Mọi item phải có status.
+- Mọi nguồn license unknown/copyrighted/needs_review không được đưa vào public quote.
+- Không viết câu phán mệnh.
+- Không dùng ngôn ngữ bói toán giật gân.
+
+Kết quả trả về:
+- danh sách file tạo
+- số lượng item trong từng file
+- item nào bị loại
+- item nào cần duyệt thủ công
+- đề xuất bước tiếp theo để nối với package knowledge-core

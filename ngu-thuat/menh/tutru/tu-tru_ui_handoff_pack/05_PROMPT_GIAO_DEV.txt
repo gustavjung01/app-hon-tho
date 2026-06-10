@@ -1,0 +1,39 @@
+Triển khai UI module Tứ Trụ cho Hồn Thơ / Cổ học theo các file trong gói ZIP này.
+
+Ưu tiên số 1:
+- Bám sát ảnh `01_UI_Mockup_6_Man_Hinh.png` về bố cục, tone màu, không khí và nhịp thị giác.
+- Không tự làm thành giao diện SaaS/form thường.
+
+Nguồn nội dung:
+- Text/copy lấy từ `02_Content_Brief_Tu_Tru.txt`
+- Kiến trúc/phase/logic lấy từ `03_Plan_Trien_Khai_Tu_Tru.md`
+- Tóm tắt visual rule xem thêm ở `04_UI_DIRECTION.md`
+
+Yêu cầu UI:
+1. Có 6 khu vực/màn:
+   - Trang chủ
+   - Nhập thông tin
+   - Kết quả tổng quan
+   - Bốn trụ chi tiết
+   - Dòng vận
+   - Sách & Quy tắc
+2. Tone:
+   - nền xanh đen/đen mực rất sẫm
+   - vàng đồng
+   - cam đất
+   - nâu giấy cổ
+3. CTA chính dùng kiểu ấn triện / thanh cổ, ví dụ “Lập trụ” hoặc “Dựng bốn trụ”.
+4. Không dùng từ: bói, xem số chuẩn, định mệnh đời bạn, vận hạn chắc chắn.
+5. Có phần version/rule/source ở khu “Sách & Quy tắc”.
+
+Quy trình làm việc:
+- Bước 1: gửi wireframe/layout trước
+- Bước 2: gửi bảng màu và component chính
+- Bước 3: mới bắt đầu code khi được duyệt
+
+Khi báo cáo, cần nêu rõ:
+- file tạo
+- file sửa
+- component chính
+- layout desktop/mobile
+- phần nào là TODO phase 2

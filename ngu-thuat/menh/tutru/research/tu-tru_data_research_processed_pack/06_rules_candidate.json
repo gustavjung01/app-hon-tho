@@ -1,0 +1,228 @@
+[
+  {
+    "id": "rule_calendar_new_moon_month_start",
+    "topic": "Lịch pháp",
+    "rule_name": "Chinese lunar month starts on the day containing the astronomical conjunction",
+    "condition": "When computing month boundaries in the modern Chinese calendar",
+    "meaning_short": "Use new moon/conjunction as month start",
+    "source_candidates": [
+      "ENG-006",
+      "ENG-015"
+    ],
+    "confidence": "high",
+    "status": "candidate"
+  },
+  {
+    "id": "rule_calendar_month11_winter_solstice",
+    "topic": "Lịch pháp",
+    "rule_name": "Month 11 contains winter solstice",
+    "condition": "When numbering months within a suì",
+    "meaning_short": "Winter-solstice month is month 11",
+    "source_candidates": [
+      "ENG-006",
+      "ENG-015"
+    ],
+    "confidence": "high",
+    "status": "candidate"
+  },
+  {
+    "id": "rule_calendar_leap_month_no_major_term",
+    "topic": "Lịch pháp",
+    "rule_name": "Leap month is the first month without a major solar term",
+    "condition": "If a suì contains 13 lunar months",
+    "meaning_short": "First month lacking a major term becomes leap month",
+    "source_candidates": [
+      "ENG-006",
+      "ENG-015"
+    ],
+    "confidence": "high",
+    "status": "candidate"
+  },
+  {
+    "id": "rule_calendar_new_year_second_regular_month",
+    "topic": "Lịch pháp",
+    "rule_name": "Chinese New Year is the first day of the second regular month after month 11",
+    "condition": "Modern Chinese calendar year computation",
+    "meaning_short": "Year starts at second regular month after month 11",
+    "source_candidates": [
+      "ENG-006",
+      "ENG-015"
+    ],
+    "confidence": "high",
+    "status": "candidate"
+  },
+  {
+    "id": "rule_ganzhi_parity_pairing",
+    "topic": "Can Chi",
+    "rule_name": "Valid stem-branch pairings preserve parity",
+    "condition": "When constructing 60 combinations",
+    "meaning_short": "Only same-parity stem/branch pairings occur",
+    "source_candidates": [
+      "ENG-003",
+      "ENG-007",
+      "ENG-022"
+    ],
+    "confidence": "high",
+    "status": "candidate"
+  },
+  {
+    "id": "rule_hour_branch_double_hour",
+    "topic": "Tứ Trụ",
+    "rule_name": "Hour branch follows the twelve double-hour system",
+    "condition": "When assigning hour branch from local birth time",
+    "meaning_short": "Map civil/solar time into 12 branch-based two-hour blocks",
+    "source_candidates": [
+      "ENG-003"
+    ],
+    "confidence": "high",
+    "status": "candidate"
+  },
+  {
+    "id": "rule_hour_stem_from_day_stem",
+    "topic": "Tứ Trụ",
+    "rule_name": "Hour stem derives from day stem plus hour branch table",
+    "condition": "After day stem and hour branch are known",
+    "meaning_short": "Use canonical lookup table to derive hour stem",
+    "source_candidates": [
+      "ENG-003"
+    ],
+    "confidence": "high",
+    "status": "candidate"
+  },
+  {
+    "id": "rule_day_pillar_from_continuous_day_cycle",
+    "topic": "Tứ Trụ",
+    "rule_name": "Day pillar follows the continuous sexagenary day cycle",
+    "condition": "Given a fixed day-count system and timezone convention",
+    "meaning_short": "Compute day pillar from continuous day indexing",
+    "source_candidates": [
+      "ENG-007",
+      "ENG-009"
+    ],
+    "confidence": "high",
+    "status": "candidate"
+  },
+  {
+    "id": "rule_year_pillar_boundary_lichun",
+    "topic": "Tứ Trụ",
+    "rule_name": "Many Bazi engines use Lập Xuân rather than lunar new year for year pillar boundary",
+    "condition": "When assigning the natal year pillar in Bazi-specific logic",
+    "meaning_short": "Year-pillar boundary may be solar-term-based, not festival-based",
+    "source_candidates": [
+      "ENG-001",
+      "ENG-021",
+      "CASE-003"
+    ],
+    "confidence": "low",
+    "status": "needs_review"
+  },
+  {
+    "id": "rule_month_pillar_by_solar_terms",
+    "topic": "Tứ Trụ",
+    "rule_name": "Month pillar in many Bazi systems follows solar-term segmentation",
+    "condition": "When assigning natal month pillar",
+    "meaning_short": "Month pillar may be tied to term boundaries rather than lunar month name",
+    "source_candidates": [
+      "ENG-001",
+      "ENG-021",
+      "CASE-004"
+    ],
+    "confidence": "medium",
+    "status": "needs_review"
+  },
+  {
+    "id": "rule_hidden_stems_branch_table",
+    "topic": "Tàng can",
+    "rule_name": "Each Earthly Branch carries a conventional hidden-stem table",
+    "condition": "When expanding branch content in a chart",
+    "meaning_short": "Assign embedded stems per branch using canonical table",
+    "source_candidates": [
+      "BOOK-003",
+      "RUL-006",
+      "RUL-008"
+    ],
+    "confidence": "medium",
+    "status": "needs_review"
+  },
+  {
+    "id": "rule_ten_gods_from_day_master_relation",
+    "topic": "Thập thần",
+    "rule_name": "Ten Gods classification is based on relation to the day stem",
+    "condition": "After day stem and comparison stem are known",
+    "meaning_short": "Classify by five-phase relation plus polarity",
+    "source_candidates": [
+      "BOOK-003",
+      "RUL-007",
+      "RUL-009"
+    ],
+    "confidence": "medium",
+    "status": "needs_review"
+  },
+  {
+    "id": "rule_branch_interaction_sets",
+    "topic": "Hợp xung hình hại phá",
+    "rule_name": "Branch interaction labels exist as combination, clash, punishment, harm, and break sets",
+    "condition": "When scanning chart relationships",
+    "meaning_short": "Interaction tables are available but activation logic varies",
+    "source_candidates": [
+      "BOOK-001",
+      "BOOK-003"
+    ],
+    "confidence": "medium",
+    "status": "needs_review"
+  },
+  {
+    "id": "rule_twelve_growth_stages",
+    "topic": "Vượng suy",
+    "rule_name": "Twelve growth stages are used as a vitality sequence in some lineages",
+    "condition": "When evaluating support/decline states",
+    "meaning_short": "Use twelve-stage sequence only after lineage/source adjudication",
+    "source_candidates": [
+      "BOOK-001",
+      "BOOK-004"
+    ],
+    "confidence": "medium",
+    "status": "needs_review"
+  },
+  {
+    "id": "rule_dayun_direction_school_variation",
+    "topic": "Đại vận",
+    "rule_name": "Direction of major luck cycles varies by school formula",
+    "condition": "When determining forward or backward cycle flow",
+    "meaning_short": "Do not hard-code until the chosen lineage is fixed",
+    "source_candidates": [
+      "BOOK-001",
+      "CASE-001",
+      "CASE-003"
+    ],
+    "confidence": "low",
+    "status": "needs_review"
+  },
+  {
+    "id": "rule_dayun_start_age_interval_method",
+    "topic": "Đại vận",
+    "rule_name": "Start age of major luck cycles may be computed from interval to nearby solar-term boundary",
+    "condition": "When deriving first cycle start age",
+    "meaning_short": "Method appears in practice but needs lineage-specific adjudication",
+    "source_candidates": [
+      "BOOK-001",
+      "CASE-001",
+      "ENG-001"
+    ],
+    "confidence": "low",
+    "status": "needs_review"
+  },
+  {
+    "id": "rule_yongshen_school_specific",
+    "topic": "Dụng thần",
+    "rule_name": "Useful-god selection is school-specific and should not be auto-promoted to core",
+    "condition": "Whenever source material presents a preferred useful element/factor",
+    "meaning_short": "Keep as comparative doctrine until conflict review is complete",
+    "source_candidates": [
+      "BOOK-003",
+      "RUL-008"
+    ],
+    "confidence": "low",
+    "status": "needs_review"
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {"id": 1, "name": "Tý", "element": "Thủy"},
+  {"id": 2, "name": "Sửu", "element": "Thổ"},
+  {"id": 3, "name": "Dần", "element": "Mộc"},
+  {"id": 4, "name": "Mão", "element": "Mộc"},
+  {"id": 5, "name": "Thìn", "element": "Thổ"},
+  {"id": 6, "name": "Tỵ", "element": "Hỏa"},
+  {"id": 7, "name": "Ngọ", "element": "Hỏa"},
+  {"id": 8, "name": "Mùi", "element": "Thổ"},
+  {"id": 9, "name": "Thân", "element": "Kim"},
+  {"id": 10, "name": "Dậu", "element": "Kim"},
+  {"id": 11, "name": "Tuất", "element": "Thổ"},
+  {"id": 12, "name": "Hợi", "element": "Thủy"}
+]

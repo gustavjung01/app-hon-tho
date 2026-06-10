@@ -1,0 +1,38 @@
+{
+  "app_name": "Mai Hoa Dịch Số",
+  "version": "1.0.0",
+  "disclaimers": [
+    {
+      "id": "general",
+      "title": "Cảnh báo sử dụng",
+      "content": "Kết quả chỉ phục vụ tham khảo và tự phản tư. Không dùng thay thế tư vấn chuyên môn, quyết định y tế, pháp lý, tài chính hoặc an toàn cá nhân."
+    },
+    {
+      "id": "no_absolutes",
+      "title": "Không chắc chắn tuyệt đối",
+      "content": "Mai Hoa Dịch Số là công cụ tượng số học thuật, không phải khoa học chính thống. Kết quả không nên được hiểu là dự đoán chắc chắn."
+    },
+    {
+      "id": "no_harmful_language",
+      "title": "Nguyên tắc ngôn từ",
+      "content": "Ứng dụng tránh dùng từ: chắc chắn xảy ra, đại họa, tai nạn, chết chóc, phá sản, định mệnh đã an bài. Thay vào đó dùng: dấu hiệu cần thận trọng, nên kiểm tra thêm, gợi ý phản tư."
+    }
+  ],
+  "interpretation_guidelines": {
+    "avoid": [
+      "chắc chắn xảy ra",
+      "đại họa",
+      "tai nạn",
+      "chết chóc",
+      "phá sản",
+      "định mệnh đã an bài"
+    ],
+    "prefer": [
+      "dấu hiệu cần thận trọng",
+      "nên kiểm tra thêm điều kiện thực tế",
+      "có thể xem như gợi ý phản tư",
+      "không nên dùng làm cơ sở quyết định duy nhất"
+    ]
+  },
+  "historical_note": "Mai Hoa Dịch Số thường được truyền thống gắn với Thiệu Ung và mạch Thiệu học, nhưng bản lưu hành hiện nay nên được xem là văn bản truyền thế/biên soạn muộn."
+}

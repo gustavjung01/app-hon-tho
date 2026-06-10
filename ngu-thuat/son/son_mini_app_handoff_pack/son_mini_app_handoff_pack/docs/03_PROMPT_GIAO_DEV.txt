@@ -1,0 +1,41 @@
+Mục tiêu: gắn bộ khung mini app Sơn – Phong thủy an cư vào repo Goc_Binh_Yen.
+
+Bối cảnh:
+- Sơn là mini web app riêng trong cùng website, không phải bài viết tĩnh.
+- App chính nằm ở /mini-apps/son.
+- Trang /huyen-mon-tham-khao/ngu-thuat/son chỉ là landing/cổng giới thiệu.
+- UI quan trọng nhất ở phase này.
+- Data hiện là placeholder để test flow, chưa phải engine phong thủy thật.
+
+Việc cần làm:
+1. Copy toàn bộ nội dung goc-binh-yen-patch/src vào src của repo.
+2. Giữ route app chính:
+   src/app/mini-apps/son/page.tsx
+3. Giữ landing Ngũ thuật:
+   src/app/huyen-mon-tham-khao/ngu-thuat/son/page.tsx
+4. Chạy:
+   npm run build
+5. Preview /mini-apps/son trên desktop và mobile.
+6. Kiểm tra các tương tác:
+   - Bát trạch / Phi tinh đổi đúng nội dung.
+   - Nhập thông tin đổi đúng form.
+   - Sơ đồ hiển thị 8 hướng hoặc 9 cung.
+   - Phân tích hiển thị notices.
+   - Gợi ý hiển thị điều chỉnh nhẹ.
+   - Quy tắc & nguồn hiển thị glossary/rule/source placeholder.
+7. Không thay placeholder thành kết quả phong thủy thật khi chưa có rule/source đã kiểm duyệt.
+
+Yêu cầu UI:
+- tone nâu đất, vàng cũ, xanh đá trầm
+- nền cổ, bản đồ/địa thế nhẹ
+- nút có chiều sâu, active rõ
+- mobile không vỡ
+- không neon, không game, không pháp trận
+- không dùng chữ hù dọa
+
+Sau khi xong báo lại:
+1. File đã thêm/sửa.
+2. Build có lỗi không.
+3. Ảnh preview desktop/mobile.
+4. Có cần tách component nhỏ hơn không.
+5. Phần nào còn cần data/rule engine thật.

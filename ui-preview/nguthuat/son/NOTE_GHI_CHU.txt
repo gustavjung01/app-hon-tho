@@ -1,0 +1,6 @@
+Suggested folder: apps/web/public/images/nguthuat/son/
+Files:
+ui-son-hero-bg-phong-thuy.png
+ui-son-phong-thuy-an-cu-card.png
+ui-son-bat-trach-bagua-panel.png
+ui-son-cuu-cung-phi-tinh-panel.png

@@ -1,0 +1,55 @@
+{
+  "bat_trach_output": {
+    "module": "son-bat-trach",
+    "version": "bt-v1",
+    "input": {
+      "birthYear": 1990,
+      "gender": "male",
+      "mainDirection": "south",
+      "spaceType": "home"
+    },
+    "computed_profile": {
+      "cungMenh": "Khảm",
+      "menhGroup": "Đông tứ mệnh",
+      "confidence": "core|reference|caution"
+    },
+    "direction_map": [],
+    "sector_meanings": [],
+    "recommendations": [],
+    "cautions": [],
+    "source_refs": [],
+    "rule_version": "bt-v1"
+  },
+  "phi_tinh_output": {
+    "module": "son-phi-tinh",
+    "version": "pt-v1",
+    "input": {
+      "housePeriod": 9,
+      "facingDirection": "south",
+      "year": 2026
+    },
+    "house_period": 9,
+    "facing_direction": "south",
+    "base_chart": [],
+    "annual_chart": [],
+    "palace_grid": [],
+    "star_meanings": [],
+    "sector_recommendations": [],
+    "cautions": [],
+    "source_refs": [],
+    "rule_version": "pt-v1"
+  },
+  "rule_object": {
+    "id": "SON-PT-001",
+    "module": "bat_trach|phi_tinh",
+    "condition": "string or json condition",
+    "result": "string or json result",
+    "explanation_plain": "user-safe wording",
+    "severity": "info|notice|caution|strong_caution",
+    "confidence": "core|reference|caution",
+    "source_refs": [],
+    "allowed_wording": [],
+    "forbidden_wording": [],
+    "requires_human_review": true
+  }
+}

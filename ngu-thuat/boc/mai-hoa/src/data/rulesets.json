@@ -1,0 +1,16 @@
+[
+  {
+    "ruleset_id": "mhds_time_v1",
+    "method_type": "time",
+    "calendar_basis": "earthly-branches+lunar-month-day",
+    "description": "Khởi quẻ theo năm chi, tháng, ngày, giờ chi. Thượng quái = (năm + tháng + ngày) % 8, Hạ quái = (năm + tháng + ngày + giờ) % 8, Hào động = (năm + tháng + ngày + giờ) % 6.",
+    "status": "phase_1"
+  },
+  {
+    "ruleset_id": "mhds_three_numbers_v1",
+    "method_type": "three_numbers",
+    "calendar_basis": "none",
+    "description": "Khởi quẻ bằng 3 số tự chọn. Thượng quái = số 1 % 8, Hạ quái = số 2 % 8, Hào động = số 3 % 6.",
+    "status": "phase_1"
+  }
+]

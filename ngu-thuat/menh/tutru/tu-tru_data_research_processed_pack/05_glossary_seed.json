@@ -1,0 +1,372 @@
+[
+  {
+    "id": "gls_thien_can",
+    "term_vi": "Thiên Can",
+    "term_han": "天干",
+    "term_en": "Heavenly Stems",
+    "short_definition": "The ten stem symbols used in the sexagenary cycle.",
+    "related_terms": [
+      "Địa Chi",
+      "Can Chi",
+      "Tứ Trụ"
+    ],
+    "source_candidates": [
+      "ENG-003",
+      "ENG-007",
+      "RUL-004",
+      "RUL-005"
+    ],
+    "confidence": "high"
+  },
+  {
+    "id": "gls_dia_chi",
+    "term_vi": "Địa Chi",
+    "term_han": "地支",
+    "term_en": "Earthly Branches",
+    "short_definition": "The twelve branch symbols paired with Heavenly Stems in the sexagenary cycle.",
+    "related_terms": [
+      "Thiên Can",
+      "Can Chi",
+      "Tàng Can"
+    ],
+    "source_candidates": [
+      "ENG-003",
+      "ENG-007",
+      "RUL-002",
+      "RUL-005"
+    ],
+    "confidence": "high"
+  },
+  {
+    "id": "gls_can_chi",
+    "term_vi": "Can Chi",
+    "term_han": "干支",
+    "term_en": "Stem-Branch; Sexagenary Cycle",
+    "short_definition": "The paired stem-branch cycle of sixty combinations used for year, month, day, and time notation.",
+    "related_terms": [
+      "Thiên Can",
+      "Địa Chi",
+      "Lục thập hoa giáp"
+    ],
+    "source_candidates": [
+      "ENG-003",
+      "ENG-007",
+      "RUL-004"
+    ],
+    "confidence": "high"
+  },
+  {
+    "id": "gls_tiet_khi",
+    "term_vi": "Tiết khí",
+    "term_han": "節氣",
+    "term_en": "Solar Terms",
+    "short_definition": "The twenty-four annual solar markers used in Chinese calendrical segmentation.",
+    "related_terms": [
+      "Lịch pháp",
+      "Trụ tháng",
+      "Lập Xuân"
+    ],
+    "source_candidates": [
+      "ENG-001",
+      "ENG-002",
+      "ENG-008"
+    ],
+    "confidence": "high"
+  },
+  {
+    "id": "gls_tu_tru",
+    "term_vi": "Tứ Trụ",
+    "term_han": "四柱",
+    "term_en": "Four Pillars",
+    "short_definition": "A chart model using year, month, day, and hour pillars, each expressed as a stem-branch pair.",
+    "related_terms": [
+      "Bát tự",
+      "Trụ năm",
+      "Trụ tháng",
+      "Trụ ngày",
+      "Trụ giờ"
+    ],
+    "source_candidates": [
+      "ENG-021",
+      "BOOK-001",
+      "BOOK-002",
+      "CASE-003"
+    ],
+    "confidence": "medium"
+  },
+  {
+    "id": "gls_bat_tu",
+    "term_vi": "Bát tự",
+    "term_han": "八字",
+    "term_en": "Eight Characters; BaZi",
+    "short_definition": "The eight characters formed by the four pillars in a stem-branch chart.",
+    "related_terms": [
+      "Tứ Trụ",
+      "Can Chi"
+    ],
+    "source_candidates": [
+      "CASE-003",
+      "CASE-004",
+      "BOOK-001"
+    ],
+    "confidence": "medium"
+  },
+  {
+    "id": "gls_ngu_hanh",
+    "term_vi": "Ngũ hành",
+    "term_han": "五行",
+    "term_en": "Five Phases",
+    "short_definition": "The five-phase framework commonly rendered in English as Wood, Fire, Earth, Metal, and Water.",
+    "related_terms": [
+      "Âm dương",
+      "Vượng suy",
+      "Thập thần"
+    ],
+    "source_candidates": [
+      "BOOK-001",
+      "BOOK-003",
+      "BOOK-012"
+    ],
+    "confidence": "high"
+  },
+  {
+    "id": "gls_am_duong",
+    "term_vi": "Âm dương",
+    "term_han": "陰陽",
+    "term_en": "Yin-Yang",
+    "short_definition": "The binary polarity framework used across stems, branches, and five-phase relationships.",
+    "related_terms": [
+      "Ngũ hành",
+      "Thiên Can",
+      "Địa Chi"
+    ],
+    "source_candidates": [
+      "BOOK-003",
+      "RUL-005"
+    ],
+    "confidence": "high"
+  },
+  {
+    "id": "gls_nhat_chu",
+    "term_vi": "Nhật chủ",
+    "term_han": "日主",
+    "term_en": "Day Master",
+    "short_definition": "A label used in many Bazi schools for the day stem as the chart’s reference stem.",
+    "related_terms": [
+      "Trụ ngày",
+      "Thập thần"
+    ],
+    "source_candidates": [
+      "RUL-010",
+      "CASE-004",
+      "BOOK-003"
+    ],
+    "confidence": "medium"
+  },
+  {
+    "id": "gls_thap_than",
+    "term_vi": "Thập thần",
+    "term_han": "十神",
+    "term_en": "Ten Gods",
+    "short_definition": "A relationship classification system derived from the interaction between the reference day stem and other stems.",
+    "related_terms": [
+      "Nhật chủ",
+      "Ngũ hành",
+      "Tàng Can"
+    ],
+    "source_candidates": [
+      "RUL-007",
+      "RUL-009",
+      "BOOK-003"
+    ],
+    "confidence": "medium"
+  },
+  {
+    "id": "gls_tang_can",
+    "term_vi": "Tàng can",
+    "term_han": "藏干",
+    "term_en": "Hidden Stems",
+    "short_definition": "Stems traditionally assigned within each Earthly Branch in many Bazi lineages.",
+    "related_terms": [
+      "Địa Chi",
+      "Thập thần"
+    ],
+    "source_candidates": [
+      "RUL-006",
+      "RUL-008",
+      "BOOK-003"
+    ],
+    "confidence": "medium"
+  },
+  {
+    "id": "gls_hop",
+    "term_vi": "Hợp",
+    "term_han": "合",
+    "term_en": "Combination",
+    "short_definition": "A relationship label used for certain stem or branch pairings in classical rule systems.",
+    "related_terms": [
+      "Xung",
+      "Hình",
+      "Hại",
+      "Phá"
+    ],
+    "source_candidates": [
+      "BOOK-001",
+      "BOOK-003"
+    ],
+    "confidence": "medium"
+  },
+  {
+    "id": "gls_xung",
+    "term_vi": "Xung",
+    "term_han": "沖",
+    "term_en": "Clash",
+    "short_definition": "A relationship label used for opposing stem/branch interactions in classical rule systems.",
+    "related_terms": [
+      "Hợp",
+      "Hình",
+      "Hại",
+      "Phá"
+    ],
+    "source_candidates": [
+      "BOOK-001",
+      "BOOK-003"
+    ],
+    "confidence": "medium"
+  },
+  {
+    "id": "gls_hinh",
+    "term_vi": "Hình",
+    "term_han": "刑",
+    "term_en": "Punishment",
+    "short_definition": "A classical interaction label applied to specific branch configurations.",
+    "related_terms": [
+      "Hợp",
+      "Xung",
+      "Hại"
+    ],
+    "source_candidates": [
+      "BOOK-001",
+      "BOOK-003"
+    ],
+    "confidence": "medium"
+  },
+  {
+    "id": "gls_hai",
+    "term_vi": "Hại",
+    "term_han": "害",
+    "term_en": "Harm",
+    "short_definition": "A classical interaction label for certain branch relationships.",
+    "related_terms": [
+      "Hợp",
+      "Xung",
+      "Hình",
+      "Phá"
+    ],
+    "source_candidates": [
+      "BOOK-001"
+    ],
+    "confidence": "medium"
+  },
+  {
+    "id": "gls_pha",
+    "term_vi": "Phá",
+    "term_han": "破",
+    "term_en": "Break; Destruction",
+    "short_definition": "A relationship label used in some branch interaction schemes.",
+    "related_terms": [
+      "Hợp",
+      "Xung",
+      "Hại"
+    ],
+    "source_candidates": [
+      "BOOK-003",
+      "RUL-007"
+    ],
+    "confidence": "low"
+  },
+  {
+    "id": "gls_truong_sinh",
+    "term_vi": "Trường sinh mười hai cung",
+    "term_han": "十二長生",
+    "term_en": "Twelve Stages of Growth",
+    "short_definition": "A twelve-stage vitality sequence used in some classical and later Bazi analyses.",
+    "related_terms": [
+      "Vượng suy",
+      "Ngũ hành"
+    ],
+    "source_candidates": [
+      "BOOK-001",
+      "BOOK-004"
+    ],
+    "confidence": "medium"
+  },
+  {
+    "id": "gls_vuong_suy",
+    "term_vi": "Vượng suy",
+    "term_han": "旺衰",
+    "term_en": "Prosperity and decline; strength state",
+    "short_definition": "A chart-strength vocabulary for judging relative seasonal/structural support.",
+    "related_terms": [
+      "Ngũ hành",
+      "Trường sinh mười hai cung"
+    ],
+    "source_candidates": [
+      "BOOK-001",
+      "BOOK-003",
+      "BOOK-004"
+    ],
+    "confidence": "medium"
+  },
+  {
+    "id": "gls_dai_van",
+    "term_vi": "Đại vận",
+    "term_han": "大運",
+    "term_en": "Major Luck Cycle; Ten-Year Luck Pillar",
+    "short_definition": "A long-cycle pillar sequence used in many Bazi systems for temporal layering.",
+    "related_terms": [
+      "Lưu niên",
+      "Tứ Trụ"
+    ],
+    "source_candidates": [
+      "BOOK-001",
+      "ENG-003",
+      "ENG-020"
+    ],
+    "confidence": "medium"
+  },
+  {
+    "id": "gls_luu_nien",
+    "term_vi": "Lưu niên",
+    "term_han": "流年",
+    "term_en": "Annual Influence; Annual Cycle",
+    "short_definition": "The year-by-year temporal layer commonly compared against a natal chart.",
+    "related_terms": [
+      "Đại vận",
+      "Can Chi năm"
+    ],
+    "source_candidates": [
+      "BOOK-001",
+      "ENG-003",
+      "ENG-020"
+    ],
+    "confidence": "medium"
+  },
+  {
+    "id": "gls_dung_than",
+    "term_vi": "Dụng thần",
+    "term_han": "用神",
+    "term_en": "Useful God; Functional Reference",
+    "short_definition": "A school-dependent selecting concept used to identify a chart’s key balancing or functional factor.",
+    "related_terms": [
+      "Hỷ thần",
+      "Kỵ thần",
+      "Vượng suy"
+    ],
+    "source_candidates": [
+      "BOOK-003",
+      "RUL-008"
+    ],
+    "confidence": "low"
+  }
+]
