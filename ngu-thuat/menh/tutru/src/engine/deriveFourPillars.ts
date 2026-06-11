@@ -4,6 +4,7 @@ import { CALCULATION_MODE, deriveTenGod, ENGINE_VERSION, getStemByIndex, getTwel
 import { assertSupportedTimezone, getNominalTimezoneOffsetHours, getTimezoneOffsetHours, zonedDateTimeToUtc } from "./timezone";
 import { deriveDayPillar } from "./dayPillar";
 import { deriveHourPillar } from "./hourPillar";
+import { deriveMajorLuckCycles } from "./luckCycles";
 import { deriveMonthPillar } from "./monthPillar";
 import type { DayBoundaryMode, DeriveFourPillarsInput, DeriveFourPillarsOutput, ParsedBirthDateTime, Pillar } from "./types";
 import { deriveYearPillar } from "./yearPillar";
@@ -124,6 +125,12 @@ export function deriveFourPillars(input: DeriveFourPillarsInput): DeriveFourPill
     },
     day.stemIndex
   );
+  const majorLuck = deriveMajorLuckCycles({
+    input,
+    parsed,
+    yearPillar: pillars.year,
+    monthPillar: pillars.month
+  });
 
   return {
     input,
@@ -131,6 +138,7 @@ export function deriveFourPillars(input: DeriveFourPillarsInput): DeriveFourPill
     summary: {
       dayMaster: day.pillar.stem
     },
+    majorLuck,
     meta: {
       engineVersion: ENGINE_VERSION,
       ruleSetVersion: RULE_SET_VERSION,
