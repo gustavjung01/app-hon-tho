@@ -9,7 +9,19 @@ function assertSupportedTimezone(timezone: string) {
   try {
     new Intl.DateTimeFormat("en-US", { timeZone: timezone });
   } catch {
-    throw new Error("Múi giờ không hợp lệ cho engine tối thiểu.");
+    throw new Error("Múi giờ không hợp lệ cho engine hiện tại.");
+  }
+}
+
+function assertValidGregorianDate(year: number, month: number, day: number) {
+  const candidate = new Date(Date.UTC(year, month - 1, day));
+  const isSameDate =
+    candidate.getUTCFullYear() === year &&
+    candidate.getUTCMonth() === month - 1 &&
+    candidate.getUTCDate() === day;
+
+  if (!isSameDate) {
+    throw new Error("Ngày sinh không tồn tại trong lịch dương.");
   }
 }
 
@@ -31,13 +43,15 @@ function parseBirthDateTime(input: DeriveFourPillarsInput): ParsedBirthDateTime 
   const hour = Number(timeMatch[1]);
   const minute = Number(timeMatch[2]);
 
+  if (year < 1600 || year > 2200) {
+    throw new Error("Năm sinh hiện hỗ trợ trong khoảng 1600-2200.");
+  }
+
   if (month < 1 || month > 12) {
     throw new Error("Tháng sinh không hợp lệ.");
   }
 
-  if (day < 1 || day > 31) {
-    throw new Error("Ngày sinh không hợp lệ.");
-  }
+  assertValidGregorianDate(year, month, day);
 
   if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
     throw new Error("Giờ sinh không hợp lệ.");
@@ -48,7 +62,7 @@ function parseBirthDateTime(input: DeriveFourPillarsInput): ParsedBirthDateTime 
 
 export function deriveFourPillars(input: DeriveFourPillarsInput): DeriveFourPillarsOutput {
   if (input.calendarType === "lunar") {
-    throw new Error("Âm lịch sẽ được hỗ trợ ở phiên bản sau.");
+    throw new Error("MVP hiện chỉ hỗ trợ dương lịch. Âm lịch sẽ được thêm sau khi có bộ đổi lịch đã kiểm chứng.");
   }
 
   assertSupportedTimezone(input.timezone);
@@ -77,4 +91,3 @@ export function deriveFourPillars(input: DeriveFourPillarsInput): DeriveFourPill
     }
   };
 }
-
