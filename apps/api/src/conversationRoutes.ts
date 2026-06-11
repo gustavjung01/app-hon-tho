@@ -1,7 +1,9 @@
-import type express from "express";
+import type { Express } from "express";
 import { z } from "zod";
 import { pool, query } from "./db.js";
 import { requireAdmin, requireAuth, type AuthedRequest, type UserRole } from "./auth.js";
+
+type QueryClient = Pick<typeof pool, "query">;
 
 const adminRoles: UserRole[] = ["super_admin", "admin", "operator", "reviewer"];
 const statusSchema = z.enum(["open", "closed", "archived", "flagged"]);
@@ -73,7 +75,7 @@ async function listMessages(conversationId: string, includeHidden = false) {
   );
 }
 
-async function touchConversation(conversationId: string, content: string, client = pool) {
+async function touchConversation(conversationId: string, content: string, client: QueryClient = pool) {
   await client.query(
     `UPDATE conversations
      SET updated_at=now(),
@@ -85,7 +87,7 @@ async function touchConversation(conversationId: string, content: string, client
   );
 }
 
-async function nextMessageSequence(conversationId: string, client = pool) {
+async function nextMessageSequence(conversationId: string, client: QueryClient = pool) {
   const result = await client.query<{ next_sequence: number }>(
     `SELECT COALESCE(max(sequence), 0) + 1 AS next_sequence FROM messages WHERE conversation_id=$1`,
     [conversationId]
@@ -93,7 +95,7 @@ async function nextMessageSequence(conversationId: string, client = pool) {
   return result.rows[0]?.next_sequence ?? 1;
 }
 
-function registerUserConversationRoutes(app: express.Express) {
+function registerUserConversationRoutes(app: Express) {
   app.get("/api/apps", requireAuth, async (_req, res) => {
     const rows = await query(
       `SELECT key, name, category, status, description, default_credit_cost
@@ -259,7 +261,7 @@ function registerUserConversationRoutes(app: express.Express) {
   });
 }
 
-function registerAdminConversationRoutes(app: express.Express) {
+function registerAdminConversationRoutes(app: Express) {
   app.get("/api/admin/conversations", requireAuth, requireAdmin, async (req: AuthedRequest, res) => {
     const appKey = typeof req.query.appKey === "string" && req.query.appKey ? req.query.appKey : null;
     const status = typeof req.query.status === "string" && req.query.status ? req.query.status : null;
@@ -361,7 +363,7 @@ function registerAdminConversationRoutes(app: express.Express) {
   });
 }
 
-export function registerConversationRoutes(app: express.Express) {
+export function registerConversationRoutes(app: Express) {
   registerUserConversationRoutes(app);
   registerAdminConversationRoutes(app);
 }
