@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200" role="img" aria-labelledby="title desc">
+  <title id="title">Đại Lục Nhâm</title>
+  <desc id="desc">Lục bàn, thủy văn và thiên tướng cho card Lục Nhâm.</desc>
+  <defs>
+    <radialGradient id="water" cx="50%" cy="38%" r="72%">
+      <stop offset="0" stop-color="#e7cc83" stop-opacity="0.95"/>
+      <stop offset="0.44" stop-color="#5f4b29" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#0f0905"/>
+    </radialGradient>
+  </defs>
+  <rect width="900" height="1200" fill="#0f0905"/>
+  <rect width="900" height="1200" fill="url(#water)" opacity="0.84"/>
+  <g transform="translate(450 555)" fill="none" stroke="#f3dfaa" stroke-opacity="0.52">
+    <circle r="270" stroke-width="5"/>
+    <circle r="210" stroke-width="3"/>
+    <circle r="148" stroke-width="3"/>
+    <path d="M0 -270 V270 M-270 0 H270" stroke-width="3"/>
+    <path d="M-235 -135 L235 135 M235 -135 L-235 135" stroke-width="3"/>
+    <path d="M-135 -235 L135 235 M135 -235 L-135 235" stroke-width="3"/>
+  </g>
+  <g transform="translate(450 555)" fill="#f4dea4" font-family="serif" font-size="34" text-anchor="middle" opacity="0.9">
+    <text y="-225">子</text><text x="112" y="-192">丑</text><text x="198" y="-100">寅</text><text x="225" y="12">卯</text>
+    <text x="196" y="118">辰</text><text x="105" y="205">巳</text><text y="245">午</text><text x="-112" y="205">未</text>
+    <text x="-200" y="118">申</text><text x="-225" y="12">酉</text><text x="-198" y="-100">戌</text><text x="-112" y="-192">亥</text>
+  </g>
+  <path d="M185 820 C285 760 375 840 465 780 C555 720 640 810 735 748" fill="none" stroke="#e8c97a" stroke-opacity="0.36" stroke-width="12"/>
+  <path d="M135 900 C265 830 365 920 505 850 C635 785 735 875 820 820" fill="none" stroke="#f3dfaa" stroke-opacity="0.18" stroke-width="9"/>
+  <g fill="#0f0905" opacity="0.42">
+    <path d="M450 362 l58 120 l132 20 l-95 94 l22 132 l-117 -62 l-117 62 l22 -132 l-95 -94 l132 -20z"/>
+  </g>
+  <circle cx="450" cy="555" r="40" fill="#e8c97a" opacity="0.88"/>
+  <circle cx="450" cy="555" r="14" fill="#0f0905"/>
+  <g stroke="#f3dfaa" stroke-opacity="0.16" stroke-width="3">
+    <path d="M85 155 C220 210 300 120 435 180 C565 240 670 135 815 205"/>
+    <path d="M90 1040 C220 980 330 1080 455 1015 C595 940 700 1035 815 970"/>
+  </g>
+  <rect x="48" y="48" width="804" height="1104" rx="28" fill="none" stroke="#d6b46a" stroke-opacity="0.36" stroke-width="4"/>
+</svg>
