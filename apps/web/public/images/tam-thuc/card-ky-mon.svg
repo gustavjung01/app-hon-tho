@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200" role="img" aria-labelledby="title desc">
+  <title id="title">Kỳ Môn Độn Giáp</title>
+  <desc id="desc">Cổ đồ la bàn và cổng phương vị cho card Kỳ Môn.</desc>
+  <defs>
+    <radialGradient id="g" cx="50%" cy="34%" r="70%">
+      <stop offset="0" stop-color="#d8bd75" stop-opacity="0.95"/>
+      <stop offset="0.42" stop-color="#69502a" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#120c06"/>
+    </radialGradient>
+    <linearGradient id="mist" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#f0d99a" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="soft"><feGaussianBlur stdDeviation="8"/></filter>
+  </defs>
+  <rect width="900" height="1200" fill="#120c06"/>
+  <rect width="900" height="1200" fill="url(#g)" opacity="0.82"/>
+  <path d="M0 260 C170 210 250 260 400 220 C560 178 700 138 900 205 L900 0 L0 0 Z" fill="url(#mist)"/>
+  <circle cx="450" cy="520" r="260" fill="none" stroke="#e8c97a" stroke-opacity="0.55" stroke-width="6"/>
+  <circle cx="450" cy="520" r="205" fill="none" stroke="#e8c97a" stroke-opacity="0.42" stroke-width="3"/>
+  <circle cx="450" cy="520" r="145" fill="none" stroke="#e8c97a" stroke-opacity="0.35" stroke-width="3"/>
+  <g stroke="#e8c97a" stroke-opacity="0.58" stroke-width="4">
+    <path d="M450 260 L450 780"/><path d="M190 520 L710 520"/>
+    <path d="M266 336 L634 704"/><path d="M634 336 L266 704"/>
+  </g>
+  <g fill="#f3dfaa" font-family="serif" font-size="44" text-anchor="middle" opacity="0.9">
+    <text x="450" y="310">乾</text><text x="660" y="535">震</text><text x="450" y="755">坤</text><text x="240" y="535">巽</text>
+  </g>
+  <g fill="none" stroke="#0d0905" stroke-opacity="0.55" stroke-width="18">
+    <path d="M315 395 h270 v250 h-270z"/>
+    <path d="M450 395 v250 M315 520 h270"/>
+  </g>
+  <circle cx="450" cy="520" r="36" fill="#e8c97a" opacity="0.88"/>
+  <circle cx="450" cy="520" r="12" fill="#120c06"/>
+  <g opacity="0.14" stroke="#f3dfaa" stroke-width="2">
+    <path d="M55 1030 C210 970 310 1050 470 985 C620 925 740 1005 845 930"/>
+    <path d="M70 1095 C235 1035 355 1110 505 1050 C665 985 760 1070 865 1008"/>
+  </g>
+  <rect x="48" y="48" width="804" height="1104" rx="28" fill="none" stroke="#d6b46a" stroke-opacity="0.36" stroke-width="4"/>
+</svg>
