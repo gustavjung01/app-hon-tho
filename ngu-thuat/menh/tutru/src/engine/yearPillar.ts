@@ -1,17 +1,14 @@
 import { createPillar } from "./stemsBranches";
+import { getLiChunBoundary } from "./solarTerms";
 import type { ParsedBirthDateTime, Pillar } from "./types";
 
-const APPROX_LICHUN_MONTH = 2;
-const APPROX_LICHUN_DAY = 4;
-
-function isOnOrAfterApproxLichun(parsed: ParsedBirthDateTime) {
-  if (parsed.month > APPROX_LICHUN_MONTH) return true;
-  if (parsed.month < APPROX_LICHUN_MONTH) return false;
-  return parsed.day >= APPROX_LICHUN_DAY;
+function isOnOrAfterLiChun(parsed: ParsedBirthDateTime) {
+  const liChun = getLiChunBoundary(parsed.year);
+  return parsed.birthInstantUtc.getTime() >= liChun.utcMs;
 }
 
 export function resolveGregorianYearForYearPillar(parsed: ParsedBirthDateTime) {
-  return isOnOrAfterApproxLichun(parsed) ? parsed.year : parsed.year - 1;
+  return isOnOrAfterLiChun(parsed) ? parsed.year : parsed.year - 1;
 }
 
 export function deriveYearPillar(parsed: ParsedBirthDateTime): { pillar: Pillar; stemIndex: number; branchIndex: number; resolvedYear: number } {
@@ -26,4 +23,3 @@ export function deriveYearPillar(parsed: ParsedBirthDateTime): { pillar: Pillar;
     resolvedYear
   };
 }
-
