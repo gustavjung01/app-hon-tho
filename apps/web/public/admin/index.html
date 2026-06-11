@@ -96,7 +96,7 @@ async function initClerk(){
   try{
     const cfg=await openApi('/api/admin/public-config');
     if(!cfg.clerkPublishableKey)throw new Error('Thi?u CLERK_PUBLISHABLE_KEY trong API .env');
-    $('authStatus').textContent='?ang t?i Clerk t? Frontend API...';
+    $('authStatus').textContent='Dang tai Clerk tu Frontend API...';
     const clerk=await loadClerkSdk(cfg.clerkPublishableKey);
     state.clerk=clerk;
     state.user=clerk.user;
