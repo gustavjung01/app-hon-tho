@@ -5,6 +5,7 @@ import type { PlainDate } from "./calendarMath";
 export type CalendarType = "solar" | "lunar";
 export type GenderType = "male" | "female" | "other";
 export type DayBoundaryMode = "zi-hour-rollover" | "civil-day";
+export type LuckCycleDirection = "forward" | "backward";
 
 export interface DeriveFourPillarsInput {
   birthDate: string;
@@ -37,6 +38,54 @@ export interface Pillar {
   twelveGrowthStage?: string;
 }
 
+export interface LuckCycleStartAge {
+  daysToStart: number;
+  totalMonths: number;
+  years: number;
+  months: number;
+  label: string;
+  targetTerm: {
+    role: "next" | "previous";
+    name: string;
+    han: string;
+    isoUtc: string;
+  };
+}
+
+export interface MajorLuckCycle {
+  index: number;
+  pillar: string;
+  pillarHan: string;
+  stem: string;
+  stemHan: string;
+  stemIndex: number;
+  stemElement: ElementName;
+  stemPolarity: PolarityLabel;
+  branch: string;
+  branchHan: string;
+  branchIndex: number;
+  branchElement: ElementName;
+  branchPolarity: PolarityLabel;
+  ageStartMonths: number;
+  ageEndMonths: number;
+  ageLabel: string;
+  startDate: string;
+  endDate: string;
+  years: string;
+}
+
+export interface MajorLuckCycleResult {
+  direction: LuckCycleDirection;
+  directionLabel: "Thuận vận" | "Nghịch vận";
+  directionRule: string;
+  gender: GenderType;
+  yearStem: string;
+  yearStemHan: string;
+  yearStemPolarity: PolarityLabel;
+  startAge: LuckCycleStartAge;
+  cycles: MajorLuckCycle[];
+}
+
 export interface DeriveFourPillarsOutput {
   input: DeriveFourPillarsInput;
   pillars: {
@@ -48,6 +97,7 @@ export interface DeriveFourPillarsOutput {
   summary: {
     dayMaster: string;
   };
+  majorLuck: MajorLuckCycleResult;
   meta: {
     engineVersion: string;
     ruleSetVersion: string;
