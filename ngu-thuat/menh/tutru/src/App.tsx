@@ -21,6 +21,17 @@ const elementClass: Record<(typeof elementOrder)[number], string> = {
 };
 
 type PillarKey = (typeof pillarOrder)[number]["key"];
+type InterpretStatus = "idle" | "saving" | "running" | "done" | "error";
+
+type InterpretationState = {
+  status: InterpretStatus;
+  message?: string;
+  appRunId?: string;
+  conversationId?: string;
+  reply?: string;
+  provider?: string;
+  model?: string;
+};
 
 const pillarWatermark: Record<PillarKey, string> = {
   year: "年",
@@ -45,6 +56,38 @@ function toGenderLabel(gender: GenderType) {
 
 function toDirectionText(content: ResultContentLayer) {
   return `${content.majorLuck.directionLabel} · ${content.majorLuck.startAgeLabel}`;
+}
+
+function getApiBase() {
+  return (localStorage.getItem("hontho_api_base") || "/api").replace(/\/$/, "");
+}
+
+function getAuthToken() {
+  return localStorage.getItem("hontho_user_token") || localStorage.getItem("hontho_admin_token") || "";
+}
+
+async function apiRequest<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
+  const token = getAuthToken().trim();
+  if (!token) {
+    throw new Error("Chưa có token đăng nhập. Vào /history/ hoặc /admin/ lưu Clerk JWT trước, sau đó quay lại bấm Luận AI.");
+  }
+
+  const response = await fetch(`${getApiBase()}${path}`, {
+    method: options.method || "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined
+  });
+
+  const data = await response.json().catch(() => ({ error: response.statusText }));
+  if (!response.ok) {
+    const message = typeof data?.error === "string" ? data.error : "API chưa xử lý được yêu cầu.";
+    const detail = typeof data?.detail === "string" ? ` ${data.detail}` : "";
+    throw new Error(`${message}${detail}`.trim());
+  }
+  return data as T;
 }
 
 function buildInputFromForm(
@@ -410,6 +453,35 @@ function MajorLuckPanel({ content }: { content: ResultContentLayer }) {
   );
 }
 
+function InterpretationPanel({ state, onInterpret }: { state: InterpretationState; onInterpret: () => void }) {
+  const isBusy = state.status === "saving" || state.status === "running";
+
+  return (
+    <section className="panel interpretation-panel" id="luan-ai">
+      <SectionTitle
+        eyebrow="Luận AI"
+        title="Luận tổng quan theo dữ liệu đã an"
+        note="Lưu app_run Tứ Trụ trước, sau đó gọi Tứ Trụ Agent. AI không tự tính lại lá số."
+      />
+      <div className="interpretation-actions">
+        <button className="primary-action" type="button" onClick={onInterpret} disabled={isBusy}>
+          {state.status === "saving" ? "Đang lưu lá số..." : state.status === "running" ? "Đang luận..." : "Luận AI"}
+        </button>
+        <a className="history-link" href="/history/">Xem lịch sử</a>
+      </div>
+      {state.message ? <p className={cx("interpretation-status", state.status === "error" && "error-text")}>{state.message}</p> : null}
+      {state.appRunId || state.conversationId ? (
+        <div className="interpretation-meta">
+          {state.appRunId ? <span>App run: {state.appRunId}</span> : null}
+          {state.conversationId ? <span>Conversation: {state.conversationId}</span> : null}
+          {state.provider ? <span>{state.provider} · {state.model}</span> : null}
+        </div>
+      ) : null}
+      {state.reply ? <div className="ai-reply-box">{state.reply}</div> : null}
+    </section>
+  );
+}
+
 function VerificationPanel({ result, content }: { result: DeriveFourPillarsOutput; content: ResultContentLayer }) {
   return (
     <section className="panel verification-panel">
@@ -442,7 +514,17 @@ function VerificationPanel({ result, content }: { result: DeriveFourPillarsOutpu
   );
 }
 
-function ResultSheet({ result, content }: { result: DeriveFourPillarsOutput; content: ResultContentLayer }) {
+function ResultSheet({
+  result,
+  content,
+  interpretation,
+  onInterpret
+}: {
+  result: DeriveFourPillarsOutput;
+  content: ResultContentLayer;
+  interpretation: InterpretationState;
+  onInterpret: () => void;
+}) {
   return (
     <div className="result-stack">
       <InputSummary result={result} content={content} />
@@ -450,6 +532,7 @@ function ResultSheet({ result, content }: { result: DeriveFourPillarsOutput; con
       <ElementBalance content={content} />
       <TenGodPanel content={content} />
       <MajorLuckPanel content={content} />
+      <InterpretationPanel state={interpretation} onInterpret={onInterpret} />
       <VerificationPanel result={result} content={content} />
     </div>
   );
@@ -459,8 +542,10 @@ export default function App() {
   const [calendarType, setCalendarType] = useState<CalendarType>("solar");
   const [gender, setGender] = useState<GenderType>("male");
   const [isLeapMonth, setIsLeapMonth] = useState(false);
+  const [chartInput, setChartInput] = useState<DeriveFourPillarsInput | null>(null);
   const [chartResult, setChartResult] = useState<DeriveFourPillarsOutput | null>(null);
   const [chartError, setChartError] = useState<string | null>(null);
+  const [interpretation, setInterpretation] = useState<InterpretationState>({ status: "idle" });
 
   const resultContent = useMemo(() => {
     if (!chartResult) return null;
@@ -477,13 +562,76 @@ export default function App() {
     try {
       const input = buildInputFromForm(event.currentTarget, calendarType, gender, isLeapMonth);
       const result = deriveFourPillars(input);
+      setChartInput(input);
       setChartResult(result);
       setChartError(null);
+      setInterpretation({ status: "idle" });
       window.setTimeout(() => document.getElementById("la-so")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Không dựng được lá phiếu với dữ liệu hiện tại.";
+      setChartInput(null);
       setChartResult(null);
       setChartError(message);
+      setInterpretation({ status: "idle" });
+    }
+  };
+
+  const handleInterpretChart = async () => {
+    if (!chartInput || !chartResult || !resultContent) {
+      setInterpretation({ status: "error", message: "Chưa có lá số để luận." });
+      return;
+    }
+
+    try {
+      const title = `Luận Tứ Trụ ${chartInput.birthDate} ${chartInput.birthTime}`;
+      setInterpretation({ status: "saving", message: "Đang lưu dữ liệu engine vào app_run..." });
+
+      const saved = await apiRequest<{ appRun: { id: string } }>("/nguthuat/tutru/app-runs", {
+        method: "POST",
+        body: {
+          input: chartInput,
+          result: chartResult,
+          contentLayer: resultContent,
+          title
+        }
+      });
+
+      setInterpretation({ status: "running", appRunId: saved.appRun.id, message: "Đã lưu app_run. Đang tạo conversation và gọi Tứ Trụ Agent..." });
+
+      const conversation = await apiRequest<{ conversation: { id: string } }>("/conversations", {
+        method: "POST",
+        body: {
+          appKey: "tu_tru",
+          title,
+          sourceAppRunId: saved.appRun.id,
+          initialMessage: "Hãy luận tổng quan lá số Tứ Trụ này theo dữ liệu engine đã lưu. Chỉ dùng các lớp đã có: bốn trụ, Ngũ hành, Tàng can, Thập thần và Đại vận. Không tự bịa dụng thần, vượng suy hoặc lưu niên nếu engine chưa cung cấp."
+        }
+      });
+
+      const ai = await apiRequest<{
+        message: { content: string };
+        provider: string;
+        model: string;
+      }>(`/conversations/${conversation.conversation.id}/ai-reply`, {
+        method: "POST",
+        body: {
+          extraInstruction: "Trả lời thành các mục ngắn: Tổng quan, Nhật chủ, Ngũ hành, Thập thần, Đại vận, Phần chưa đủ dữ liệu. Không phán tuyệt đối."
+        }
+      });
+
+      setInterpretation({
+        status: "done",
+        appRunId: saved.appRun.id,
+        conversationId: conversation.conversation.id,
+        provider: ai.provider,
+        model: ai.model,
+        message: "Đã lưu lá số, tạo conversation và nhận luận AI.",
+        reply: ai.message.content
+      });
+      window.setTimeout(() => document.getElementById("luan-ai")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Không gọi được luận AI.";
+      setInterpretation({ status: "error", message });
     }
   };
 
@@ -494,6 +642,7 @@ export default function App() {
           <a href="#lap-phieu">Nhập liệu</a>
           <a href="#la-so">Lá số</a>
           <a href="#dai-van">Đại vận</a>
+          <a href="#luan-ai">Luận AI</a>
         </nav>
         <img
           className="home-hero-card"
@@ -522,7 +671,7 @@ export default function App() {
       />
 
       {chartResult && resultContent ? (
-        <ResultSheet result={chartResult} content={resultContent} />
+        <ResultSheet result={chartResult} content={resultContent} interpretation={interpretation} onInterpret={handleInterpretChart} />
       ) : (
         <section className="panel empty-panel">
           <h2>Chưa có lá phiếu</h2>
