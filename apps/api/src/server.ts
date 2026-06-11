@@ -5,6 +5,7 @@ import { z } from "zod";
 import { query } from "./db.js";
 import { register, login, signToken, requireAuth, requireAdmin, type AuthedRequest } from "./auth.js";
 import { registerConversationRoutes } from "./conversationRoutes.js";
+import { registerAiRoutes } from "./aiRoutes.js";
 import { sendEmail } from "./email.js";
 
 const app = express();
@@ -14,7 +15,7 @@ app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(express.json({ limit: "2mb" }));
 
 function publicHealthPayload() {
-  return { ok: true, service: "hontho-app-api", phase: "conversation-core", time: new Date().toISOString() };
+  return { ok: true, service: "hontho-app-api", phase: "ai-agent-runtime", time: new Date().toISOString() };
 }
 
 app.get("/health", (_req, res) => res.json(publicHealthPayload()));
@@ -191,6 +192,7 @@ app.get("/api/admin/ai-agents", requireAuth, requireAdmin, async (_req, res) => 
 });
 
 registerConversationRoutes(app);
+registerAiRoutes(app);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(error);
