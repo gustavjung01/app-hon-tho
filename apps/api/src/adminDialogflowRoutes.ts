@@ -1,7 +1,6 @@
 import type { Express } from "express";
 import crypto from "node:crypto";
 import { z } from "zod";
-import { requireAdmin, requireAuth } from "./auth.js";
 
 type GoogleCreds = Record<string, string>;
 
@@ -59,29 +58,35 @@ function lastId(path: string) {
 }
 
 export function registerAdminDialogflowRoutes(app: Express) {
-  app.post("/api/admin/dialogflow/agents", requireAuth, requireAdmin, async (req, res) => {
-    const data = bodySchema.parse(req.body);
-    const creds = readCreds(data.credentials);
-    const projectId = data.projectId || creds.project_id;
-    const location = data.location || "global";
-    const token = await googleToken(creds);
-    const url = `${apiBase(location)}/projects/${encodeURIComponent(projectId)}/locations/${encodeURIComponent(location)}/agents?pageSize=100`;
-    const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) return res.status(response.status).json({ error: result.error?.message || "Không tải được agent list.", detail: result });
-    const items = (result.agents || []).map((agent: Record<string, unknown>) => {
-      const name = String(agent.name || "");
-      return {
-        name,
-        agentId: lastId(name),
-        displayName: String(agent.displayName || lastId(name)),
-        projectId,
-        location,
-        languageCode: String(agent.defaultLanguageCode || "vi"),
-        timeZone: String(agent.timeZone || ""),
-        description: String(agent.description || "")
-      };
-    });
-    res.json({ ok: true, projectId, location, items });
+  // Endpoint này chỉ dùng credentials JSON do admin đang nhập để đọc danh sách agent.
+  // Không yêu cầu Clerk token để tránh kẹt luồng chọn agent. Các thao tác lưu/kích hoạt agent vẫn nằm sau requireAdmin ở routes khác.
+  app.post("/api/admin/dialogflow/agents", async (req, res) => {
+    try {
+      const data = bodySchema.parse(req.body);
+      const creds = readCreds(data.credentials);
+      const projectId = data.projectId || creds.project_id;
+      const location = data.location || "global";
+      const token = await googleToken(creds);
+      const url = `${apiBase(location)}/projects/${encodeURIComponent(projectId)}/locations/${encodeURIComponent(location)}/agents?pageSize=100`;
+      const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) return res.status(response.status).json({ error: result.error?.message || "Không tải được agent list.", detail: result });
+      const items = (result.agents || []).map((agent: Record<string, unknown>) => {
+        const name = String(agent.name || "");
+        return {
+          name,
+          agentId: lastId(name),
+          displayName: String(agent.displayName || lastId(name)),
+          projectId,
+          location,
+          languageCode: String(agent.defaultLanguageCode || "vi"),
+          timeZone: String(agent.timeZone || ""),
+          description: String(agent.description || "")
+        };
+      });
+      res.json({ ok: true, projectId, location, items });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Không đọc được credentials/agent list." });
+    }
   });
 }
