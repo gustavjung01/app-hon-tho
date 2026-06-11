@@ -335,7 +335,7 @@ function registerAdminConversationRoutes(app: Express) {
            status=COALESCE($3, status),
            metadata=COALESCE($4::jsonb, metadata),
            closed_at=CASE WHEN $3='closed' THEN now() ELSE closed_at END,
-           archived_at=CASE WHEN $3='archived' THEN now() ELSE closed_at END,
+           archived_at=CASE WHEN $3='archived' THEN now() ELSE archived_at END,
            updated_at=now()
        WHERE id=$1
        RETURNING *`,
