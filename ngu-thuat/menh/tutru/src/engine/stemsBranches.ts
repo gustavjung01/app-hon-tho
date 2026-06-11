@@ -41,9 +41,9 @@ export type {
   TwelveGrowthStage
 } from "./coreTables";
 
-export const ENGINE_VERSION = "0.2.0";
-export const RULE_SET_VERSION = "core-v0.3";
-export const CALCULATION_MODE = "solar-lunar/solar-term/timezone/zi-hour";
+export const ENGINE_VERSION = "0.3.0";
+export const RULE_SET_VERSION = "core-v0.4";
+export const CALCULATION_MODE = "solar-lunar/solar-term/timezone/zi-hour/major-luck";
 
 export function getStem(index: number) {
   return getStemByIndex(index);
