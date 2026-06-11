@@ -7,15 +7,6 @@ const DAY_MS = 86400000;
 const MONTHS_PER_MAJOR_LUCK = 120;
 const DEFAULT_CYCLE_COUNT = 10;
 
-function plainDateFromUtcMs(utcMs: number): PlainDate {
-  const date = new Date(utcMs);
-  return {
-    year: date.getUTCFullYear(),
-    month: date.getUTCMonth() + 1,
-    day: date.getUTCDate()
-  };
-}
-
 function addMonthsToPlainDate(date: PlainDate, months: number): PlainDate {
   const candidate = new Date(Date.UTC(date.year, date.month - 1 + months, date.day));
   return {
