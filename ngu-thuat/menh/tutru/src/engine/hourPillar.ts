@@ -1,9 +1,11 @@
 import { createPillar, getHourStemStartIndex } from "./stemsBranches";
 import type { ParsedBirthDateTime, Pillar } from "./types";
 
-function resolveHourBranchIndex(parsed: ParsedBirthDateTime) {
+export function resolveHourBranchIndex(parsed: ParsedBirthDateTime) {
   const totalMinutes = parsed.hour * 60 + parsed.minute;
 
+  // Giờ Tý: 23:00-00:59. Khi dayBoundaryMode = zi-hour-rollover,
+  // trụ ngày đã được đẩy sang ngày kế tiếp từ 23:00 trước khi tính Can giờ.
   if (totalMinutes >= 23 * 60 || totalMinutes < 60) {
     return 0;
   }
@@ -22,4 +24,3 @@ export function deriveHourPillar(parsed: ParsedBirthDateTime, dayStemIndex: numb
     branchIndex
   };
 }
-
