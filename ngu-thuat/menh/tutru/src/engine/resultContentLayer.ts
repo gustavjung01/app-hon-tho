@@ -1,4 +1,4 @@
-import type { DeriveFourPillarsOutput, Pillar } from "./types";
+import type { DeriveFourPillarsOutput, MajorLuckCycle, Pillar } from "./types";
 import {
   TEN_GOD_NOTES,
   TEN_GOD_ORDER,
@@ -61,6 +61,15 @@ export interface ElementBalanceSummary {
   note: string;
 }
 
+export interface MajorLuckCycleSummary {
+  directionLabel: string;
+  directionRule: string;
+  startAgeLabel: string;
+  startTerm: string;
+  cycles: MajorLuckCycle[];
+  note: string;
+}
+
 export interface ResultContentLayer {
   inputSummary: {
     birthDate: string;
@@ -87,6 +96,7 @@ export interface ResultContentLayer {
   elementBalance: ElementBalanceSummary;
   tenGodOverview: TenGodOverviewItem[];
   hiddenStemOverview: HiddenStemOverviewRow[];
+  majorLuck: MajorLuckCycleSummary;
   guardrail: string;
 }
 
@@ -236,6 +246,14 @@ export function buildResultContentLayer(result: DeriveFourPillarsOutput): Result
     },
     tenGodOverview,
     hiddenStemOverview,
+    majorLuck: {
+      directionLabel: result.majorLuck.directionLabel,
+      directionRule: result.majorLuck.directionRule,
+      startAgeLabel: result.majorLuck.startAge.label,
+      startTerm: `${result.majorLuck.startAge.targetTerm.name} (${result.majorLuck.startAge.targetTerm.han}) · ${result.majorLuck.startAge.targetTerm.isoUtc}`,
+      cycles: result.majorLuck.cycles,
+      note: "Đại vận được tính từ chiều vận theo giới tính + âm/dương năm sinh, rồi quy đổi khoảng cách tới tiết khí trước/sau theo quy tắc 3 ngày = 1 năm."
+    },
     guardrail:
       "Các lớp Can Chi, Ngũ hành, Thập thần và Dòng vận là công cụ tham khảo cổ học. Kết quả này không dùng để phán định đời người, không thay thế quyết định thực tế."
   };
