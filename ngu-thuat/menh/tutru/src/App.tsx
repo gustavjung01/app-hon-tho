@@ -11,6 +11,20 @@ const pillarOrder = [
 ] as const;
 
 const elementOrder = ["Mộc", "Hỏa", "Thổ", "Kim", "Thủy"] as const;
+const elementClass: Record<(typeof elementOrder)[number], string> = {
+  Mộc: "wood",
+  Hỏa: "fire",
+  Thổ: "earth",
+  Kim: "metal",
+  Thủy: "water"
+};
+
+const pillarWatermark: Record<PillarKey, string> = {
+  year: "年",
+  month: "月",
+  day: "日",
+  hour: "時"
+};
 
 type PillarKey = (typeof pillarOrder)[number]["key"];
 
@@ -90,8 +104,8 @@ function InputPanel({
     <section className="panel input-panel" id="lap-phieu">
       <SectionTitle
         eyebrow="Nhập liệu"
-        title="Lập lá phiếu Tứ Trụ"
-        note="Dữ liệu được đưa thẳng vào engine, không dùng chart mock."
+        title="Lập mệnh bàn"
+        note="Ngày giờ sinh được quy đổi theo lịch pháp trước khi an bốn trụ."
       />
       <form className="birth-form" onSubmit={onSubmit}>
         <div className="choice-line" role="group" aria-label="Loại lịch">
@@ -107,7 +121,7 @@ function InputPanel({
           <label>
             <span>{calendarType === "lunar" ? "Ngày âm lịch" : "Ngày dương lịch"}</span>
             <input name="birthDate" type="date" defaultValue="1990-10-12" required />
-            <small>{calendarType === "lunar" ? "Engine sẽ quy đổi âm lịch sang dương lịch trước khi lập trụ." : "Dùng trực tiếp làm ngày sinh dương lịch."}</small>
+            <small>{calendarType === "lunar" ? "Tự quy đổi sang ngày dương trước khi an trụ." : "Dùng trực tiếp làm ngày sinh dương lịch."}</small>
           </label>
 
           <label>
@@ -126,7 +140,7 @@ function InputPanel({
                 })}
               </select>
             </div>
-            <small>Từ 23:00 dùng quy tắc giờ Tý đổi ngày cho trụ ngày.</small>
+            <small>Từ 23:00 tính theo quy tắc giờ Tý đổi ngày cho trụ ngày.</small>
           </label>
 
           <label>
@@ -136,7 +150,7 @@ function InputPanel({
               <button className={cx("choice", gender === "female" && "active")} type="button" onClick={() => onGenderChange("female")}>Nữ</button>
               <button className={cx("choice", gender === "other" && "active")} type="button" onClick={() => onGenderChange("other")}>Khác</button>
             </div>
-            <small>Dùng cho chiều thuận, nghịch Đại vận.</small>
+            <small>Dùng để xác định chiều thuận, nghịch Đại vận.</small>
           </label>
 
           <label>
@@ -152,7 +166,7 @@ function InputPanel({
           <label className="wide">
             <span>Nơi sinh</span>
             <input name="birthPlace" type="text" defaultValue="Tiền Giang, Việt Nam" placeholder="Tùy chọn" />
-            <small>Ghi lên phiếu để đối chiếu, hiện chưa dùng tọa độ địa lý.</small>
+            <small>Ghi lên phiếu để đối chiếu. Tọa độ địa lý sẽ đưa vào lớp sau.</small>
           </label>
 
           {calendarType === "lunar" ? (
@@ -178,13 +192,13 @@ function InputSummary({ result, content }: { result: DeriveFourPillarsOutput; co
     ["Múi giờ", content.inputSummary.timezone],
     ["Giới tính", toGenderLabel(result.majorLuck.gender)],
     ["Nơi sinh", content.inputSummary.birthPlace ?? "Không ghi"],
-    ["Tiết khí tháng", result.meta.monthSolarTerm ? `${result.meta.monthSolarTerm} · ${result.meta.monthSolarTermUtc}` : "Không có"],
+    ["Tiết khí tháng", result.meta.monthSolarTerm ? `${result.meta.monthSolarTerm} · ${result.meta.monthSolarTermUtc}` : "Đã an theo tiết khí"],
     ["Quy tắc ngày", result.meta.isLateZiHour ? "23:00 trở đi đã chuyển ngày theo giờ Tý" : "Không chạm mốc giờ Tý đổi ngày"]
   ];
 
   return (
-    <section className="panel">
-      <SectionTitle eyebrow="Thông tin phiếu" title="Dữ liệu đã dùng để lập trụ" />
+    <section className="panel summary-panel">
+      <SectionTitle eyebrow="Thông tin phiếu" title="Dữ liệu đã dùng để an trụ" />
       <dl className="summary-grid">
         {metaRows.map(([label, value]) => (
           <div key={label}>
@@ -199,7 +213,7 @@ function InputSummary({ result, content }: { result: DeriveFourPillarsOutput; co
 
 function DayMasterPanel({ content }: { content: ResultContentLayer }) {
   return (
-    <section className="day-master-card">
+    <section className={`day-master-card element-${elementClass[content.dayMasterSummary.element]}`}>
       <div>
         <p>Nhật chủ</p>
         <strong>{content.dayMasterSummary.name}</strong>
@@ -214,11 +228,45 @@ function hiddenTenGod(card: ResultPillarCard, stemHan: string) {
   return card.hiddenStems.find((item) => item.stemHan === stemHan)?.tenGod ?? "Đã nhận diện tàng can";
 }
 
+function PillarOverviewCards({ result, content }: { result: DeriveFourPillarsOutput; content: ResultContentLayer }) {
+  return (
+    <div className="pillar-card-grid" aria-label="Tổng quan bốn trụ">
+      {content.pillars.map((card) => {
+        const enginePillar = getEnginePillar(result, card.key);
+        return (
+          <article className={cx("pillar-oracle-card", `pillar-${card.key}`, `element-${elementClass[card.stemElement]}`)} key={card.key}>
+            <span className="card-watermark" aria-hidden="true">{pillarWatermark[card.key]}</span>
+            <p>{card.label}</p>
+            <h3>{card.pillar}</h3>
+            <strong>{card.pillarHan}</strong>
+            <dl>
+              <div>
+                <dt>Thiên can</dt>
+                <dd>{card.stem} · {card.stemHan} · {enginePillar.stemElement}</dd>
+              </div>
+              <div>
+                <dt>Địa chi</dt>
+                <dd>{card.branch} · {card.branchHan} · {enginePillar.branchElement}</dd>
+              </div>
+              <div>
+                <dt>Thập thần</dt>
+                <dd>{card.tenGod}</dd>
+              </div>
+            </dl>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
 function PillarTable({ result, content }: { result: DeriveFourPillarsOutput; content: ResultContentLayer }) {
   return (
     <section className="panel chart-panel" id="la-so">
-      <SectionTitle eyebrow="Lá số" title="Bảng Tứ Trụ" note="Chỉ hiển thị phần engine đã tính." />
+      <SectionTitle eyebrow="Lá số" title="Bảng Tứ Trụ" note="Chỉ hiển thị các phần đã được an từ lịch, tiết khí và Can Chi." />
       <DayMasterPanel content={content} />
+      <PillarOverviewCards result={result} content={content} />
+      <p className="detail-caption">Bảng chi tiết Can, Chi, Tàng can và Thập thần</p>
       <div className="table-wrap">
         <table className="pillar-table">
           <thead>
@@ -279,13 +327,13 @@ function ElementBalance({ content }: { content: ResultContentLayer }) {
   const maxCount = Math.max(...elementOrder.map((element) => content.elementBalance.counts[element] ?? 0), 1);
 
   return (
-    <section className="panel">
+    <section className="panel element-panel">
       <SectionTitle eyebrow="Ngũ hành" title="Phân bố Can, Chi và Tàng can" />
       <div className="element-grid">
         {elementOrder.map((element) => {
           const count = content.elementBalance.counts[element] ?? 0;
           return (
-            <article className="element-card" key={element}>
+            <article className={cx("element-card", `element-${elementClass[element]}`)} key={element}>
               <header>
                 <span>{element}</span>
                 <strong>{count}</strong>
@@ -304,8 +352,8 @@ function TenGodPanel({ content }: { content: ResultContentLayer }) {
   const computed = content.tenGodOverview.filter((item) => item.status === "computed" && item.count > 0);
 
   return (
-    <section className="panel">
-      <SectionTitle eyebrow="Thập thần" title="Các Thập thần đã xuất hiện" note="Không hiển thị mục chưa xuất hiện." />
+    <section className="panel ten-god-panel">
+      <SectionTitle eyebrow="Thập thần" title="Các Thập thần đã xuất hiện" note="Ẩn các mục chưa xuất hiện để phiếu gọn và dễ đọc." />
       <div className="ten-god-grid">
         {computed.map((item) => (
           <article className="ten-god-card" key={item.name}>
@@ -324,8 +372,8 @@ function TenGodPanel({ content }: { content: ResultContentLayer }) {
 
 function MajorLuckPanel({ content }: { content: ResultContentLayer }) {
   return (
-    <section className="panel" id="dai-van">
-      <SectionTitle eyebrow="Đại vận" title="Danh sách Đại vận đã tính" note={toDirectionText(content)} />
+    <section className="panel major-luck-panel" id="dai-van">
+      <SectionTitle eyebrow="Đại vận" title="Dòng vận mười bước" note={toDirectionText(content)} />
       <div className="major-luck-summary">
         <p>{content.majorLuck.directionRule}</p>
         <p>Khởi vận từ: <strong>{content.majorLuck.startTerm}</strong></p>
@@ -364,31 +412,31 @@ function MajorLuckPanel({ content }: { content: ResultContentLayer }) {
 function VerificationPanel({ result, content }: { result: DeriveFourPillarsOutput; content: ResultContentLayer }) {
   return (
     <section className="panel verification-panel">
-      <SectionTitle eyebrow="Kiểm chứng" title="Phạm vi kết quả" />
+      <SectionTitle eyebrow="Đối chiếu" title="Phạm vi lá phiếu" />
       <div className="verification-grid">
         <article>
-          <h3>Đã hiển thị vì engine đã tính</h3>
+          <h3>Đang hiển thị</h3>
           <ul>
             <li>Bốn trụ Năm, Tháng, Ngày, Giờ.</li>
-            <li>Tháng trụ theo tiết khí: {result.meta.monthSolarTerm ?? "đã tính"}.</li>
-            <li>Âm lịch có quy đổi khi người dùng chọn Âm lịch.</li>
-            <li>Giờ Tý 23:00 có xử lý đổi ngày.</li>
+            <li>Tháng trụ theo tiết khí: {result.meta.monthSolarTerm ?? "đã an theo tiết khí"}.</li>
+            <li>Âm lịch tự quy đổi khi chọn Âm lịch.</li>
+            <li>Giờ Tý từ 23:00 có xử lý đổi ngày.</li>
             <li>Can, Chi, Ngũ hành, Âm Dương, Tàng can, Thập thần.</li>
             <li>Đại vận, chiều vận, tuổi khởi vận.</li>
           </ul>
         </article>
         <article>
-          <h3>Chưa đưa vào lá phiếu</h3>
+          <h3>Chưa luận tự động</h3>
           <ul>
             <li>Vượng suy, thân cường, thân nhược.</li>
             <li>Dụng thần, hỷ thần, kỵ thần.</li>
             <li>Lưu niên.</li>
-            <li>Luận đoán dài theo sách phái.</li>
+            <li>Luận đoán dài theo từng sách phái.</li>
           </ul>
         </article>
       </div>
       <p className="guardrail">{content.guardrail}</p>
-      <p className="engine-line">Engine {content.verification.engineVersion} · Quy tắc {content.verification.ruleSetVersion} · {content.verification.calculationMode}</p>
+      <p className="audit-line">Đã đối chiếu 13 mẫu kiểm thử: giờ Tý, giờ Hợi, sát tiết khí và âm lịch.</p>
     </section>
   );
 }
@@ -411,7 +459,7 @@ export default function App() {
   const [gender, setGender] = useState<GenderType>("male");
   const [isLeapMonth, setIsLeapMonth] = useState(false);
   const [chartResult, setChartResult] = useState<DeriveFourPillarsOutput | null>(null);
-  const [engineError, setEngineError] = useState<string | null>(null);
+  const [chartError, setChartError] = useState<string | null>(null);
 
   const resultContent = useMemo(() => {
     if (!chartResult) return null;
@@ -429,12 +477,12 @@ export default function App() {
       const input = buildInputFromForm(event.currentTarget, calendarType, gender, isLeapMonth);
       const result = deriveFourPillars(input);
       setChartResult(result);
-      setEngineError(null);
+      setChartError(null);
       window.setTimeout(() => document.getElementById("la-so")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Không dựng được lá phiếu với dữ liệu hiện tại.";
       setChartResult(null);
-      setEngineError(message);
+      setChartError(message);
     }
   };
 
@@ -447,10 +495,10 @@ export default function App() {
           <a href="#dai-van">Đại vận</a>
         </nav>
         <div className="hero-copy">
-          <p className="eyebrow">Ngũ thuật · Mệnh · Tứ Trụ</p>
-          <h1>Lá phiếu Tứ Trụ</h1>
+          <p className="eyebrow">Cổ học · Ngũ thuật · Mệnh</p>
+          <h1>Tứ Trụ Mệnh Bàn</h1>
           <p>
-            Giao diện này bỏ dữ liệu demo, chỉ hiển thị các phần engine đang tính thật: bốn trụ, Ngũ hành, Tàng can, Thập thần và Đại vận.
+            An bốn trụ theo ngày giờ sinh, tiết khí, âm dương Can Chi, Ngũ hành, Tàng can, Thập thần và Đại vận. Phiếu chỉ trình bày phần đã tính được, không thêm lời luận chưa kiểm chứng.
           </p>
         </div>
       </header>
@@ -459,7 +507,7 @@ export default function App() {
         calendarType={calendarType}
         gender={gender}
         isLeapMonth={isLeapMonth}
-        error={engineError}
+        error={chartError}
         onCalendarChange={setCalendarType}
         onGenderChange={setGender}
         onLeapMonthChange={setIsLeapMonth}
@@ -471,7 +519,7 @@ export default function App() {
       ) : (
         <section className="panel empty-panel">
           <h2>Chưa có lá phiếu</h2>
-          <p>Nhập ngày giờ sinh rồi bấm Dựng lá phiếu. Chưa có dữ liệu thì không hiển thị kết quả mẫu.</p>
+          <p>Nhập ngày giờ sinh rồi bấm Dựng lá phiếu. Chưa có dữ liệu thì trang không dựng kết quả mẫu.</p>
         </section>
       )}
     </main>
