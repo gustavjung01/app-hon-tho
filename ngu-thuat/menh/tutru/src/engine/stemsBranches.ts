@@ -1,61 +1,56 @@
 import type { Pillar } from "./types";
+import { getBranchByIndex, getStemByIndex, normalizeModulo } from "./coreTables";
 
-export interface StemDefinition {
-  index: number;
-  name: string;
-  han: string;
-  element: string;
-}
+export {
+  BRANCHES,
+  CONTROLS,
+  CORE_TABLE_VERSION,
+  ELEMENTS,
+  GENERATES,
+  HIDDEN_STEMS_BY_BRANCH_HAN,
+  STEMS,
+  TEN_GOD_NOTES,
+  TEN_GOD_ORDER,
+  TWELVE_GROWTH_BRANCHES_BY_STEM_HAN,
+  TWELVE_GROWTH_STAGE_ORDER,
+  TWELVE_GROWTH_STAGES_BY_STEM_HAN,
+  deriveTenGod,
+  findBranchByHan,
+  findBranchByName,
+  findStemByHan,
+  findStemByName,
+  getBranchByIndex,
+  getHiddenStemsForBranch,
+  getStemByIndex,
+  getTwelveGrowthStage,
+  normalizeModulo,
+  resolveElementRelation
+} from "./coreTables";
 
-export interface BranchDefinition {
-  index: number;
-  name: string;
-  han: string;
-  element: string;
-}
+export type {
+  BranchDefinition,
+  ElementDefinition,
+  ElementName,
+  ElementRelation,
+  HiddenStemDefinition,
+  HiddenStemQi,
+  Polarity,
+  PolarityLabel,
+  StemDefinition,
+  TenGodName,
+  TwelveGrowthStage
+} from "./coreTables";
 
-export const STEMS: StemDefinition[] = [
-  { index: 0, name: "Giáp", han: "甲", element: "Mộc" },
-  { index: 1, name: "Ất", han: "乙", element: "Mộc" },
-  { index: 2, name: "Bính", han: "丙", element: "Hỏa" },
-  { index: 3, name: "Đinh", han: "丁", element: "Hỏa" },
-  { index: 4, name: "Mậu", han: "戊", element: "Thổ" },
-  { index: 5, name: "Kỷ", han: "己", element: "Thổ" },
-  { index: 6, name: "Canh", han: "庚", element: "Kim" },
-  { index: 7, name: "Tân", han: "辛", element: "Kim" },
-  { index: 8, name: "Nhâm", han: "壬", element: "Thủy" },
-  { index: 9, name: "Quý", han: "癸", element: "Thủy" }
-];
-
-export const BRANCHES: BranchDefinition[] = [
-  { index: 0, name: "Tý", han: "子", element: "Thủy" },
-  { index: 1, name: "Sửu", han: "丑", element: "Thổ" },
-  { index: 2, name: "Dần", han: "寅", element: "Mộc" },
-  { index: 3, name: "Mão", han: "卯", element: "Mộc" },
-  { index: 4, name: "Thìn", han: "辰", element: "Thổ" },
-  { index: 5, name: "Tỵ", han: "巳", element: "Hỏa" },
-  { index: 6, name: "Ngọ", han: "午", element: "Hỏa" },
-  { index: 7, name: "Mùi", han: "未", element: "Thổ" },
-  { index: 8, name: "Thân", han: "申", element: "Kim" },
-  { index: 9, name: "Dậu", han: "酉", element: "Kim" },
-  { index: 10, name: "Tuất", han: "戌", element: "Thổ" },
-  { index: 11, name: "Hợi", han: "亥", element: "Thủy" }
-];
-
-export const ENGINE_VERSION = "0.1.0";
-export const RULE_SET_VERSION = "core-v0.1";
+export const ENGINE_VERSION = "0.1.1";
+export const RULE_SET_VERSION = "core-v0.2";
 export const CALCULATION_MODE = "solar/timezone";
 
-export function normalizeModulo(value: number, divisor: number) {
-  return ((value % divisor) + divisor) % divisor;
-}
-
 export function getStem(index: number) {
-  return STEMS[normalizeModulo(index, STEMS.length)];
+  return getStemByIndex(index);
 }
 
 export function getBranch(index: number) {
-  return BRANCHES[normalizeModulo(index, BRANCHES.length)];
+  return getBranchByIndex(index);
 }
 
 export function createPillar(label: string, stemIndex: number, branchIndex: number): Pillar {
