@@ -222,7 +222,8 @@ async function persistAiSuccess(args: {
       provider: args.result.provider,
       model: args.result.model,
       agentId: args.agent.id,
-      agentName: args.agent.name
+      agentName: args.agent.name,
+      appKey: args.agent.app_key
     };
     const message = await client.query(
       `INSERT INTO messages(conversation_id, role, content, metadata_json, token_input, token_output, cost,
@@ -287,6 +288,10 @@ async function persistAiError(args: {
   );
 }
 
+function missingAgentError(appKey: string) {
+  return `Chưa có agent active cho app ${appKey}.`;
+}
+
 function registerAgentReadRoutes(app: Express) {
   app.get("/api/ai/agents", requireAuth, async (req, res) => {
     const appKey = typeof req.query.appKey === "string" && req.query.appKey ? req.query.appKey : null;
@@ -330,7 +335,7 @@ function registerReplyRoutes(app: Express) {
     if (body.message) await insertUserMessage(conversation!.id, req.user!.id, body.message);
 
     const agent = await loadAgent(conversation!);
-    if (!agent) return res.status(400).json({ error: "Chưa có AI agent active cho app này." });
+    if (!agent) return res.status(400).json({ error: missingAgentError(conversation!.app_key) });
     await ensureConversationAgent(conversation!, agent);
 
     try {
@@ -355,7 +360,7 @@ function registerReplyRoutes(app: Express) {
     if (body.message) await insertUserMessage(conversation!.id, req.user!.id, body.message);
 
     const agent = await loadAgent(conversation!);
-    if (!agent) return res.status(400).json({ error: "Chưa có AI agent active cho app này." });
+    if (!agent) return res.status(400).json({ error: missingAgentError(conversation!.app_key) });
     await ensureConversationAgent(conversation!, agent);
 
     try {
