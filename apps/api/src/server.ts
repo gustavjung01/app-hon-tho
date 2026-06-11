@@ -4,6 +4,7 @@ import cors from "cors";
 import { z } from "zod";
 import { query } from "./db.js";
 import { register, login, signToken, requireAuth, requireAdmin, type AuthedRequest } from "./auth.js";
+import { registerConversationRoutes } from "./conversationRoutes.js";
 import { sendEmail } from "./email.js";
 
 const app = express();
@@ -13,7 +14,7 @@ app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(express.json({ limit: "2mb" }));
 
 function publicHealthPayload() {
-  return { ok: true, service: "hontho-app-api", phase: "admin-foundation", time: new Date().toISOString() };
+  return { ok: true, service: "hontho-app-api", phase: "conversation-core", time: new Date().toISOString() };
 }
 
 app.get("/health", (_req, res) => res.json(publicHealthPayload()));
@@ -189,75 +190,7 @@ app.get("/api/admin/ai-agents", requireAuth, requireAdmin, async (_req, res) => 
   res.json({ items: rows });
 });
 
-app.get("/api/admin/conversations", requireAuth, requireAdmin, async (_req, res) => {
-  const rows = await query(
-    `SELECT c.id, c.title, c.status, c.app_key, c.created_at, c.updated_at,
-            u.email, u.clerk_user_id, a.name AS agent_name,
-            (SELECT count(*) FROM messages m WHERE m.conversation_id = c.id) AS message_count
-     FROM conversations c
-     JOIN users u ON u.id = c.user_id
-     LEFT JOIN ai_agents a ON a.id = c.agent_id
-     ORDER BY c.updated_at DESC
-     LIMIT 200`
-  );
-  res.json({ items: rows });
-});
-
-app.get("/api/conversations", requireAuth, async (req: AuthedRequest, res) => {
-  const rows = await query(
-    `SELECT c.id, c.title, c.status, c.app_key, c.created_at, c.updated_at, a.name AS agent_name
-     FROM conversations c
-     LEFT JOIN ai_agents a ON a.id = c.agent_id
-     WHERE c.user_id=$1
-     ORDER BY c.updated_at DESC
-     LIMIT 100`,
-    [req.user!.id]
-  );
-  res.json({ items: rows });
-});
-
-app.post("/api/conversations", requireAuth, async (req: AuthedRequest, res) => {
-  const data = z.object({
-    appKey: z.string().min(1),
-    title: z.string().min(1).max(160).optional(),
-    agentId: z.string().uuid().optional(),
-    sourceAppRunId: z.string().uuid().optional()
-  }).parse(req.body);
-
-  const defaultAgent = data.agentId
-    ? [{ id: data.agentId }]
-    : await query<{ id: string }>(`SELECT id FROM ai_agents WHERE app_key=$1 AND status='active' ORDER BY version DESC LIMIT 1`, [data.appKey]);
-
-  const rows = await query(
-    `INSERT INTO conversations(user_id, app_key, agent_id, title, source_app_run_id)
-     VALUES($1, $2, $3, $4, $5)
-     RETURNING *`,
-    [req.user!.id, data.appKey, defaultAgent[0]?.id ?? null, data.title || "Cuộc hội thoại mới", data.sourceAppRunId || null]
-  );
-
-  res.status(201).json({ conversation: rows[0] });
-});
-
-app.get("/api/conversations/:id/messages", requireAuth, async (req: AuthedRequest, res) => {
-  const owns = await query<{ id: string }>(`SELECT id FROM conversations WHERE id=$1 AND user_id=$2`, [req.params.id, req.user!.id]);
-  if (!owns[0]) return res.status(404).json({ error: "Không tìm thấy hội thoại." });
-  const rows = await query(`SELECT * FROM messages WHERE conversation_id=$1 ORDER BY created_at ASC`, [req.params.id]);
-  res.json({ items: rows });
-});
-
-app.post("/api/conversations/:id/messages", requireAuth, async (req: AuthedRequest, res) => {
-  const data = z.object({ content: z.string().min(1).max(20000) }).parse(req.body);
-  const owns = await query<{ id: string }>(`SELECT id FROM conversations WHERE id=$1 AND user_id=$2`, [req.params.id, req.user!.id]);
-  if (!owns[0]) return res.status(404).json({ error: "Không tìm thấy hội thoại." });
-  const rows = await query(
-    `INSERT INTO messages(conversation_id, role, content)
-     VALUES($1, 'user', $2)
-     RETURNING *`,
-    [req.params.id, data.content]
-  );
-  await query(`UPDATE conversations SET updated_at=now() WHERE id=$1`, [req.params.id]);
-  res.status(201).json({ message: rows[0], note: "Phase 1 chỉ lưu message, chưa gọi AI." });
-});
+registerConversationRoutes(app);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(error);
