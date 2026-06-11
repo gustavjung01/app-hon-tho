@@ -292,6 +292,10 @@ function missingAgentError(appKey: string) {
   return `Chưa có agent active cho app ${appKey}.`;
 }
 
+function invalidAppRunError(appKey: string) {
+  return `Không tìm thấy app_run hợp lệ cho app ${appKey}.`;
+}
+
 function registerAgentReadRoutes(app: Express) {
   app.get("/api/ai/agents", requireAuth, async (req, res) => {
     const appKey = typeof req.query.appKey === "string" && req.query.appKey ? req.query.appKey : null;
@@ -340,6 +344,7 @@ function registerReplyRoutes(app: Express) {
 
     try {
       const appRun = await loadAppRun(conversation!, req, false);
+      if (conversation!.source_app_run_id && !appRun) return res.status(400).json({ error: invalidAppRunError(conversation!.app_key) });
       const messages = await loadRuntimeMessages(conversation!.id, false);
       const result = await runAgentRuntime({ agent, appRun, messages, extraInstruction: body.extraInstruction });
       const saved = await persistAiSuccess({ conversation: conversation!, agent, userId: req.user!.id, result, visibleToUser: true, startedAt });
@@ -365,6 +370,7 @@ function registerReplyRoutes(app: Express) {
 
     try {
       const appRun = await loadAppRun(conversation!, req, true);
+      if (conversation!.source_app_run_id && !appRun) return res.status(400).json({ error: invalidAppRunError(conversation!.app_key) });
       const messages = await loadRuntimeMessages(conversation!.id, true);
       const result = await runAgentRuntime({ agent, appRun, messages, extraInstruction: body.extraInstruction });
       const saved = await persistAiSuccess({
