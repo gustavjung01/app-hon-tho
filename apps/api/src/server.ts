@@ -7,6 +7,7 @@ import { register, login, signToken, requireAuth, requireAdmin, type AuthedReque
 import { registerConversationRoutes } from "./conversationRoutes.js";
 import { registerAiRoutes } from "./aiRoutes.js";
 import { registerAdminPromptUsageRoutes } from "./adminPromptUsageRoutes.js";
+import { registerAdminAgentManagementRoutes } from "./adminAgentManagementRoutes.js";
 import { registerTuTruRoutes } from "./tuTruRoutes.js";
 import { sendEmail } from "./email.js";
 
@@ -17,7 +18,7 @@ app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(express.json({ limit: "2mb" }));
 
 function publicHealthPayload() {
-  return { ok: true, service: "hontho-app-api", phase: "tu-tru-ai-foundation", time: new Date().toISOString() };
+  return { ok: true, service: "hontho-app-api", phase: "admin-agent-manager", time: new Date().toISOString() };
 }
 
 app.get("/health", (_req, res) => res.json(publicHealthPayload()));
@@ -196,6 +197,7 @@ app.get("/api/admin/ai-agents", requireAuth, requireAdmin, async (_req, res) => 
 registerTuTruRoutes(app);
 registerConversationRoutes(app);
 registerAiRoutes(app);
+registerAdminAgentManagementRoutes(app);
 registerAdminPromptUsageRoutes(app);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
