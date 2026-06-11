@@ -1,36 +1,185 @@
-// Phase-next TODO for luck cycle engine.
-// This file is intentionally a scaffold and is not wired into runtime yet.
+import { addDaysToPlainDate, formatPlainDate, type PlainDate } from "./calendarMath";
+import { getBranchByIndex, getStemByIndex, type Polarity } from "./coreTables";
+import { JIE_SOLAR_TERMS, getJieSolarTermBoundary, type JieSolarTermBoundary } from "./solarTerms";
+import type { DeriveFourPillarsInput, LuckCycleDirection, MajorLuckCycle, MajorLuckCycleResult, ParsedBirthDateTime, Pillar } from "./types";
 
-export interface LuckCycleTodoPlan {
-  id: string;
-  title: string;
-  detail: string;
+const DAY_MS = 86400000;
+const MONTHS_PER_MAJOR_LUCK = 120;
+const DEFAULT_CYCLE_COUNT = 10;
+
+function plainDateFromUtcMs(utcMs: number): PlainDate {
+  const date = new Date(utcMs);
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate()
+  };
 }
 
-export const luckCycleEngineTodo: LuckCycleTodoPlan[] = [
-  {
-    id: "direction-by-gender-and-year-polarity",
-    title: "Xác định chiều thuận/nghịch vận",
-    detail: "Tính theo giới tính và âm/dương năm sinh, có chọn rõ công thức học phái."
-  },
-  {
-    id: "start-age-calculation",
-    title: "Tính tuổi khởi vận",
-    detail: "Tính khoảng cách mốc tiết khí và quy đổi ra tuổi khởi vận theo quy tắc lịch pháp."
-  },
-  {
-    id: "generate-major-luck-cycles",
-    title: "Sinh danh sách đại vận",
-    detail: "Tạo chuỗi trụ đại vận theo chiều thuận/nghịch đã xác định."
-  },
-  {
-    id: "generate-annual-cycles",
-    title: "Sinh lưu niên cơ bản",
-    detail: "Tạo lớp đối chiếu năm theo Can Chi để đặt cạnh đại vận."
-  },
-  {
-    id: "gender-diff-fixtures",
-    title: "Bổ sung fixture nam/nữ",
-    detail: "Thêm fixture cùng ngày giờ khác giới tính để kiểm thử khác biệt ở lớp dòng vận."
+function addMonthsToPlainDate(date: PlainDate, months: number): PlainDate {
+  const candidate = new Date(Date.UTC(date.year, date.month - 1 + months, date.day));
+  return {
+    year: candidate.getUTCFullYear(),
+    month: candidate.getUTCMonth() + 1,
+    day: candidate.getUTCDate()
+  };
+}
+
+function formatAge(totalMonths: number) {
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+
+  if (years <= 0) return `${months} tháng`;
+  if (months === 0) return `${years} tuổi`;
+  return `${years} tuổi ${months} tháng`;
+}
+
+function formatAgeRange(startMonths: number, endMonths: number) {
+  return `${formatAge(startMonths)} - ${formatAge(endMonths)}`;
+}
+
+function getSortedJieBoundariesAround(instantUtc: Date) {
+  const year = instantUtc.getUTCFullYear();
+  const years = [year - 2, year - 1, year, year + 1, year + 2];
+
+  return years
+    .flatMap((candidateYear) => JIE_SOLAR_TERMS.map((term) => getJieSolarTermBoundary(candidateYear, term.key)))
+    .sort((left, right) => left.utcMs - right.utcMs);
+}
+
+function findAdjacentJieTerms(instantUtc: Date) {
+  const boundaries = getSortedJieBoundariesAround(instantUtc);
+  const instantMs = instantUtc.getTime();
+  let previous: JieSolarTermBoundary | null = null;
+  let next: JieSolarTermBoundary | null = null;
+
+  for (const boundary of boundaries) {
+    if (boundary.utcMs <= instantMs) {
+      previous = boundary;
+      continue;
+    }
+
+    next = boundary;
+    break;
   }
-];
+
+  if (!previous || !next) {
+    throw new Error("Không xác định được tiết khí trước/sau để tính tuổi khởi vận.");
+  }
+
+  return { previous, next };
+}
+
+export function resolveMajorLuckDirection(gender: DeriveFourPillarsInput["gender"], yearStemPolarity: Polarity): LuckCycleDirection {
+  const normalizedGender = gender ?? "male";
+
+  if (normalizedGender === "female") {
+    return yearStemPolarity === "yin" ? "forward" : "backward";
+  }
+
+  return yearStemPolarity === "yang" ? "forward" : "backward";
+}
+
+function buildDirectionRule(gender: DeriveFourPillarsInput["gender"], yearStemPolarity: Polarity) {
+  const genderLabel = gender === "female" ? "nữ" : gender === "other" ? "khác/không ghi" : "nam";
+  const polarityLabel = yearStemPolarity === "yang" ? "Dương" : "Âm";
+  return `Quy tắc: nam + năm Dương hoặc nữ + năm Âm đi thuận; nam + năm Âm hoặc nữ + năm Dương đi nghịch. Dữ liệu hiện tại: ${genderLabel}, năm ${polarityLabel}.`;
+}
+
+function calculateStartAge(parsed: ParsedBirthDateTime, direction: LuckCycleDirection) {
+  const adjacent = findAdjacentJieTerms(parsed.birthInstantUtc);
+  const targetTerm = direction === "forward" ? adjacent.next : adjacent.previous;
+  const role = direction === "forward" ? "next" : "previous";
+  const daysToStart = Math.abs(targetTerm.utcMs - parsed.birthInstantUtc.getTime()) / DAY_MS;
+
+  // Quy đổi phổ biến: 3 ngày = 1 năm, 1 ngày = 4 tháng. Làm tròn tới tháng gần nhất để không giả chính xác tới giờ/phút.
+  const totalMonths = Math.max(0, Math.round(daysToStart * 4));
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+
+  return {
+    daysToStart,
+    totalMonths,
+    years,
+    months,
+    label: formatAge(totalMonths),
+    targetTerm: {
+      role,
+      name: targetTerm.name,
+      han: targetTerm.han,
+      isoUtc: targetTerm.isoUtc
+    }
+  };
+}
+
+function buildMajorLuckCycle(
+  index: number,
+  direction: LuckCycleDirection,
+  monthPillar: Pillar,
+  parsed: ParsedBirthDateTime,
+  startAgeMonths: number
+): MajorLuckCycle {
+  const step = direction === "forward" ? 1 : -1;
+  const stem = getStemByIndex(monthPillar.stemIndex + step * index);
+  const branch = getBranchByIndex(monthPillar.branchIndex + step * index);
+  const ageStartMonths = startAgeMonths + (index - 1) * MONTHS_PER_MAJOR_LUCK;
+  const ageEndMonths = ageStartMonths + MONTHS_PER_MAJOR_LUCK - 1;
+  const startDate = addMonthsToPlainDate(parsed.solarDate, ageStartMonths);
+  const endDate = addDaysToPlainDate(addMonthsToPlainDate(parsed.solarDate, ageEndMonths + 1), -1);
+
+  return {
+    index,
+    pillar: `${stem.name} ${branch.name}`,
+    pillarHan: `${stem.han}${branch.han}`,
+    stem: stem.name,
+    stemHan: stem.han,
+    stemIndex: stem.index,
+    stemElement: stem.element,
+    stemPolarity: stem.polarityLabel,
+    branch: branch.name,
+    branchHan: branch.han,
+    branchIndex: branch.index,
+    branchElement: branch.element,
+    branchPolarity: branch.polarityLabel,
+    ageStartMonths,
+    ageEndMonths,
+    ageLabel: formatAgeRange(ageStartMonths, ageEndMonths),
+    startDate: formatPlainDate(startDate),
+    endDate: formatPlainDate(endDate),
+    years: `${startDate.year}-${endDate.year}`
+  };
+}
+
+export function deriveMajorLuckCycles({
+  input,
+  parsed,
+  yearPillar,
+  monthPillar,
+  cycleCount = DEFAULT_CYCLE_COUNT
+}: {
+  input: DeriveFourPillarsInput;
+  parsed: ParsedBirthDateTime;
+  yearPillar: Pillar;
+  monthPillar: Pillar;
+  cycleCount?: number;
+}): MajorLuckCycleResult {
+  const yearStem = getStemByIndex(yearPillar.stemIndex);
+  const gender = input.gender ?? "male";
+  const direction = resolveMajorLuckDirection(gender, yearStem.polarity);
+  const startAge = calculateStartAge(parsed, direction);
+  const cycles = Array.from({ length: cycleCount }, (_, index) =>
+    buildMajorLuckCycle(index + 1, direction, monthPillar, parsed, startAge.totalMonths)
+  );
+
+  return {
+    direction,
+    directionLabel: direction === "forward" ? "Thuận vận" : "Nghịch vận",
+    directionRule: buildDirectionRule(gender, yearStem.polarity),
+    gender,
+    yearStem: yearStem.name,
+    yearStemHan: yearStem.han,
+    yearStemPolarity: yearStem.polarityLabel,
+    startAge,
+    cycles
+  };
+}
