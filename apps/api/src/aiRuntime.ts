@@ -142,6 +142,15 @@ export async function runAgentRuntime(input: AiRuntimeInput): Promise<AiRuntimeR
     return stubResponse(input, systemPrompt, "stub", "Agent provider đang là stub hoặc chưa cấu hình, nên runtime không gọi OpenAI.");
   }
 
+  if (agentProvider === "dialogflow_cx") {
+    return stubResponse(
+      input,
+      systemPrompt,
+      "dialogflow_cx",
+      "Dialogflow CX chỉ được test/binding trong runtime hiện tại. Runtime không gọi OpenAI và không dùng model/path dạng projects/.../agents/... làm OpenAI model."
+    );
+  }
+
   if (!isOpenAiProvider(agentProvider)) {
     return stubResponse(
       input,
