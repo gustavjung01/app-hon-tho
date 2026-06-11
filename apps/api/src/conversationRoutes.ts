@@ -46,6 +46,12 @@ type ConversationAccess = {
   clerk_user_id?: string | null;
 };
 
+type AppRunRef = {
+  id: string;
+  user_id: string;
+  app_key: string;
+};
+
 async function loadConversation(id: string) {
   const rows = await query<ConversationAccess>(
     `SELECT c.*, app.name AS app_name, a.name AS agent_name, u.email AS user_email, u.clerk_user_id
@@ -93,6 +99,18 @@ async function nextMessageSequence(conversationId: string, client: QueryClient =
     [conversationId]
   );
   return result.rows[0]?.next_sequence ?? 1;
+}
+
+async function validateSourceAppRun(appKey: string, sourceAppRunId: string | undefined, userId: string) {
+  if (!sourceAppRunId) return null;
+  const rows = await query<AppRunRef>(
+    `SELECT id, user_id, app_key
+     FROM app_runs
+     WHERE id=$1 AND app_key=$2 AND user_id=$3
+     LIMIT 1`,
+    [sourceAppRunId, appKey, userId]
+  );
+  return rows[0] || null;
 }
 
 function registerUserConversationRoutes(app: Express) {
@@ -144,11 +162,14 @@ function registerUserConversationRoutes(app: Express) {
     const apps = await query<{ key: string; status: string }>(`SELECT key, status FROM apps WHERE key=$1`, [data.appKey]);
     if (!apps[0] || apps[0].status !== "active") return res.status(400).json({ error: "Ứng dụng chưa sẵn sàng để tạo hội thoại." });
 
+    const sourceAppRun = await validateSourceAppRun(data.appKey, data.sourceAppRunId, req.user!.id);
+    if (data.sourceAppRunId && !sourceAppRun) return res.status(400).json({ error: `Không tìm thấy app_run hợp lệ cho app ${data.appKey}.` });
+
     const defaultAgent = data.agentId
-      ? await query<{ id: string }>(`SELECT id FROM ai_agents WHERE id=$1 AND app_key=$2 LIMIT 1`, [data.agentId, data.appKey])
+      ? await query<{ id: string }>(`SELECT id FROM ai_agents WHERE id=$1 AND app_key=$2 AND status='active' LIMIT 1`, [data.agentId, data.appKey])
       : await query<{ id: string }>(`SELECT id FROM ai_agents WHERE app_key=$1 AND status='active' ORDER BY version DESC LIMIT 1`, [data.appKey]);
 
-    if (data.agentId && !defaultAgent[0]) return res.status(400).json({ error: "AI agent không thuộc ứng dụng này." });
+    if (data.agentId && !defaultAgent[0]) return res.status(400).json({ error: "AI agent không active hoặc không thuộc ứng dụng này." });
 
     const client = await pool.connect();
     try {
@@ -162,8 +183,8 @@ function registerUserConversationRoutes(app: Express) {
           data.appKey,
           defaultAgent[0]?.id ?? null,
           data.title || "Cuộc hội thoại mới",
-          data.sourceAppRunId || null,
-          JSON.stringify(data.metadata || {})
+          sourceAppRun?.id || null,
+          JSON.stringify({ ...(data.metadata || {}), ...(sourceAppRun ? { sourceAppRunAppKey: sourceAppRun.app_key } : {}) })
         ]
       );
       const conversation = inserted.rows[0];
@@ -314,7 +335,7 @@ function registerAdminConversationRoutes(app: Express) {
            status=COALESCE($3, status),
            metadata=COALESCE($4::jsonb, metadata),
            closed_at=CASE WHEN $3='closed' THEN now() ELSE closed_at END,
-           archived_at=CASE WHEN $3='archived' THEN now() ELSE archived_at END,
+           archived_at=CASE WHEN $3='archived' THEN now() ELSE closed_at END,
            updated_at=now()
        WHERE id=$1
        RETURNING *`,
