@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cổ học Admin</title>
+  <style>
+    :root { color-scheme: dark; --bg:#090705; --panel:#17110b; --line:#6f5425; --gold:#f5d982; --muted:#c7aa68; --text:#fff4cf; --danger:#ff9f85; }
+    * { box-sizing: border-box; }
+    body { margin:0; min-height:100vh; background: radial-gradient(circle at 20% 0%, rgba(182,135,47,.25), transparent 36%), linear-gradient(135deg,#070504,#140d08 52%,#050302); color:var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { color:inherit; }
+    .shell { max-width:1180px; margin:0 auto; padding:28px 20px 56px; }
+    .top { display:flex; justify-content:space-between; gap:18px; align-items:center; margin-bottom:24px; }
+    .brand { display:flex; flex-direction:column; gap:6px; }
+    .eyebrow { color:var(--muted); letter-spacing:.18em; text-transform:uppercase; font-size:12px; font-weight:700; }
+    h1 { margin:0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(40px, 7vw, 78px); line-height:.9; color:var(--gold); }
+    .lead { color:#ddc99a; max-width:820px; line-height:1.7; font-size:16px; }
+    .pillbar { display:flex; flex-wrap:wrap; gap:10px; }
+    .pill { border:1px solid rgba(245,217,130,.45); border-radius:999px; padding:10px 14px; color:var(--gold); background:rgba(255,235,160,.04); font-weight:700; font-size:13px; }
+    .grid { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:16px; margin:24px 0; }
+    .card { border:1px solid rgba(245,217,130,.24); background:linear-gradient(180deg,rgba(35,26,16,.92),rgba(13,9,6,.94)); border-radius:22px; padding:20px; box-shadow:0 18px 60px rgba(0,0,0,.28); min-height:142px; }
+    .card h2 { margin:0 0 12px; color:var(--gold); font-size:20px; }
+    .card p, .card li { color:#cdb887; line-height:1.62; }
+    .metric { font-size:38px; color:#fff1bd; font-family: Georgia, "Times New Roman", serif; margin-top:12px; }
+    .panel { border:1px solid rgba(245,217,130,.28); border-radius:24px; padding:20px; margin-top:18px; background:rgba(15,10,7,.78); }
+    .panel-title { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:14px; }
+    .panel-title h2 { margin:0; color:var(--gold); }
+    input, textarea { width:100%; border:1px solid rgba(245,217,130,.28); border-radius:14px; background:#070504; color:var(--text); padding:12px 14px; font:inherit; }
+    textarea { min-height:88px; resize:vertical; }
+    button { cursor:pointer; border:1px solid rgba(245,217,130,.52); background:linear-gradient(180deg,#f8dc86,#b98b39); color:#1b1005; font-weight:800; border-radius:14px; padding:12px 16px; }
+    .muted { color:#c1aa74; font-size:13px; }
+    .warn { border-color:rgba(255,159,133,.4); color:var(--danger); }
+    pre { white-space:pre-wrap; word-break:break-word; background:#050302; border:1px solid rgba(245,217,130,.2); padding:14px; border-radius:16px; color:#e4d09c; max-height:340px; overflow:auto; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th, td { text-align:left; border-bottom:1px solid rgba(245,217,130,.15); padding:10px 8px; color:#d9c18b; font-size:14px; }
+    th { color:var(--gold); }
+    @media (max-width: 820px) { .top { align-items:flex-start; flex-direction:column; } .grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="top">
+      <div class="brand">
+        <div class="eyebrow">Cổ học · Control Center</div>
+        <h1>Admin</h1>
+        <p class="lead">Nền quản trị Phase 1: Clerk server-side auth, Neon/Postgres schema, app registry, AI agent registry, conversation store và message store. AI chưa gọi ở phase này.</p>
+      </div>
+      <div class="pillbar">
+        <a class="pill" href="/">Trang chủ</a>
+        <a class="pill" href="/nguthuat/menh/tutru/">Tứ Trụ</a>
+        <span class="pill">Phase 1</span>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card"><h2>Users</h2><p>Đồng bộ từ Clerk token vào bảng users.</p><div class="metric" id="usersMetric">?</div></div>
+      <div class="card"><h2>Conversations</h2><p>Lưu hội thoại theo user, app và agent.</p><div class="metric" id="conversationsMetric">?</div></div>
+      <div class="card"><h2>Messages</h2><p>Phase 1 chỉ lưu message, chưa gọi AI.</p><div class="metric" id="messagesMetric">?</div></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title"><h2>Kết nối API</h2><span class="muted">Dùng Clerk JWT dạng Bearer token</span></div>
+      <div style="display:grid; gap:12px; grid-template-columns:1fr;">
+        <label>API base URL<input id="apiBase" value="/api" /></label>
+        <label>Admin Clerk JWT<textarea id="token" placeholder="Dán Clerk token để gọi endpoint admin. Token này chỉ lưu localStorage trình duyệt."></textarea></label>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button id="saveBtn">Lưu token</button>
+          <button id="healthBtn" type="button">Kiểm tra API</button>
+          <button id="overviewBtn" type="button">Tải overview</button>
+        </div>
+        <p class="muted warn">Không nhập DATABASE_URL hoặc secret vào trang này. Secret chỉ đặt trong file .env của API trên VPS.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title"><h2>Apps</h2><span class="muted">Registry từ bảng apps</span></div>
+      <div id="appsTable" class="muted">Chưa tải dữ liệu.</div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title"><h2>AI Agents</h2><span class="muted">Mỗi app một agent riêng</span></div>
+      <div id="agentsTable" class="muted">Chưa tải dữ liệu.</div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title"><h2>API output</h2></div>
+      <pre id="output">Sẵn sàng.</pre>
+    </section>
+  </main>
+
+  <script>
+    const tokenEl = document.getElementById('token');
+    const apiBaseEl = document.getElementById('apiBase');
+    const outputEl = document.getElementById('output');
+    tokenEl.value = localStorage.getItem('hontho_admin_token') || '';
+    apiBaseEl.value = localStorage.getItem('hontho_api_base') || '/api';
+
+    function apiBase() { return apiBaseEl.value.replace(/\/$/, ''); }
+    function token() { return tokenEl.value.trim(); }
+    function show(data) { outputEl.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2); }
+    function table(rows, cols) {
+      if (!rows?.length) return '<p class="muted">Chưa có dữ liệu.</p>';
+      return `<table><thead><tr>${cols.map(c => `<th>${c[1]}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${cols.map(c => `<td>${row[c[0]] ?? ''}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    }
+    async function request(path, auth = false) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (auth) headers.Authorization = `Bearer ${token()}`;
+      const res = await fetch(`${apiBase()}${path}`, { headers });
+      const data = await res.json().catch(() => ({ error: res.statusText }));
+      if (!res.ok) throw data;
+      return data;
+    }
+
+    document.getElementById('saveBtn').onclick = () => {
+      localStorage.setItem('hontho_admin_token', token());
+      localStorage.setItem('hontho_api_base', apiBase());
+      show('Đã lưu token/API base vào localStorage.');
+    };
+    document.getElementById('healthBtn').onclick = async () => {
+      try { show(await request('/health')); } catch (e) { show(e); }
+    };
+    document.getElementById('overviewBtn').onclick = async () => {
+      try {
+        const data = await request('/admin/overview', true);
+        document.getElementById('usersMetric').textContent = data.totals?.users ?? '?';
+        document.getElementById('conversationsMetric').textContent = data.totals?.conversations ?? '?';
+        document.getElementById('messagesMetric').textContent = data.totals?.messages ?? '?';
+        document.getElementById('appsTable').innerHTML = table(data.apps, [['key','Key'], ['name','Tên'], ['category','Nhánh'], ['status','Trạng thái'], ['default_credit_cost','Credit']]);
+        document.getElementById('agentsTable').innerHTML = table(data.agents, [['app_key','App'], ['name','Agent'], ['model','Model'], ['system_prompt_key','Prompt'], ['version','Version'], ['status','Trạng thái']]);
+        show(data);
+      } catch (e) { show(e); }
+    };
+  </script>
+</body>
+</html>
