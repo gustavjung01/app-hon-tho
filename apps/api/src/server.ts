@@ -7,6 +7,7 @@ import { register, login, signToken, requireAuth, requireAdmin, type AuthedReque
 import { registerConversationRoutes } from "./conversationRoutes.js";
 import { registerAiRoutes } from "./aiRoutes.js";
 import { registerAdminPromptUsageRoutes } from "./adminPromptUsageRoutes.js";
+import { registerTuTruRoutes } from "./tuTruRoutes.js";
 import { sendEmail } from "./email.js";
 
 const app = express();
@@ -16,7 +17,7 @@ app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(express.json({ limit: "2mb" }));
 
 function publicHealthPayload() {
-  return { ok: true, service: "hontho-app-api", phase: "admin-prompt-usage", time: new Date().toISOString() };
+  return { ok: true, service: "hontho-app-api", phase: "tu-tru-ai-foundation", time: new Date().toISOString() };
 }
 
 app.get("/health", (_req, res) => res.json(publicHealthPayload()));
@@ -146,7 +147,7 @@ app.post("/nguthuat/tutru/calculate", requireAuth, async (req: AuthedRequest, re
   res.json({
     ok: true,
     result: {
-      message: "API placeholder. Gắn engine Tứ Trụ thật vào endpoint này ở phase sau.",
+      message: "API placeholder. Frontend engine lưu kết quả thật qua /api/nguthuat/tutru/app-runs.",
       input: req.body
     }
   });
@@ -192,6 +193,7 @@ app.get("/api/admin/ai-agents", requireAuth, requireAdmin, async (_req, res) => 
   res.json({ items: rows });
 });
 
+registerTuTruRoutes(app);
 registerConversationRoutes(app);
 registerAiRoutes(app);
 registerAdminPromptUsageRoutes(app);
