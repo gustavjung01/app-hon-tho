@@ -1,7 +1,15 @@
 import { addDaysToPlainDate, formatPlainDate, type PlainDate } from "./calendarMath";
 import { getBranchByIndex, getStemByIndex, type Polarity } from "./coreTables";
 import { JIE_SOLAR_TERMS, getJieSolarTermBoundary, type JieSolarTermBoundary } from "./solarTerms";
-import type { DeriveFourPillarsInput, LuckCycleDirection, MajorLuckCycle, MajorLuckCycleResult, ParsedBirthDateTime, Pillar } from "./types";
+import type {
+  DeriveFourPillarsInput,
+  LuckCycleDirection,
+  LuckCycleStartAge,
+  MajorLuckCycle,
+  MajorLuckCycleResult,
+  ParsedBirthDateTime,
+  Pillar
+} from "./types";
 
 const DAY_MS = 86400000;
 const MONTHS_PER_MAJOR_LUCK = 120;
@@ -77,10 +85,10 @@ function buildDirectionRule(gender: DeriveFourPillarsInput["gender"], yearStemPo
   return `Quy tắc: nam + năm Dương hoặc nữ + năm Âm đi thuận; nam + năm Âm hoặc nữ + năm Dương đi nghịch. Dữ liệu hiện tại: ${genderLabel}, năm ${polarityLabel}.`;
 }
 
-function calculateStartAge(parsed: ParsedBirthDateTime, direction: LuckCycleDirection) {
+function calculateStartAge(parsed: ParsedBirthDateTime, direction: LuckCycleDirection): LuckCycleStartAge {
   const adjacent = findAdjacentJieTerms(parsed.birthInstantUtc);
   const targetTerm = direction === "forward" ? adjacent.next : adjacent.previous;
-  const role = direction === "forward" ? "next" : "previous";
+  const role: LuckCycleStartAge["targetTerm"]["role"] = direction === "forward" ? "next" : "previous";
   const daysToStart = Math.abs(targetTerm.utcMs - parsed.birthInstantUtc.getTime()) / DAY_MS;
 
   // Quy đổi phổ biến: 3 ngày = 1 năm, 1 ngày = 4 tháng. Làm tròn tới tháng gần nhất để không giả chính xác tới giờ/phút.
