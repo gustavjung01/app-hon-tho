@@ -1,5 +1,5 @@
 import type { Pillar } from "./types";
-import { getBranchByIndex, getStemByIndex, normalizeModulo } from "./coreTables";
+import { getBranchByIndex, getHiddenStemsForBranch, getStemByIndex, normalizeModulo } from "./coreTables";
 
 export {
   BRANCHES,
@@ -41,9 +41,9 @@ export type {
   TwelveGrowthStage
 } from "./coreTables";
 
-export const ENGINE_VERSION = "0.1.1";
-export const RULE_SET_VERSION = "core-v0.2";
-export const CALCULATION_MODE = "solar/timezone";
+export const ENGINE_VERSION = "0.2.0";
+export const RULE_SET_VERSION = "core-v0.3";
+export const CALCULATION_MODE = "solar-lunar/solar-term/timezone/zi-hour";
 
 export function getStem(index: number) {
   return getStemByIndex(index);
@@ -61,8 +61,15 @@ export function createPillar(label: string, stemIndex: number, branchIndex: numb
     label,
     stem: stem.name,
     stemHan: stem.han,
+    stemIndex: stem.index,
+    stemElement: stem.element,
+    stemPolarity: stem.polarityLabel,
     branch: branch.name,
     branchHan: branch.han,
+    branchIndex: branch.index,
+    branchElement: branch.element,
+    branchPolarity: branch.polarityLabel,
+    hiddenStems: getHiddenStemsForBranch(branch.han),
     pillar: `${stem.name} ${branch.name}`,
     pillarHan: `${stem.han}${branch.han}`,
     element: stem.element
