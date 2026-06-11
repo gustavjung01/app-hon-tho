@@ -61,13 +61,14 @@
       <div class="brand">
         <div class="eyebrow">Cổ học · Control Center</div>
         <h1>Admin</h1>
-        <p class="lead">Phase 3: AI Agent Runtime. Mỗi app dùng agent riêng, AI chỉ diễn giải dựa trên conversation và app_run/engine data đã lưu, có log ai_run và usage ledger.</p>
+        <p class="lead">Admin nhập AI thủ công, quản lý conversation và gọi AI agent theo app. Key AI lưu server-side, không lưu ở localStorage.</p>
       </div>
       <div class="pillbar">
         <a class="pill" href="/">Trang chủ</a>
         <a class="pill" href="/history/">Lịch sử user</a>
         <a class="pill" href="/nguthuat/menh/tutru/">Tứ Trụ</a>
-        <span class="pill">Phase 3</span>
+        <a class="pill" href="#aiSettings">AI thủ công</a>
+        <a class="pill" href="/admin/phase4.html">Prompt & Usage</a>
       </div>
     </section>
 
@@ -87,8 +88,30 @@
           <button id="healthBtn" type="button" class="secondary">Kiểm tra API</button>
           <button id="overviewBtn" type="button">Tải overview</button>
         </div>
-        <p class="muted warn">Không nhập DATABASE_URL, CLERK_SECRET_KEY hoặc OPENAI_API_KEY vào trang này. Secret chỉ đặt trong file .env của API trên VPS.</p>
+        <p class="muted warn">DATABASE_URL và CLERK_SECRET_KEY vẫn đặt trong .env API. AI key nhập ngay ở khung bên dưới.</p>
       </div>
+    </section>
+
+    <section class="panel" id="aiSettings">
+      <div class="panel-title"><h2>AI thủ công</h2><span id="aiKeyStatus" class="muted">Chưa tải cấu hình</span></div>
+      <div class="form-grid">
+        <label>Bật AI thật<select id="aiEnabled"><option value="false">false - stub/test</option><option value="true">true - gọi provider thật</option></select></label>
+        <label>Provider<select id="aiProvider"><option value="stub">stub</option><option value="openai">openai</option></select></label>
+        <label>Model<input id="aiModel" value="gpt-4.1-mini" /></label>
+        <label>Base URL<input id="aiBaseUrl" value="https://api.openai.com/v1/chat/completions" /></label>
+      </div>
+      <div class="form-grid two" style="margin-top:12px;">
+        <label>Cost input / 1K token<input id="aiCostInput" type="number" step="0.000001" value="0" /></label>
+        <label>Cost output / 1K token<input id="aiCostOutput" type="number" step="0.000001" value="0" /></label>
+      </div>
+      <label style="margin-top:12px;">OpenAI API Key<input id="aiApiKey" type="password" placeholder="Dán key mới. Để trống nếu giữ key đã lưu." /></label>
+      <div class="row" style="margin-top:12px;">
+        <button id="loadAiSettingsBtn" type="button" class="secondary">Tải AI settings</button>
+        <button id="saveAiSettingsBtn" type="button">Lưu cấu hình AI</button>
+        <button id="testAiSettingsBtn" type="button" class="secondary">Test AI config</button>
+        <a class="pill" href="/admin/ai-settings.html">Trang AI riêng</a>
+      </div>
+      <p class="muted">Key gửi về backend và lưu trong database, frontend chỉ thấy trạng thái/key đã che.</p>
     </section>
 
     <section class="panel">
@@ -168,6 +191,37 @@
       document.getElementById('messagesMetric').textContent = data.totals?.messages ?? '?';
       document.getElementById('appsTable').innerHTML = table(data.apps, [['key','Key'], ['name','Tên'], ['category','Nhánh'], ['status','Trạng thái'], ['default_credit_cost','Credit']]);
       document.getElementById('agentsTable').innerHTML = table(data.agents, [['app_key','App'], ['name','Agent'], ['model','Model'], ['system_prompt_key','Prompt'], ['version','Version'], ['status','Trạng thái']]);
+      show(data);
+    }
+
+    function fillAiSettings(settings) {
+      document.getElementById('aiEnabled').value = String(!!settings.enabled);
+      document.getElementById('aiProvider').value = settings.provider || 'stub';
+      document.getElementById('aiModel').value = settings.model || 'gpt-4.1-mini';
+      document.getElementById('aiBaseUrl').value = settings.baseUrl || 'https://api.openai.com/v1/chat/completions';
+      document.getElementById('aiCostInput').value = settings.costInputPer1K ?? 0;
+      document.getElementById('aiCostOutput').value = settings.costOutputPer1K ?? 0;
+      document.getElementById('aiKeyStatus').textContent = settings.hasApiKey ? `Đã lưu key: ${settings.apiKeyMasked || '••••'}` : 'Chưa lưu key';
+    }
+    async function loadAiSettings() {
+      const data = await request('/admin/ai-settings');
+      fillAiSettings(data.settings || {});
+      show(data);
+    }
+    async function saveAiSettings() {
+      const apiKey = document.getElementById('aiApiKey').value;
+      const body = {
+        enabled: document.getElementById('aiEnabled').value === 'true',
+        provider: document.getElementById('aiProvider').value,
+        model: document.getElementById('aiModel').value.trim(),
+        baseUrl: document.getElementById('aiBaseUrl').value.trim(),
+        costInputPer1K: Number(document.getElementById('aiCostInput').value || 0),
+        costOutputPer1K: Number(document.getElementById('aiCostOutput').value || 0)
+      };
+      if (apiKey) body.apiKey = apiKey;
+      const data = await request('/admin/ai-settings', { method:'PUT', body });
+      document.getElementById('aiApiKey').value = '';
+      fillAiSettings(data.settings || {});
       show(data);
     }
 
@@ -271,6 +325,9 @@
     };
     document.getElementById('healthBtn').onclick = async () => { try { show(await request('/health', { auth:false })); } catch (e) { show(e); } };
     document.getElementById('overviewBtn').onclick = async () => { try { await loadOverview(); } catch (e) { show(e); } };
+    document.getElementById('loadAiSettingsBtn').onclick = async () => { try { await loadAiSettings(); } catch (e) { show(e); } };
+    document.getElementById('saveAiSettingsBtn').onclick = async () => { try { await saveAiSettings(); } catch (e) { show(e); } };
+    document.getElementById('testAiSettingsBtn').onclick = async () => { try { show(await request('/admin/ai-settings/test', { method:'POST' })); } catch (e) { show(e); } };
     document.getElementById('loadConversationsBtn').onclick = async () => { try { await loadConversations(); } catch (e) { show(e); } };
     document.getElementById('clearFilterBtn').onclick = () => { document.getElementById('filterApp').value=''; document.getElementById('filterStatus').value=''; document.getElementById('filterQ').value=''; };
     document.getElementById('createConversationBtn').onclick = async () => {
