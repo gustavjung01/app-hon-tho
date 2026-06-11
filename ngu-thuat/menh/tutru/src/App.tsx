@@ -1,18 +1,11 @@
 import { FormEvent, useMemo, useState } from "react";
 import homeTuTruImage from "../../../../home-tu-tru.png";
 import { deriveFourPillars } from "./engine/deriveFourPillars";
-import { buildResultContentLayer, type ResultContentLayer, type ResultPillarCard } from "./engine/resultContentLayer";
-import type { CalendarType, DeriveFourPillarsInput, DeriveFourPillarsOutput, GenderType, Pillar } from "./engine/types";
-
-const pillarOrder = [
-  { key: "year", label: "Năm" },
-  { key: "month", label: "Tháng" },
-  { key: "day", label: "Ngày" },
-  { key: "hour", label: "Giờ" }
-] as const;
+import { buildResultContentLayer, type ResultContentLayer } from "./engine/resultContentLayer";
+import type { CalendarType, DeriveFourPillarsInput, DeriveFourPillarsOutput, GenderType } from "./engine/types";
 
 const elementOrder = ["Mộc", "Hỏa", "Thổ", "Kim", "Thủy"] as const;
-const elementClass: Record<(typeof elementOrder)[number], string> = {
+const elementClass: Record<string, string> = {
   Mộc: "wood",
   Hỏa: "fire",
   Thổ: "earth",
@@ -20,7 +13,6 @@ const elementClass: Record<(typeof elementOrder)[number], string> = {
   Thủy: "water"
 };
 
-type PillarKey = (typeof pillarOrder)[number]["key"];
 type InterpretStatus = "idle" | "saving" | "running" | "done" | "error";
 
 type InterpretationState = {
@@ -33,19 +25,8 @@ type InterpretationState = {
   model?: string;
 };
 
-const pillarWatermark: Record<PillarKey, string> = {
-  year: "年",
-  month: "月",
-  day: "日",
-  hour: "時"
-};
-
 function cx(...items: Array<string | false | null | undefined>) {
   return items.filter(Boolean).join(" ");
-}
-
-function getEnginePillar(result: DeriveFourPillarsOutput, key: PillarKey): Pillar {
-  return result.pillars[key];
 }
 
 function toGenderLabel(gender: GenderType) {
@@ -54,22 +35,18 @@ function toGenderLabel(gender: GenderType) {
   return "Khác";
 }
 
-function toDirectionText(content: ResultContentLayer) {
-  return `${content.majorLuck.directionLabel} · ${content.majorLuck.startAgeLabel}`;
-}
-
 function getApiBase() {
   return (localStorage.getItem("hontho_api_base") || "/api").replace(/\/$/, "");
 }
 
 function getAuthToken() {
-  return localStorage.getItem("hontho_user_token") || localStorage.getItem("hontho_admin_token") || "";
+  return localStorage.getItem("hontho_user_token") || "";
 }
 
 async function apiRequest<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
   const token = getAuthToken().trim();
   if (!token) {
-    throw new Error("Chưa có token đăng nhập. Vào /history/ hoặc /admin/ lưu Clerk JWT trước, sau đó quay lại bấm Luận AI.");
+    throw new Error("Chưa đăng nhập. Vào /account đăng nhập trước, sau đó quay lại bấm Luận.");
   }
 
   const response = await fetch(`${getApiBase()}${path}`, {
@@ -146,19 +123,11 @@ function InputPanel({
 }) {
   return (
     <section className="panel input-panel" id="lap-phieu">
-      <SectionTitle
-        eyebrow="Nhập liệu"
-        title="Lập mệnh bàn"
-        note="Ngày giờ sinh được quy đổi theo lịch pháp trước khi an bốn trụ."
-      />
+      <SectionTitle eyebrow="Nhập liệu" title="Lập mệnh bàn" note="Ngày giờ sinh được quy đổi theo lịch pháp trước khi an bốn trụ." />
       <form className="birth-form" onSubmit={onSubmit}>
         <div className="choice-line" role="group" aria-label="Loại lịch">
-          <button className={cx("choice", calendarType === "solar" && "active")} type="button" onClick={() => onCalendarChange("solar")}>
-            Dương lịch
-          </button>
-          <button className={cx("choice", calendarType === "lunar" && "active")} type="button" onClick={() => onCalendarChange("lunar")}>
-            Âm lịch
-          </button>
+          <button className={cx("choice", calendarType === "solar" && "active")} type="button" onClick={() => onCalendarChange("solar")}>Dương lịch</button>
+          <button className={cx("choice", calendarType === "lunar" && "active")} type="button" onClick={() => onCalendarChange("lunar")}>Âm lịch</button>
         </div>
 
         <div className="form-grid">
@@ -255,113 +224,32 @@ function InputSummary({ result, content }: { result: DeriveFourPillarsOutput; co
   );
 }
 
-function DayMasterPanel({ content }: { content: ResultContentLayer }) {
+function PillarOverview({ content }: { content: ResultContentLayer }) {
   return (
-    <section className={`day-master-card element-${elementClass[content.dayMasterSummary.element]}`}>
-      <div>
-        <p>Nhật chủ</p>
-        <strong>{content.dayMasterSummary.name}</strong>
-        <span>{content.dayMasterSummary.han} · {content.dayMasterSummary.element}</span>
-      </div>
-      <p>{content.dayMasterSummary.note}</p>
-    </section>
-  );
-}
-
-function hiddenTenGod(card: ResultPillarCard, stemHan: string) {
-  return card.hiddenStems.find((item) => item.stemHan === stemHan)?.tenGod ?? "Đã nhận diện tàng can";
-}
-
-function PillarOverviewCards({ result, content }: { result: DeriveFourPillarsOutput; content: ResultContentLayer }) {
-  return (
-    <div className="pillar-card-grid" aria-label="Tổng quan bốn trụ">
-      {content.pillars.map((card) => {
-        const enginePillar = getEnginePillar(result, card.key);
-        return (
-          <article className={cx("pillar-oracle-card", `pillar-${card.key}`, `element-${elementClass[card.stemElement]}`)} key={card.key}>
-            <span className="card-watermark" aria-hidden="true">{pillarWatermark[card.key]}</span>
+    <section className="panel chart-panel" id="la-so">
+      <SectionTitle eyebrow="Lá số" title="Bảng Tứ Trụ" note="Chỉ hiển thị các phần đã được an từ lịch, tiết khí và Can Chi." />
+      <section className={`day-master-card element-${elementClass[content.dayMasterSummary.element] || "wood"}`}>
+        <div>
+          <p>Nhật chủ</p>
+          <strong>{content.dayMasterSummary.name}</strong>
+          <span>{content.dayMasterSummary.han} · {content.dayMasterSummary.element}</span>
+        </div>
+        <p>{content.dayMasterSummary.note}</p>
+      </section>
+      <div className="pillar-card-grid" aria-label="Tổng quan bốn trụ">
+        {content.pillars.map((card) => (
+          <article className={cx("pillar-oracle-card", `pillar-${card.key}`, `element-${elementClass[card.stemElement] || "wood"}`)} key={card.key}>
             <p>{card.label}</p>
             <h3>{card.pillar}</h3>
             <strong>{card.pillarHan}</strong>
             <dl>
-              <div>
-                <dt>Thiên can</dt>
-                <dd>{card.stem} · {card.stemHan} · {enginePillar.stemElement}</dd>
-              </div>
-              <div>
-                <dt>Địa chi</dt>
-                <dd>{card.branch} · {card.branchHan} · {enginePillar.branchElement}</dd>
-              </div>
-              <div>
-                <dt>Thập thần</dt>
-                <dd>{card.tenGod}</dd>
-              </div>
+              <div><dt>Thiên can</dt><dd>{card.stem} · {card.stemHan} · {card.stemElement}</dd></div>
+              <div><dt>Địa chi</dt><dd>{card.branch} · {card.branchHan}</dd></div>
+              <div><dt>Thập thần</dt><dd>{card.tenGod}</dd></div>
             </dl>
+            <small>{card.note}</small>
           </article>
-        );
-      })}
-    </div>
-  );
-}
-
-function PillarTable({ result, content }: { result: DeriveFourPillarsOutput; content: ResultContentLayer }) {
-  return (
-    <section className="panel chart-panel" id="la-so">
-      <SectionTitle eyebrow="Lá số" title="Bảng Tứ Trụ" note="Chỉ hiển thị các phần đã được an từ lịch, tiết khí và Can Chi." />
-      <DayMasterPanel content={content} />
-      <PillarOverviewCards result={result} content={content} />
-      <p className="detail-caption">Bảng chi tiết Can, Chi, Tàng can và Thập thần</p>
-      <div className="table-wrap">
-        <table className="pillar-table">
-          <thead>
-            <tr>
-              <th>Trụ</th>
-              <th>Can</th>
-              <th>Chi</th>
-              <th>Tàng can</th>
-              <th>Thập thần</th>
-              <th>Ghi chú</th>
-            </tr>
-          </thead>
-          <tbody>
-            {content.pillars.map((card) => {
-              const enginePillar = getEnginePillar(result, card.key);
-              return (
-                <tr key={card.key}>
-                  <th scope="row">
-                    <span className="pillar-name">{card.label}</span>
-                    <strong>{card.pillar}</strong>
-                    <b>{card.pillarHan}</b>
-                  </th>
-                  <td>
-                    <strong>{card.stem} {card.stemHan}</strong>
-                    <small>{enginePillar.stemElement} · {enginePillar.stemPolarity}</small>
-                  </td>
-                  <td>
-                    <strong>{card.branch} {card.branchHan}</strong>
-                    <small>{enginePillar.branchElement} · {enginePillar.branchPolarity}</small>
-                  </td>
-                  <td>
-                    <ul className="mini-list">
-                      {enginePillar.hiddenStems.map((hidden) => (
-                        <li key={`${card.key}-${hidden.stemHan}-${hidden.qi}`}>
-                          <span>{hidden.qiLabel}: {hidden.stem} {hidden.stemHan}</span>
-                          <small>{hidden.element} · {hiddenTenGod(card, hidden.stemHan)}</small>
-                        </li>
-                      ))}
-                    </ul>
-                  </td>
-                  <td>
-                    <strong>{card.tenGod}</strong>
-                  </td>
-                  <td>
-                    <small>{card.note}</small>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        ))}
       </div>
     </section>
   );
@@ -369,7 +257,6 @@ function PillarTable({ result, content }: { result: DeriveFourPillarsOutput; con
 
 function ElementBalance({ content }: { content: ResultContentLayer }) {
   const maxCount = Math.max(...elementOrder.map((element) => content.elementBalance.counts[element] ?? 0), 1);
-
   return (
     <section className="panel element-panel">
       <SectionTitle eyebrow="Ngũ hành" title="Phân bố Can, Chi và Tàng can" />
@@ -378,10 +265,7 @@ function ElementBalance({ content }: { content: ResultContentLayer }) {
           const count = content.elementBalance.counts[element] ?? 0;
           return (
             <article className={cx("element-card", `element-${elementClass[element]}`)} key={element}>
-              <header>
-                <span>{element}</span>
-                <strong>{count}</strong>
-              </header>
+              <header><span>{element}</span><strong>{count}</strong></header>
               <div className="bar"><span style={{ width: `${Math.max(8, (count / maxCount) * 100)}%` }} /></div>
             </article>
           );
@@ -394,17 +278,13 @@ function ElementBalance({ content }: { content: ResultContentLayer }) {
 
 function TenGodPanel({ content }: { content: ResultContentLayer }) {
   const computed = content.tenGodOverview.filter((item) => item.status === "computed" && item.count > 0);
-
   return (
     <section className="panel ten-god-panel">
       <SectionTitle eyebrow="Thập thần" title="Các Thập thần đã xuất hiện" note="Ẩn các mục chưa xuất hiện để phiếu gọn và dễ đọc." />
       <div className="ten-god-grid">
         {computed.map((item) => (
           <article className="ten-god-card" key={item.name}>
-            <header>
-              <strong>{item.name}</strong>
-              <span>{item.count}</span>
-            </header>
+            <header><strong>{item.name}</strong><span>{item.count}</span></header>
             <p>{item.positions}</p>
             <small>{item.note}</small>
           </article>
@@ -417,7 +297,7 @@ function TenGodPanel({ content }: { content: ResultContentLayer }) {
 function MajorLuckPanel({ content }: { content: ResultContentLayer }) {
   return (
     <section className="panel major-luck-panel" id="dai-van">
-      <SectionTitle eyebrow="Đại vận" title="Dòng vận mười bước" note={toDirectionText(content)} />
+      <SectionTitle eyebrow="Đại vận" title="Dòng vận mười bước" note={`${content.majorLuck.directionLabel} · ${content.majorLuck.startAgeLabel}`} />
       <div className="major-luck-summary">
         <p>{content.majorLuck.directionRule}</p>
         <p>Khởi vận từ: <strong>{content.majorLuck.startTerm}</strong></p>
@@ -425,16 +305,7 @@ function MajorLuckPanel({ content }: { content: ResultContentLayer }) {
       </div>
       <div className="table-wrap">
         <table className="luck-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Đại vận</th>
-              <th>Tuổi</th>
-              <th>Năm dương lịch</th>
-              <th>Ngày bắt đầu</th>
-              <th>Ngũ hành</th>
-            </tr>
-          </thead>
+          <thead><tr><th>#</th><th>Đại vận</th><th>Tuổi</th><th>Năm dương lịch</th><th>Ngày bắt đầu</th><th>Ngũ hành</th></tr></thead>
           <tbody>
             {content.majorLuck.cycles.map((cycle) => (
               <tr key={`${cycle.index}-${cycle.pillarHan}`}>
@@ -455,19 +326,19 @@ function MajorLuckPanel({ content }: { content: ResultContentLayer }) {
 
 function InterpretationPanel({ state, onInterpret }: { state: InterpretationState; onInterpret: () => void }) {
   const isBusy = state.status === "saving" || state.status === "running";
-
   return (
-    <section className="panel interpretation-panel" id="luan-ai">
+    <section className="panel interpretation-panel" id="luan">
       <SectionTitle
-        eyebrow="Luận AI"
+        eyebrow="Luận"
         title="Luận tổng quan theo dữ liệu đã an"
-        note="Lưu app_run Tứ Trụ trước, sau đó gọi Tứ Trụ Agent. AI không tự tính lại lá số."
+        note="Lưu dữ liệu trước, sau đó gọi đúng agent đang active cho app này."
       />
       <div className="interpretation-actions">
         <button className="primary-action" type="button" onClick={onInterpret} disabled={isBusy}>
-          {state.status === "saving" ? "Đang lưu lá số..." : state.status === "running" ? "Đang luận..." : "Luận AI"}
+          {state.status === "saving" ? "Đang lưu..." : state.status === "running" ? "Đang luận..." : "Luận"}
         </button>
-        <a className="history-link" href="/history/">Xem lịch sử</a>
+        <a className="history-link" href="/account">Đăng nhập</a>
+        <a className="history-link" href="/">Trang chủ</a>
       </div>
       {state.message ? <p className={cx("interpretation-status", state.status === "error" && "error-text")}>{state.message}</p> : null}
       {state.appRunId || state.conversationId ? (
@@ -478,38 +349,6 @@ function InterpretationPanel({ state, onInterpret }: { state: InterpretationStat
         </div>
       ) : null}
       {state.reply ? <div className="ai-reply-box">{state.reply}</div> : null}
-    </section>
-  );
-}
-
-function VerificationPanel({ result, content }: { result: DeriveFourPillarsOutput; content: ResultContentLayer }) {
-  return (
-    <section className="panel verification-panel">
-      <SectionTitle eyebrow="Đối chiếu" title="Phạm vi lá phiếu" />
-      <div className="verification-grid">
-        <article>
-          <h3>Đang hiển thị</h3>
-          <ul>
-            <li>Bốn trụ Năm, Tháng, Ngày, Giờ.</li>
-            <li>Tháng trụ theo tiết khí: {result.meta.monthSolarTerm ?? "đã an theo tiết khí"}.</li>
-            <li>Âm lịch tự quy đổi khi chọn Âm lịch.</li>
-            <li>Giờ Tý từ 23:00 có xử lý đổi ngày.</li>
-            <li>Can, Chi, Ngũ hành, Âm Dương, Tàng can, Thập thần.</li>
-            <li>Đại vận, chiều vận, tuổi khởi vận.</li>
-          </ul>
-        </article>
-        <article>
-          <h3>Chưa luận tự động</h3>
-          <ul>
-            <li>Vượng suy, thân cường, thân nhược.</li>
-            <li>Dụng thần, hỷ thần, kỵ thần.</li>
-            <li>Lưu niên.</li>
-            <li>Luận đoán dài theo từng sách phái.</li>
-          </ul>
-        </article>
-      </div>
-      <p className="guardrail">{content.guardrail}</p>
-      <p className="audit-line">Đã đối chiếu 13 mẫu kiểm thử: giờ Tý, giờ Hợi, sát tiết khí và âm lịch.</p>
     </section>
   );
 }
@@ -528,12 +367,14 @@ function ResultSheet({
   return (
     <div className="result-stack">
       <InputSummary result={result} content={content} />
-      <PillarTable result={result} content={content} />
+      <PillarOverview content={content} />
       <ElementBalance content={content} />
       <TenGodPanel content={content} />
       <MajorLuckPanel content={content} />
+      <section className="panel">
+        <SectionTitle eyebrow="Lưu ý" title="Giới hạn diễn giải" note={content.guardrail} />
+      </section>
       <InterpretationPanel state={interpretation} onInterpret={onInterpret} />
-      <VerificationPanel result={result} content={content} />
     </div>
   );
 }
@@ -584,7 +425,7 @@ export default function App() {
 
     try {
       const title = `Luận Tứ Trụ ${chartInput.birthDate} ${chartInput.birthTime}`;
-      setInterpretation({ status: "saving", message: "Đang lưu dữ liệu engine vào app_run..." });
+      setInterpretation({ status: "saving", message: "Đang lưu dữ liệu trước khi gọi agent..." });
 
       const saved = await apiRequest<{ appRun: { id: string } }>("/nguthuat/tutru/app-runs", {
         method: "POST",
@@ -596,7 +437,7 @@ export default function App() {
         }
       });
 
-      setInterpretation({ status: "running", appRunId: saved.appRun.id, message: "Đã lưu app_run. Đang tạo conversation và gọi Tứ Trụ Agent..." });
+      setInterpretation({ status: "running", appRunId: saved.appRun.id, message: "Đã lưu dữ liệu. Đang tạo hội thoại và gọi agent đang active cho app tu_tru..." });
 
       const conversation = await apiRequest<{ conversation: { id: string } }>("/conversations", {
         method: "POST",
@@ -604,7 +445,7 @@ export default function App() {
           appKey: "tu_tru",
           title,
           sourceAppRunId: saved.appRun.id,
-          initialMessage: "Hãy luận tổng quan lá số Tứ Trụ này theo dữ liệu engine đã lưu. Chỉ dùng các lớp đã có: bốn trụ, Ngũ hành, Tàng can, Thập thần và Đại vận. Không tự bịa dụng thần, vượng suy hoặc lưu niên nếu engine chưa cung cấp."
+          initialMessage: "Hãy luận tổng quan lá số Tứ Trụ này theo dữ liệu engine đã lưu. Chỉ dùng app_run, bốn trụ, Ngũ hành, Tàng can, Thập thần và Đại vận đã có. Không tự tính lại lá số, không bịa dụng thần, vượng suy hoặc lưu niên nếu dữ liệu chưa cung cấp."
         }
       });
 
@@ -625,12 +466,12 @@ export default function App() {
         conversationId: conversation.conversation.id,
         provider: ai.provider,
         model: ai.model,
-        message: "Đã lưu lá số, tạo conversation và nhận luận AI.",
+        message: "Đã lưu dữ liệu, tạo hội thoại và nhận phần luận.",
         reply: ai.message.content
       });
-      window.setTimeout(() => document.getElementById("luan-ai")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+      window.setTimeout(() => document.getElementById("luan")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Không gọi được luận AI.";
+      const message = error instanceof Error ? error.message : "Không gọi được phần luận.";
       setInterpretation({ status: "error", message });
     }
   };
@@ -639,10 +480,11 @@ export default function App() {
     <main className="page-shell">
       <header className="hero-panel compact-hero">
         <nav className="top-nav" aria-label="Điều hướng Tứ Trụ">
+          <a href="/">Trang chủ</a>
           <a href="#lap-phieu">Nhập liệu</a>
           <a href="#la-so">Lá số</a>
           <a href="#dai-van">Đại vận</a>
-          <a href="#luan-ai">Luận AI</a>
+          <a href="#luan">Luận</a>
         </nav>
         <img
           className="home-hero-card"
