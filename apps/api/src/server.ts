@@ -7,12 +7,17 @@ import { register, login, signToken, requireAuth, requireAdmin, type AuthedReque
 import { sendEmail } from "./email.js";
 
 const app = express();
-app.use(cors());
-app.use(express.json({ limit: "1mb" }));
+const corsOrigin = process.env.CORS_ORIGIN || true;
 
-app.get("/health", (_req, res) => {
-  res.json({ ok: true, service: "hontho-app-api", time: new Date().toISOString() });
-});
+app.use(cors({ origin: corsOrigin, credentials: true }));
+app.use(express.json({ limit: "2mb" }));
+
+function publicHealthPayload() {
+  return { ok: true, service: "hontho-app-api", phase: "admin-foundation", time: new Date().toISOString() };
+}
+
+app.get("/health", (_req, res) => res.json(publicHealthPayload()));
+app.get("/api/health", (_req, res) => res.json(publicHealthPayload()));
 
 app.post("/auth/register", async (req, res) => {
   const data = z.object({
@@ -33,7 +38,7 @@ app.post("/auth/login", async (req, res) => {
 
 app.get("/account/me", requireAuth, async (req: AuthedRequest, res) => {
   const rows = await query(
-    `SELECT u.id, u.email, u.display_name, u.role, cb.balance
+    `SELECT u.id, u.clerk_user_id, u.email, u.display_name, u.role, u.status, cb.balance
      FROM users u
      LEFT JOIN credit_balances cb ON cb.user_id = u.id
      WHERE u.id=$1`,
@@ -42,11 +47,23 @@ app.get("/account/me", requireAuth, async (req: AuthedRequest, res) => {
   res.json({ user: rows[0] });
 });
 
-app.get("/credits/balance", requireAuth, async (req: AuthedRequest, res) => {
-  const rows = await query<{ balance: number }>(
-    `SELECT balance FROM credit_balances WHERE user_id=$1`,
+app.get("/api/auth/me", requireAuth, async (req: AuthedRequest, res) => {
+  const rows = await query(
+    `SELECT u.id, u.clerk_user_id, u.email, u.display_name, u.role, u.status, cb.balance
+     FROM users u
+     LEFT JOIN credit_balances cb ON cb.user_id = u.id
+     WHERE u.id=$1`,
     [req.user!.id]
   );
+  res.json({ user: rows[0] });
+});
+
+app.post("/api/auth/sync", requireAuth, async (req: AuthedRequest, res) => {
+  res.json({ ok: true, user: req.user });
+});
+
+app.get("/credits/balance", requireAuth, async (req: AuthedRequest, res) => {
+  const rows = await query<{ balance: number }>(`SELECT balance FROM credit_balances WHERE user_id=$1`, [req.user!.id]);
   res.json({ balance: rows[0]?.balance ?? 0 });
 });
 
@@ -120,7 +137,7 @@ app.post("/email/test", requireAuth, requireAdmin, async (req: AuthedRequest, re
 app.post("/nguthuat/tutru/calculate", requireAuth, async (req: AuthedRequest, res) => {
   await query(
     `INSERT INTO app_usage_logs(user_id, app_key, action, credit_cost, metadata)
-     VALUES($1, 'nguthuat.tutru', 'calculate', 0, $2)`,
+     VALUES($1, 'tu_tru', 'calculate', 0, $2)`,
     [req.user!.id, JSON.stringify(req.body)]
   );
   res.json({
@@ -132,5 +149,121 @@ app.post("/nguthuat/tutru/calculate", requireAuth, async (req: AuthedRequest, re
   });
 });
 
-const port = Number(process.env.API_PORT || 4000);
+app.get("/api/admin/overview", requireAuth, requireAdmin, async (_req, res) => {
+  const [users, conversations, messages, apps, agents] = await Promise.all([
+    query<{ count: string }>(`SELECT count(*) FROM users`),
+    query<{ count: string }>(`SELECT count(*) FROM conversations`),
+    query<{ count: string }>(`SELECT count(*) FROM messages`),
+    query(`SELECT key, name, category, status, default_credit_cost FROM apps ORDER BY category, name`),
+    query(`SELECT id, app_key, name, model, system_prompt_key, version, status FROM ai_agents ORDER BY app_key, version DESC`)
+  ]);
+  res.json({
+    totals: {
+      users: Number(users[0]?.count ?? 0),
+      conversations: Number(conversations[0]?.count ?? 0),
+      messages: Number(messages[0]?.count ?? 0)
+    },
+    apps,
+    agents
+  });
+});
+
+app.get("/api/admin/users", requireAuth, requireAdmin, async (_req, res) => {
+  const rows = await query(
+    `SELECT u.id, u.clerk_user_id, u.email, u.display_name, u.role, u.status, cb.balance, u.created_at
+     FROM users u
+     LEFT JOIN credit_balances cb ON cb.user_id = u.id
+     ORDER BY u.created_at DESC
+     LIMIT 200`
+  );
+  res.json({ items: rows });
+});
+
+app.get("/api/admin/apps", requireAuth, requireAdmin, async (_req, res) => {
+  const rows = await query(`SELECT * FROM apps ORDER BY category, name`);
+  res.json({ items: rows });
+});
+
+app.get("/api/admin/ai-agents", requireAuth, requireAdmin, async (_req, res) => {
+  const rows = await query(`SELECT * FROM ai_agents ORDER BY app_key, version DESC, name`);
+  res.json({ items: rows });
+});
+
+app.get("/api/admin/conversations", requireAuth, requireAdmin, async (_req, res) => {
+  const rows = await query(
+    `SELECT c.id, c.title, c.status, c.app_key, c.created_at, c.updated_at,
+            u.email, u.clerk_user_id, a.name AS agent_name,
+            (SELECT count(*) FROM messages m WHERE m.conversation_id = c.id) AS message_count
+     FROM conversations c
+     JOIN users u ON u.id = c.user_id
+     LEFT JOIN ai_agents a ON a.id = c.agent_id
+     ORDER BY c.updated_at DESC
+     LIMIT 200`
+  );
+  res.json({ items: rows });
+});
+
+app.get("/api/conversations", requireAuth, async (req: AuthedRequest, res) => {
+  const rows = await query(
+    `SELECT c.id, c.title, c.status, c.app_key, c.created_at, c.updated_at, a.name AS agent_name
+     FROM conversations c
+     LEFT JOIN ai_agents a ON a.id = c.agent_id
+     WHERE c.user_id=$1
+     ORDER BY c.updated_at DESC
+     LIMIT 100`,
+    [req.user!.id]
+  );
+  res.json({ items: rows });
+});
+
+app.post("/api/conversations", requireAuth, async (req: AuthedRequest, res) => {
+  const data = z.object({
+    appKey: z.string().min(1),
+    title: z.string().min(1).max(160).optional(),
+    agentId: z.string().uuid().optional(),
+    sourceAppRunId: z.string().uuid().optional()
+  }).parse(req.body);
+
+  const defaultAgent = data.agentId
+    ? [{ id: data.agentId }]
+    : await query<{ id: string }>(`SELECT id FROM ai_agents WHERE app_key=$1 AND status='active' ORDER BY version DESC LIMIT 1`, [data.appKey]);
+
+  const rows = await query(
+    `INSERT INTO conversations(user_id, app_key, agent_id, title, source_app_run_id)
+     VALUES($1, $2, $3, $4, $5)
+     RETURNING *`,
+    [req.user!.id, data.appKey, defaultAgent[0]?.id ?? null, data.title || "Cuộc hội thoại mới", data.sourceAppRunId || null]
+  );
+
+  res.status(201).json({ conversation: rows[0] });
+});
+
+app.get("/api/conversations/:id/messages", requireAuth, async (req: AuthedRequest, res) => {
+  const owns = await query<{ id: string }>(`SELECT id FROM conversations WHERE id=$1 AND user_id=$2`, [req.params.id, req.user!.id]);
+  if (!owns[0]) return res.status(404).json({ error: "Không tìm thấy hội thoại." });
+  const rows = await query(`SELECT * FROM messages WHERE conversation_id=$1 ORDER BY created_at ASC`, [req.params.id]);
+  res.json({ items: rows });
+});
+
+app.post("/api/conversations/:id/messages", requireAuth, async (req: AuthedRequest, res) => {
+  const data = z.object({ content: z.string().min(1).max(20000) }).parse(req.body);
+  const owns = await query<{ id: string }>(`SELECT id FROM conversations WHERE id=$1 AND user_id=$2`, [req.params.id, req.user!.id]);
+  if (!owns[0]) return res.status(404).json({ error: "Không tìm thấy hội thoại." });
+  const rows = await query(
+    `INSERT INTO messages(conversation_id, role, content)
+     VALUES($1, 'user', $2)
+     RETURNING *`,
+    [req.params.id, data.content]
+  );
+  await query(`UPDATE conversations SET updated_at=now() WHERE id=$1`, [req.params.id]);
+  res.status(201).json({ message: rows[0], note: "Phase 1 chỉ lưu message, chưa gọi AI." });
+});
+
+app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(error);
+  if (error instanceof z.ZodError) return res.status(400).json({ error: "Dữ liệu không hợp lệ.", details: error.flatten() });
+  return res.status(500).json({ error: "Lỗi hệ thống API." });
+});
+
+const port = Number(process.env.API_PORT || process.env.PORT || 4000);
 app.listen(port, () => console.log(`Hồn Thơ API listening on ${port}`));
