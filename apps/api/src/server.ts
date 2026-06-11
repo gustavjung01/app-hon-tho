@@ -8,6 +8,7 @@ import { registerConversationRoutes } from "./conversationRoutes.js";
 import { registerAiRoutes } from "./aiRoutes.js";
 import { registerAdminPromptUsageRoutes } from "./adminPromptUsageRoutes.js";
 import { registerAdminAgentManagementRoutes } from "./adminAgentManagementRoutes.js";
+import { registerAdminDialogflowRoutes } from "./adminDialogflowRoutes.js";
 import { registerTuTruRoutes } from "./tuTruRoutes.js";
 import { sendEmail } from "./email.js";
 
@@ -198,6 +199,7 @@ registerTuTruRoutes(app);
 registerConversationRoutes(app);
 registerAiRoutes(app);
 registerAdminAgentManagementRoutes(app);
+registerAdminDialogflowRoutes(app);
 registerAdminPromptUsageRoutes(app);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
