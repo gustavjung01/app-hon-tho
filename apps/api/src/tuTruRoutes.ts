@@ -10,6 +10,16 @@ const tuTruAppRunSchema = z.object({
   title: z.string().max(180).optional()
 });
 
+type TuTruAppRunRow = {
+  id: string;
+  user_id: string;
+  app_key: string;
+  source_type: string;
+  input_json: unknown;
+  result_json: unknown;
+  created_at: string;
+};
+
 function buildResultJson(data: z.infer<typeof tuTruAppRunSchema>) {
   return {
     app: "tu_tru",
@@ -27,7 +37,7 @@ export function registerTuTruRoutes(app: Express) {
     const inputJson = data.input;
     const resultJson = buildResultJson(data);
 
-    const rows = await query(
+    const rows = await query<TuTruAppRunRow>(
       `INSERT INTO app_runs(user_id, app_key, source_type, input_json, result_json)
        VALUES($1, 'tu_tru', 'engine.client.tutru', $2::jsonb, $3::jsonb)
        RETURNING id, user_id, app_key, source_type, input_json, result_json, created_at`,
