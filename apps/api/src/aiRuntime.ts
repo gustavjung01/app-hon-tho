@@ -72,6 +72,19 @@ function normalizeMessage(message: RuntimeMessage) {
   return { role: message.role, content: message.content };
 }
 
+function providerKey(value: string | null | undefined) {
+  const normalized = String(value || "stub").trim().toLowerCase().replace(/[-\s]+/g, "_");
+  return normalized || "stub";
+}
+
+function isOpenAiProvider(provider: string) {
+  return provider === "openai" || provider === "openai_chat";
+}
+
+function isDialogflowPath(model: string | null | undefined) {
+  return String(model || "").trim().startsWith("projects/");
+}
+
 export function buildAgentSystemPrompt(input: AiRuntimeInput) {
   const allowedTools = compactJson(input.agent.allowed_tools || []);
   const allowedData = compactJson(input.agent.allowed_data || []);
@@ -85,40 +98,81 @@ export function buildAgentSystemPrompt(input: AiRuntimeInput) {
   return `${input.agent.system_prompt}${guardrail}${appRun}${extra}`;
 }
 
-function stubResponse(input: AiRuntimeInput, systemPrompt: string): AiRuntimeResult {
+function stubResponse(input: AiRuntimeInput, systemPrompt: string, provider: string, note: string): AiRuntimeResult {
   const lastUser = [...input.messages].reverse().find((item) => item.role === "user")?.content || "";
   const content = [
     `Agent ${input.agent.name} đã nhận hội thoại.`,
+    `App key: ${input.agent.app_key}.`,
+    `Provider: ${provider}.`,
+    `Model/path: ${input.agent.model || "(chưa cấu hình)"}.`,
     input.appRun ? `Đã gắn dữ liệu engine app_run ${input.appRun.id}.` : "Hội thoại này chưa có dữ liệu engine/app_run gắn kèm.",
+    `System prompt preview: ${input.agent.system_prompt.slice(0, 500)}`,
     lastUser ? `Tin nhắn mới nhất: ${lastUser.slice(0, 500)}` : "Chưa có tin nhắn user để diễn giải.",
-    "AI provider đang ở chế độ stub hoặc chưa bật/cấu hình API key trong admin, nên chưa gọi model thật."
+    note
   ].join("\n");
   const tokenInput = Math.ceil((systemPrompt.length + input.messages.map((m) => m.content).join(" ").length) / 4);
   const tokenOutput = Math.ceil(content.length / 4);
 
   return {
     content,
-    provider: "stub",
+    provider,
     model: input.agent.model,
     providerResponseId: null,
     tokenInput,
     tokenOutput,
     cost: 0,
-    requestJson: { mode: "stub", messageCount: input.messages.length },
-    responseJson: { mode: "stub", content }
+    requestJson: {
+      mode: "stub",
+      provider,
+      appKey: input.agent.app_key,
+      agentId: input.agent.id,
+      model: input.agent.model,
+      messageCount: input.messages.length,
+      note
+    },
+    responseJson: { mode: "stub", provider, content }
   };
 }
 
 export async function runAgentRuntime(input: AiRuntimeInput): Promise<AiRuntimeResult> {
   const systemPrompt = buildAgentSystemPrompt(input);
+  const agentProvider = providerKey(input.agent.provider);
+
+  if (agentProvider === "stub") {
+    return stubResponse(input, systemPrompt, "stub", "Agent provider đang là stub hoặc chưa cấu hình, nên runtime không gọi OpenAI.");
+  }
+
+  if (!isOpenAiProvider(agentProvider)) {
+    return stubResponse(
+      input,
+      systemPrompt,
+      agentProvider,
+      `Provider ${agentProvider} chỉ test/binding trong runtime hiện tại. Runtime không gọi OpenAI cho provider không phải openai/openai_chat.`
+    );
+  }
+
   const settings = await loadAiProviderSettings();
-  const provider = settings.provider || input.agent.provider || "stub";
+  const settingsProvider = providerKey(settings.provider);
   const apiKey = settings.apiKey;
-  const useStub = !settings.enabled || provider === "stub" || !apiKey;
 
-  if (useStub) return stubResponse(input, systemPrompt);
+  if (!settings.enabled || !apiKey) {
+    return stubResponse(input, systemPrompt, "stub", "OpenAI chưa bật hoặc thiếu API key trong admin settings, nên runtime trả stub.");
+  }
 
-  const model = input.agent.model || settings.model || "gpt-4.1-mini";
+  if (settingsProvider !== "stub" && !isOpenAiProvider(settingsProvider)) {
+    return stubResponse(
+      input,
+      systemPrompt,
+      settingsProvider,
+      `System provider ${settingsProvider} không phải openai/openai_chat, nên runtime không gọi OpenAI.`
+    );
+  }
+
+  let model = input.agent.model || settings.model || "gpt-4.1-mini";
+  if (isDialogflowPath(model)) {
+    model = settings.model || "gpt-4.1-mini";
+  }
+
   const temperature = asNumber(input.agent.temperature, 0.3);
   const maxTokens = Number(input.agent.max_tokens || 1200);
   const endpoint = settings.baseUrl || "https://api.openai.com/v1/chat/completions";
@@ -156,7 +210,7 @@ export async function runAgentRuntime(input: AiRuntimeInput): Promise<AiRuntimeR
 
   return {
     content,
-    provider,
+    provider: agentProvider,
     model,
     providerResponseId: responseJson?.id || null,
     tokenInput,
