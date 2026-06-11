@@ -24,6 +24,9 @@ function publicHealthPayload() {
 
 app.get("/health", (_req, res) => res.json(publicHealthPayload()));
 app.get("/api/health", (_req, res) => res.json(publicHealthPayload()));
+app.get("/api/admin/public-config", (_req, res) => {
+  res.json({ clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY || "" });
+});
 
 app.post("/auth/register", async (req, res) => {
   const data = z.object({
