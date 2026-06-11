@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lịch sử hội thoại · Cổ học</title>
+  <style>
+    :root { color-scheme: dark; --bg:#080503; --panel:#171008; --line:#6d5326; --gold:#f2d37c; --text:#fff3c6; --muted:#c3aa73; --ok:#9ee6a7; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color:var(--text); background:radial-gradient(circle at 20% 0%, rgba(220,170,70,.2), transparent 34%), linear-gradient(145deg,#070402,#160f08 54%,#050302); }
+    .shell { max-width:1120px; margin:0 auto; padding:26px 18px 56px; }
+    .top { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:22px; }
+    .eyebrow { color:var(--muted); letter-spacing:.18em; text-transform:uppercase; font-size:12px; font-weight:800; }
+    h1 { margin:8px 0 8px; color:var(--gold); font-family:Georgia, "Times New Roman", serif; font-size:clamp(38px,7vw,70px); line-height:.9; }
+    p { color:#dbc591; line-height:1.65; }
+    a { color:inherit; }
+    .pillbar { display:flex; flex-wrap:wrap; gap:10px; }
+    .pill { border:1px solid rgba(242,211,124,.4); border-radius:999px; padding:10px 14px; color:var(--gold); text-decoration:none; background:rgba(255,236,160,.04); font-weight:800; }
+    .panel { border:1px solid rgba(242,211,124,.25); background:rgba(18,12,7,.82); border-radius:24px; padding:18px; margin-top:16px; box-shadow:0 16px 60px rgba(0,0,0,.26); }
+    .panel-title { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:12px; }
+    .panel-title h2 { color:var(--gold); margin:0; }
+    label { display:grid; gap:8px; color:#ecd7a2; font-size:13px; font-weight:800; }
+    input, textarea, select { width:100%; border:1px solid rgba(242,211,124,.25); border-radius:14px; background:#070503; color:var(--text); padding:12px 14px; font:inherit; }
+    textarea { min-height:100px; resize:vertical; }
+    button { cursor:pointer; border:1px solid rgba(242,211,124,.5); border-radius:14px; padding:12px 16px; color:#1b1106; background:linear-gradient(180deg,#f6db89,#b98a39); font-weight:900; }
+    button.secondary { background:rgba(255,236,160,.06); color:var(--gold); }
+    .muted { color:var(--muted); font-size:13px; }
+    .warn { color:#ffab8f; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .layout { display:grid; grid-template-columns:1fr 1.1fr; gap:16px; }
+    .list { display:grid; gap:10px; max-height:560px; overflow:auto; padding-right:4px; }
+    .item { border:1px solid rgba(242,211,124,.18); background:rgba(255,235,160,.035); border-radius:16px; padding:12px; cursor:pointer; }
+    .item:hover { border-color:rgba(242,211,124,.45); }
+    .item strong { display:block; color:#ffedb0; margin-bottom:6px; }
+    .tag { display:inline-flex; border:1px solid rgba(242,211,124,.22); border-radius:999px; padding:4px 8px; margin:2px 4px 2px 0; font-size:12px; color:#d7bd80; }
+    .messages { display:grid; gap:10px; max-height:560px; overflow:auto; }
+    .message { border:1px solid rgba(242,211,124,.18); border-radius:16px; padding:12px; background:#090604; }
+    .message.user { border-color:rgba(158,230,167,.3); }
+    .message.assistant { border-color:rgba(242,211,124,.35); }
+    .message-head { display:flex; justify-content:space-between; gap:10px; color:#bfa766; font-size:12px; margin-bottom:8px; }
+    pre { white-space:pre-wrap; word-break:break-word; background:#050302; border:1px solid rgba(242,211,124,.2); padding:14px; border-radius:16px; color:#e4cf99; max-height:280px; overflow:auto; }
+    @media (max-width:900px) { .top, .layout, .grid { grid-template-columns:1fr; flex-direction:column; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="top">
+      <div>
+        <div class="eyebrow">Cổ học · Conversation History</div>
+        <h1>Lịch sử</h1>
+        <p>Phase 2 lưu hội thoại và message theo từng app/agent. Chưa gọi AI, chỉ tạo dòng chảy dữ liệu sạch để các agent sau này bám vào.</p>
+      </div>
+      <div class="pillbar">
+        <a class="pill" href="/">Trang chủ</a>
+        <a class="pill" href="/nguthuat/menh/tutru/">Tứ Trụ</a>
+        <a class="pill" href="/admin/">Admin</a>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title"><h2>Kết nối</h2><span class="muted">Dùng token user Clerk/JWT</span></div>
+      <div class="grid">
+        <label>API base URL<input id="apiBase" value="/api" /></label>
+        <label>App<select id="appKey"><option value="tu_tru">Tứ Trụ</option><option value="mai_hoa">Mai Hoa</option><option value="y_hoc">Y học</option><option value="phong_thuy">Phong thủy</option></select></label>
+      </div>
+      <label style="margin-top:12px;">User Clerk JWT<textarea id="token" placeholder="Dán token user. Token chỉ lưu localStorage trình duyệt."></textarea></label>
+      <div class="row" style="margin-top:12px;">
+        <button id="saveBtn">Lưu token</button>
+        <button id="meBtn" class="secondary">Kiểm tra tài khoản</button>
+        <button id="loadBtn">Tải lịch sử</button>
+      </div>
+      <p class="muted warn">Khi nối Clerk frontend thật, trang này sẽ tự lấy token, không cần dán thủ công.</p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title"><h2>Tạo hội thoại</h2><span class="muted">Không gọi AI ở phase này</span></div>
+      <div class="grid">
+        <label>Tiêu đề<input id="newTitle" value="Hội thoại Tứ Trụ" /></label>
+        <label>Trạng thái<input value="open" disabled /></label>
+      </div>
+      <label style="margin-top:12px;">Message đầu tiên<textarea id="initialMessage">Tôi muốn lưu lại phiên tra cứu này để hỏi tiếp sau.</textarea></label>
+      <div class="row" style="margin-top:12px;"><button id="createBtn">Tạo hội thoại</button></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title"><h2>Hội thoại của tôi</h2><span class="muted">User chỉ thấy hội thoại của chính mình</span></div>
+      <div class="layout">
+        <div>
+          <div id="list" class="list muted">Chưa tải dữ liệu.</div>
+        </div>
+        <div>
+          <div id="detail" class="muted">Chọn một hội thoại để xem message.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title"><h2>API output</h2></div>
+      <pre id="output">Sẵn sàng.</pre>
+    </section>
+  </main>
+
+  <script>
+    const tokenEl = document.getElementById('token');
+    const apiBaseEl = document.getElementById('apiBase');
+    const outputEl = document.getElementById('output');
+    tokenEl.value = localStorage.getItem('hontho_user_token') || localStorage.getItem('hontho_admin_token') || '';
+    apiBaseEl.value = localStorage.getItem('hontho_api_base') || '/api';
+
+    function apiBase() { return apiBaseEl.value.replace(/\/$/, ''); }
+    function token() { return tokenEl.value.trim(); }
+    function show(data) { outputEl.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2); }
+    function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch])); }
+    function fmt(value) { return value ? new Date(value).toLocaleString('vi-VN') : ''; }
+    async function request(path, opts = {}) {
+      const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` };
+      const res = await fetch(`${apiBase()}${path}`, { method: opts.method || 'GET', headers, body: opts.body ? JSON.stringify(opts.body) : undefined });
+      const data = await res.json().catch(() => ({ error: res.statusText }));
+      if (!res.ok) throw data;
+      return data;
+    }
+
+    function renderList(items) {
+      const box = document.getElementById('list');
+      if (!items.length) { box.innerHTML = '<p class="muted">Chưa có hội thoại.</p>'; return; }
+      box.innerHTML = items.map(item => `
+        <div class="item" data-id="${escapeHtml(item.id)}">
+          <strong>${escapeHtml(item.title)}</strong>
+          <span class="tag">${escapeHtml(item.app_key)}</span><span class="tag">${escapeHtml(item.status)}</span><span class="tag">${escapeHtml(item.message_count)} msg</span>
+          <div class="muted">${escapeHtml(item.last_message_preview || '')}</div>
+          <div class="muted">${fmt(item.updated_at)}</div>
+        </div>`).join('');
+      box.querySelectorAll('.item').forEach(el => el.onclick = () => loadDetail(el.dataset.id));
+    }
+
+    async function loadList() {
+      const appKey = document.getElementById('appKey').value;
+      const data = await request(`/conversations?appKey=${encodeURIComponent(appKey)}`);
+      renderList(data.items || []);
+      show(data);
+    }
+
+    async function loadDetail(id) {
+      const data = await request(`/conversations/${id}`);
+      const c = data.conversation;
+      const messages = data.messages || [];
+      document.getElementById('detail').innerHTML = `
+        <div class="item" style="cursor:default;margin-bottom:12px;">
+          <strong>${escapeHtml(c.title)}</strong>
+          <span class="tag">${escapeHtml(c.app_key)}</span><span class="tag">${escapeHtml(c.status)}</span><span class="tag">${escapeHtml(c.agent_name || 'no-agent')}</span>
+        </div>
+        <div class="messages">${messages.map(m => `<div class="message ${escapeHtml(m.role)}"><div class="message-head"><span>${escapeHtml(m.role)} #${escapeHtml(m.sequence || '')}</span><span>${fmt(m.created_at)}</span></div><div>${escapeHtml(m.content)}</div></div>`).join('')}</div>
+        <label style="margin-top:12px;">Gửi thêm message<textarea id="draftMessage"></textarea></label>
+        <div class="row" style="margin-top:12px;"><button onclick="sendMessage('${escapeHtml(c.id)}')">Lưu message</button><button class="secondary" onclick="archiveConversation('${escapeHtml(c.id)}')">Archive</button></div>`;
+      show(data);
+    }
+
+    async function sendMessage(id) {
+      const content = document.getElementById('draftMessage').value.trim();
+      if (!content) return show('Chưa nhập message.');
+      const data = await request(`/conversations/${id}/messages`, { method:'POST', body:{ content } });
+      show(data);
+      await loadDetail(id);
+      await loadList();
+    }
+
+    async function archiveConversation(id) {
+      const data = await request(`/conversations/${id}`, { method:'PATCH', body:{ status:'archived' } });
+      show(data);
+      await loadList();
+    }
+
+    document.getElementById('saveBtn').onclick = () => {
+      localStorage.setItem('hontho_user_token', token());
+      localStorage.setItem('hontho_api_base', apiBase());
+      show('Đã lưu token/API base.');
+    };
+    document.getElementById('meBtn').onclick = async () => { try { show(await request('/auth/me')); } catch (e) { show(e); } };
+    document.getElementById('loadBtn').onclick = async () => { try { await loadList(); } catch (e) { show(e); } };
+    document.getElementById('createBtn').onclick = async () => {
+      try {
+        const body = { appKey: document.getElementById('appKey').value, title: document.getElementById('newTitle').value.trim(), initialMessage: document.getElementById('initialMessage').value.trim() };
+        const data = await request('/conversations', { method:'POST', body });
+        show(data);
+        await loadList();
+      } catch (e) { show(e); }
+    };
+  </script>
+</body>
+</html>
