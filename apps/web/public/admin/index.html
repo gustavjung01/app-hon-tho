@@ -61,20 +61,20 @@
       <div class="brand">
         <div class="eyebrow">Cổ học · Control Center</div>
         <h1>Admin</h1>
-        <p class="lead">Phase 2: Conversation core. Tạo hội thoại, lưu message, xem lịch sử user, và admin kiểm tra toàn bộ conversation theo app/agent. AI chưa gọi ở phase này.</p>
+        <p class="lead">Phase 3: AI Agent Runtime. Mỗi app dùng agent riêng, AI chỉ diễn giải dựa trên conversation và app_run/engine data đã lưu, có log ai_run và usage ledger.</p>
       </div>
       <div class="pillbar">
         <a class="pill" href="/">Trang chủ</a>
         <a class="pill" href="/history/">Lịch sử user</a>
         <a class="pill" href="/nguthuat/menh/tutru/">Tứ Trụ</a>
-        <span class="pill">Phase 2</span>
+        <span class="pill">Phase 3</span>
       </div>
     </section>
 
     <section class="grid">
       <div class="card"><h2>Users</h2><p>Đồng bộ từ Clerk token vào bảng users.</p><div class="metric" id="usersMetric">?</div></div>
       <div class="card"><h2>Conversations</h2><p>Lưu hội thoại theo user, app và agent.</p><div class="metric" id="conversationsMetric">?</div></div>
-      <div class="card"><h2>Messages</h2><p>Message store đã có sequence, preview, visible flag.</p><div class="metric" id="messagesMetric">?</div></div>
+      <div class="card"><h2>Messages</h2><p>Message store có AI reply, token và provider metadata.</p><div class="metric" id="messagesMetric">?</div></div>
     </section>
 
     <section class="panel">
@@ -87,12 +87,12 @@
           <button id="healthBtn" type="button" class="secondary">Kiểm tra API</button>
           <button id="overviewBtn" type="button">Tải overview</button>
         </div>
-        <p class="muted warn">Không nhập DATABASE_URL hoặc secret vào trang này. Secret chỉ đặt trong file .env của API trên VPS.</p>
+        <p class="muted warn">Không nhập DATABASE_URL, CLERK_SECRET_KEY hoặc OPENAI_API_KEY vào trang này. Secret chỉ đặt trong file .env của API trên VPS.</p>
       </div>
     </section>
 
     <section class="panel">
-      <div class="panel-title"><h2>Conversation Center</h2><span class="muted">Admin xem hội thoại theo app/user/status</span></div>
+      <div class="panel-title"><h2>Conversation Center</h2><span class="muted">Admin xem hội thoại và gọi AI agent theo app</span></div>
       <div class="form-grid">
         <label>App key<input id="filterApp" placeholder="tu_tru" /></label>
         <label>Status<select id="filterStatus"><option value="">Tất cả</option><option>open</option><option>closed</option><option>archived</option><option>flagged</option></select></label>
@@ -116,7 +116,7 @@
     </section>
 
     <section class="panel">
-      <div class="panel-title"><h2>Tạo conversation test</h2><span class="muted">Không gọi AI, chỉ lưu DB</span></div>
+      <div class="panel-title"><h2>Tạo conversation test</h2><span class="muted">Tạo lõi conversation, sau đó gọi AI agent ở chi tiết</span></div>
       <div class="form-grid two">
         <label>App key<input id="newAppKey" value="tu_tru" /></label>
         <label>Tiêu đề<input id="newTitle" value="Hội thoại Tứ Trụ thử nghiệm" /></label>
@@ -217,12 +217,15 @@
           </div>
         </div>
         <div class="messages">${messages.map(renderMessage).join('')}</div>
-        <label style="margin-top:12px;">Admin reply / note<textarea id="adminReply" placeholder="Lưu message assistant hoặc note nội bộ"></textarea></label>
+        <label style="margin-top:12px;">Admin reply / AI instruction<textarea id="adminReply" placeholder="Lưu message thủ công hoặc nhập chỉ dẫn bổ sung cho AI agent"></textarea></label>
         <div class="form-grid two" style="margin-top:10px;">
           <label>Role<select id="adminRole"><option>assistant</option><option>system</option><option>tool</option><option>user</option></select></label>
           <label>Visible to user<select id="adminVisible"><option value="true">true</option><option value="false">false</option></select></label>
         </div>
-        <div class="row" style="margin-top:12px;"><button onclick="sendAdminMessage('${escapeHtml(c.id)}')">Lưu message</button></div>`;
+        <div class="row" style="margin-top:12px;">
+          <button onclick="sendAdminMessage('${escapeHtml(c.id)}')">Lưu message</button>
+          <button onclick="runAiReply('${escapeHtml(c.id)}')">Gọi AI agent</button>
+        </div>`;
       show(data);
     }
 
@@ -246,6 +249,15 @@
       const role = document.getElementById('adminRole').value;
       const visibleToUser = document.getElementById('adminVisible').value === 'true';
       const data = await request(`/admin/conversations/${id}/messages`, { method: 'POST', body: { role, content, visibleToUser } });
+      show(data);
+      await loadConversationDetail(id);
+      await loadConversations();
+    }
+
+    async function runAiReply(id) {
+      const extraInstruction = document.getElementById('adminReply').value.trim();
+      const visibleToUser = document.getElementById('adminVisible').value === 'true';
+      const data = await request(`/admin/conversations/${id}/ai-reply`, { method: 'POST', body: { extraInstruction, visibleToUser } });
       show(data);
       await loadConversationDetail(id);
       await loadConversations();
