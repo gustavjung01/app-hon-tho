@@ -1,778 +1,417 @@
 import { FormEvent, useMemo, useState } from "react";
-import {
-  archiveContentTypes,
-  archiveItems,
-  archiveLayers,
-  archiveStatuses,
-  archiveTopics,
-  mockChartResult,
-  pillarDisplays,
-  type AnalysisTab,
-  type ElementLayerKey,
-  type PillarDisplay
-} from "./chartMock";
-import { elementDistribution, formRows, type FormRow, type PillarKey } from "./tuTruContent";
-import { BRANCHES, STEMS } from "./engine/stemsBranches";
 import { deriveFourPillars } from "./engine/deriveFourPillars";
-import type { DeriveFourPillarsInput, DeriveFourPillarsOutput, Pillar as EnginePillar } from "./engine/types";
-import { buildResultContentLayer, type ResultContentLayer } from "./engine/resultContentLayer";
-import { explainChartResult, type ChartExplanationOutput } from "./engine/explainChartResult";
-import { tuTruKnowledgeSeed } from "./data/tuTruKnowledgeSeed";
+import { buildResultContentLayer, type ResultContentLayer, type ResultPillarCard } from "./engine/resultContentLayer";
+import type { CalendarType, DeriveFourPillarsInput, DeriveFourPillarsOutput, GenderType, Pillar } from "./engine/types";
 
-type CalendarType = "solar" | "lunar";
-type GenderType = "male" | "female";
+const pillarOrder = [
+  { key: "year", label: "Năm" },
+  { key: "month", label: "Tháng" },
+  { key: "day", label: "Ngày" },
+  { key: "hour", label: "Giờ" }
+] as const;
 
-const primaryNavItems = [
-  { id: "home", label: "Trang chủ", shortLabel: "Chủ", icon: "四" },
-  { id: "input", label: "Nhập thông tin", shortLabel: "Nhập", icon: "門" },
-  { id: "analysis", label: "Luận trụ", shortLabel: "Luận trụ", icon: "柱" },
-  { id: "cycles", label: "Dòng vận", shortLabel: "Vận", icon: "運" },
-  { id: "rules", label: "Tàng thư đối chiếu", shortLabel: "Quy tắc", icon: "典" }
-];
+const elementOrder = ["Mộc", "Hỏa", "Thổ", "Kim", "Thủy"] as const;
 
-const analysisTabs: { id: AnalysisTab; label: string }[] = [
-  { id: "overview", label: "Tổng quan" },
-  { id: "pillars", label: "Bốn trụ" },
-  { id: "elements", label: "Ngũ hành" },
-  { id: "ten-gods", label: "Thập thần" }
-];
+type PillarKey = (typeof pillarOrder)[number]["key"];
 
-const elementLayerLabels: Record<ElementLayerKey, string> = {
-  global: "Toàn cục",
-  stem: "Thiên Can",
-  branch: "Địa Chi",
-  hidden: "Tàng Can"
-};
-
-function scrollToSection(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+function cx(...items: Array<string | false | null | undefined>) {
+  return items.filter(Boolean).join(" ");
 }
 
-type RuntimeDetail = {
-  title: string;
-  stem: string;
-  branch: string;
-  hidden: string;
-  relation: string;
-  note: string;
-};
-
-type KnowledgeStatusSummary = {
-  glossaryCount: number;
-  rulesCount: number;
-  topicCount: number;
-  licenseBucketCount: number;
-  statusCounts: Record<string, number>;
-};
-
-type FocusReference = {
-  id: string;
-  label: string;
-  kind: "glossary" | "rule" | "topic" | "license";
-  status: string;
-};
-
-const SOURCE_KIND_LABEL: Record<FocusReference["kind"], string> = {
-  glossary: "Thuật ngữ",
-  rule: "Quy tắc",
-  topic: "Chủ đề",
-  license: "Quyền dùng nguồn"
-};
-
-const SOURCE_STATUS_LABEL: Record<string, string> = {
-  candidate: "Ứng viên / Chờ duyệt",
-  needs_review: "Cần đối chiếu",
-  restricted: "Hạn chế sử dụng",
-  rejected: "Loại bỏ",
-  approved: "Đã duyệt"
-};
-
-const SEED_BUCKET_LABEL: Record<string, string> = {
-  glossary_seed: "Thuật ngữ",
-  rules_candidate: "Quy tắc",
-  topic_map: "Chủ đề",
-  license_review: "Quyền dùng nguồn"
-};
-
-const SEED_TOPIC_LABEL: Record<string, string> = {
-  "Lich phap": "Lịch pháp",
-  "Can Chi": "Can Chi",
-  "Tu Tru": "Tứ Trụ",
-  "Tang can": "Tàng can",
-  "Thap than": "Thập thần",
-  "Ngu hanh": "Ngũ hành",
-  "Vuong suy": "Vượng suy",
-  "Dai van": "Đại vận",
-  "Luu nien": "Lưu niên",
-  "Hop xung hinh hai pha": "Hợp xung hình hại phá",
-  "Dung than": "Dụng thần"
-};
-
-function getStemElement(stemHan: string) {
-  return STEMS.find((item) => item.han === stemHan)?.element ?? "—";
+function getEnginePillar(result: DeriveFourPillarsOutput, key: PillarKey): Pillar {
+  return result.pillars[key];
 }
 
-function getBranchElement(branchHan: string) {
-  return BRANCHES.find((item) => item.han === branchHan)?.element ?? "—";
+function toGenderLabel(gender: GenderType) {
+  if (gender === "male") return "Nam";
+  if (gender === "female") return "Nữ";
+  return "Khác";
 }
 
-function buildPillarDisplay(key: PillarKey, label: string, pillar: EnginePillar): PillarDisplay {
-  return {
-    key,
-    label,
-    stem: pillar.stem,
-    stemHan: pillar.stemHan,
-    branch: pillar.branch,
-    branchHan: pillar.branchHan,
-    stemElement: getStemElement(pillar.stemHan),
-    branchElement: getBranchElement(pillar.branchHan),
-    hiddenStem: "Chưa đủ dữ liệu để diễn giải sâu hơn.",
-    tenGod: key === "day" ? "Nhật chủ" : "Mức đọc hiện tại: đối chiếu cơ bản."
-  };
+function toDirectionText(content: ResultContentLayer) {
+  return `${content.majorLuck.directionLabel} · ${content.majorLuck.startAgeLabel}`;
 }
 
-function buildPillarDisplays(result: DeriveFourPillarsOutput): PillarDisplay[] {
-  return [
-    buildPillarDisplay("year", "Năm", result.pillars.year),
-    buildPillarDisplay("month", "Tháng", result.pillars.month),
-    buildPillarDisplay("day", "Ngày", result.pillars.day),
-    buildPillarDisplay("hour", "Giờ", result.pillars.hour)
-  ];
-}
-
-function buildRuntimeDetailCopy(result: DeriveFourPillarsOutput): Record<PillarKey, RuntimeDetail> {
-  const entries: [PillarKey, EnginePillar][] = [
-    ["year", result.pillars.year],
-    ["month", result.pillars.month],
-    ["day", result.pillars.day],
-    ["hour", result.pillars.hour]
-  ];
-
-  return Object.fromEntries(
-    entries.map(([key, pillar]) => {
-      const stemElement = getStemElement(pillar.stemHan);
-      const branchElement = getBranchElement(pillar.branchHan);
-
-      return [
-        key,
-        {
-          title: pillar.pillar.toUpperCase(),
-          stem: `Thiên Can ${pillar.stem} (${pillar.stemHan}), hành ${stemElement}.`,
-          branch: `Địa Chi ${pillar.branch} (${pillar.branchHan}), hành ${branchElement}.`,
-          hidden: "Chưa đủ dữ liệu để diễn giải sâu hơn.",
-          relation: `Can ${stemElement}, Chi ${branchElement}.`,
-          note: "Lớp này dùng quy tắc nền, chưa dùng làm kết luận tự động."
-        }
-      ];
-    })
-  ) as Record<PillarKey, RuntimeDetail>;
-}
-
-function buildResultId(input: DeriveFourPillarsInput) {
-  return `ENG-${input.birthDate.replace(/-/g, "")}-${input.birthTime.replace(":", "")}`;
-}
-
-function normalizeTimezoneInput(rawTimezone: string) {
-  if (!rawTimezone) return "Asia/Ho_Chi_Minh";
-
-  const map: Record<string, string> = {
-    "UTC+07:00 (Việt Nam)": "Asia/Ho_Chi_Minh",
-    "UTC+07:00 (Viá»‡t Nam)": "Asia/Ho_Chi_Minh",
-    "UTC+07:00 Việt Nam": "Asia/Ho_Chi_Minh",
-    "UTC+07:00": "Asia/Ho_Chi_Minh",
-    "UTC+08:00": "Asia/Shanghai",
-    "UTC+09:00": "Asia/Tokyo"
-  };
-
-  return map[rawTimezone] ?? rawTimezone;
-}
-
-function normalizeSearchText(input: string) {
-  return input
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase();
-}
-
-function toSourceStatusLabel(status: string) {
-  return SOURCE_STATUS_LABEL[status] ?? status;
-}
-
-function toSeedTopicLabel(topic: string) {
-  return SEED_TOPIC_LABEL[topic] ?? topic;
-}
-
-function toFocusReferenceTitle(reference: FocusReference) {
-  if (reference.kind === "rule") {
-    const matchedRule = tuTruKnowledgeSeed.rulesCandidate.find((item) => item.id === reference.id);
-    if (!matchedRule) {
-      return "Quy tắc đối chiếu";
-    }
-    return `Quy tắc ${toSeedTopicLabel(matchedRule.topic)}`;
-  }
-
-  if (reference.kind === "topic") {
-    return `Chủ đề ${toSeedTopicLabel(reference.label)}`;
-  }
-
-  if (reference.kind === "license") {
-    const matchedBucket = tuTruKnowledgeSeed.licenseReviewBuckets.find((item) => item.id === reference.id);
-    if (matchedBucket?.id === "lic_direct_use_after_review") return "Quyền dùng nguồn: dùng có điều kiện sau đối chiếu pháp lý";
-    if (matchedBucket?.id === "lic_internal_reference_only") return "Quyền dùng nguồn: chỉ tham khảo nội bộ";
-    if (matchedBucket?.id === "lic_short_quote_only") return "Quyền dùng nguồn: chỉ trích ngắn khi đủ điều kiện";
-    if (matchedBucket?.id === "lic_needs_permission") return "Quyền dùng nguồn: cần xin phép hoặc duyệt pháp lý";
-    if (matchedBucket?.id === "lic_rejected") return "Quyền dùng nguồn: loại bỏ";
-    return "Quyền dùng nguồn";
-  }
-
-  return `Thuật ngữ ${reference.label}`;
-}
-
-function toArchiveMethodLabel(item: (typeof archiveItems)[number]) {
-  if (item.topic === "Thuật ngữ") {
-    return "Thuật ngữ";
-  }
-  return "Quy tắc nền";
-}
-
-function buildKnowledgeStatusSummary(): KnowledgeStatusSummary {
-  const statusCounts = [
-    ...tuTruKnowledgeSeed.glossaryTerms.map((item) => item.status),
-    ...tuTruKnowledgeSeed.rulesCandidate.map((item) => item.status),
-    ...tuTruKnowledgeSeed.topicMap.map((item) => item.status),
-    ...tuTruKnowledgeSeed.licenseReviewBuckets.map((item) => item.status)
-  ].reduce<Record<string, number>>((acc, status) => {
-    acc[status] = (acc[status] ?? 0) + 1;
-    return acc;
-  }, {});
+function buildInputFromForm(
+  form: HTMLFormElement,
+  calendarType: CalendarType,
+  gender: GenderType,
+  isLeapMonth: boolean
+): DeriveFourPillarsInput {
+  const data = new FormData(form);
+  const birthDate = String(data.get("birthDate") ?? "").trim();
+  const birthHour = String(data.get("birthHour") ?? "00").padStart(2, "0");
+  const birthMinute = String(data.get("birthMinute") ?? "00").padStart(2, "0");
+  const timezone = String(data.get("timezone") ?? "Asia/Ho_Chi_Minh");
+  const birthPlace = String(data.get("birthPlace") ?? "").trim();
 
   return {
-    glossaryCount: tuTruKnowledgeSeed.glossaryTerms.length,
-    rulesCount: tuTruKnowledgeSeed.rulesCandidate.length,
-    topicCount: tuTruKnowledgeSeed.topicMap.length,
-    licenseBucketCount: tuTruKnowledgeSeed.licenseReviewBuckets.length,
-    statusCounts
+    birthDate,
+    birthTime: `${birthHour}:${birthMinute}`,
+    calendarType,
+    timezone,
+    gender,
+    birthPlace: birthPlace || undefined,
+    isLeapMonth: calendarType === "lunar" ? isLeapMonth : false,
+    dayBoundaryMode: "zi-hour-rollover"
   };
 }
 
-function buildFocusReferences(content: ResultContentLayer | null): FocusReference[] {
-  if (!content) {
-    return [];
-  }
-
-  const tokens = new Set<string>([
-    "thien can",
-    "dia chi",
-    "tang can",
-    "nhat chu",
-    "ngu hanh",
-    "thap than",
-    "lich phap",
-    "tiet khi",
-    "lap xuan",
-    "gio mui"
-  ]);
-
-  content.pillars.forEach((pillar) => {
-    tokens.add(normalizeSearchText(pillar.stem));
-    tokens.add(normalizeSearchText(pillar.branch));
-    tokens.add(normalizeSearchText(pillar.pillar));
-  });
-  tokens.add(normalizeSearchText(content.dayMasterSummary.name));
-
-  const pickMatch = (text: string) => {
-    const normalized = normalizeSearchText(text);
-    for (const token of tokens) {
-      if (token && normalized.includes(token)) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  const glossaryRefs = tuTruKnowledgeSeed.glossaryTerms
-    .filter((item) => pickMatch(`${item.termVi} ${item.shortDefinition}`))
-    .slice(0, 6)
-    .map((item) => ({
-      id: item.id,
-      label: item.termVi,
-      kind: "glossary" as const,
-      status: item.status
-    }));
-
-  const ruleRefs = tuTruKnowledgeSeed.rulesCandidate
-    .filter((item) => pickMatch(`${item.topic} ${item.ruleName} ${item.meaningShort}`))
-    .slice(0, 6)
-    .map((item) => ({
-      id: item.id,
-      label: `${item.topic}: ${item.ruleName}`,
-      kind: "rule" as const,
-      status: item.status
-    }));
-
-  const topicRefs = tuTruKnowledgeSeed.topicMap
-    .filter((item) => pickMatch(item.label))
-    .slice(0, 6)
-    .map((item) => ({
-      id: item.id,
-      label: item.label,
-      kind: "topic" as const,
-      status: item.status
-    }));
-
-  return [...glossaryRefs, ...ruleRefs, ...topicRefs].slice(0, 12);
-}
-
-function applyEngineResultToMockSurface(result: DeriveFourPillarsOutput) {
-  const nextDisplays = buildPillarDisplays(result);
-  const nextDetails = buildRuntimeDetailCopy(result);
-  const content = buildResultContentLayer(result);
-  const cardByKey = Object.fromEntries(content.pillars.map((card) => [card.key, card]));
-
-  nextDisplays.forEach((display) => {
-    const card = cardByKey[display.key];
-    if (!card) return;
-    display.hiddenStem =
-      card.hiddenStems.length > 0
-        ? card.hiddenStems.map((item) => item.stem).join(" · ")
-        : "Chưa đủ dữ liệu để diễn giải sâu hơn.";
-    display.tenGod = card.tenGod;
-  });
-
-  (Object.keys(nextDetails) as PillarKey[]).forEach((key) => {
-    const card = cardByKey[key];
-    if (!card) return;
-    nextDetails[key].hidden =
-      card.hiddenStems.length > 0
-        ? card.hiddenStems.map((item) => `${item.stem} (${item.element})`).join(", ")
-        : "Chưa đủ dữ liệu để diễn giải sâu hơn.";
-    nextDetails[key].note = card.note;
-  });
-
-  pillarDisplays.splice(0, pillarDisplays.length, ...nextDisplays);
-  mockChartResult.resultId = buildResultId(result.input);
-  mockChartResult.dayMaster = `${content.dayMasterSummary.name} (${content.dayMasterSummary.han})`;
-  mockChartResult.detailCopy.year = nextDetails.year;
-  mockChartResult.detailCopy.month = nextDetails.month;
-  mockChartResult.detailCopy.day = nextDetails.day;
-  mockChartResult.detailCopy.hour = nextDetails.hour;
-}
-
-function SectionHeader({
-  index,
-  title,
-  eyebrow = ""
-}: {
-  index: string;
-  title: string;
-  eyebrow?: string;
-}) {
+function SectionTitle({ eyebrow, title, note }: { eyebrow: string; title: string; note?: string }) {
   return (
-    <header className="section-header">
-      <span className="section-number">{index}</span>
-      <div>
-        <p>{eyebrow}</p>
-        <h2>{title}</h2>
-      </div>
+    <header className="section-title">
+      <p>{eyebrow}</p>
+      <h2>{title}</h2>
+      {note ? <span>{note}</span> : null}
     </header>
   );
 }
 
-function SealButton({
-  label,
-  href,
-  extraClass = "",
-  secondary = false,
-  type = "button",
-  onClick
-}: {
-  label: string;
-  href?: string;
-  extraClass?: string;
-  secondary?: boolean;
-  type?: "button" | "submit";
-  onClick?: () => void;
-}) {
-  const className = ["seal-button", extraClass, secondary ? "secondary" : ""].filter(Boolean).join(" ");
-
-  if (href && !onClick) {
-    return (
-      <a className={className} href={href}>
-        <span className="seal-mark" aria-hidden="true">
-          璽
-        </span>
-        <span>{label}</span>
-      </a>
-    );
-  }
-
-  return (
-    <button className={className} type={type} onClick={onClick}>
-      <span className="seal-mark" aria-hidden="true">
-        璽
-      </span>
-      <span>{label}</span>
-    </button>
-  );
-}
-
-function RichPillarCard({ pillar }: { pillar: PillarDisplay }) {
-  return (
-    <article className="pillar-card pillar-card-rich">
-      <p className="pillar-card-label">{pillar.label}</p>
-      <div className="pillar-card-hero">
-        <div className="pillar-stem">
-          <span>{pillar.stem}</span>
-          <strong>{pillar.stemHan}</strong>
-        </div>
-        <div className="pillar-branch">
-          <span>{pillar.branch}</span>
-          <strong>{pillar.branchHan}</strong>
-        </div>
-      </div>
-      <dl className="pillar-card-meta">
-        <div>
-          <dt>Ngũ hành Can</dt>
-          <dd>{pillar.stemElement}</dd>
-        </div>
-        <div>
-          <dt>Ngũ hành Chi</dt>
-          <dd>{pillar.branchElement}</dd>
-        </div>
-        <div>
-          <dt>Tàng can chính</dt>
-          <dd>{pillar.hiddenStem}</dd>
-        </div>
-        <div>
-          <dt>Thập thần (Nhật chủ)</dt>
-          <dd>{pillar.tenGod}</dd>
-        </div>
-      </dl>
-    </article>
-  );
-}
-
-function ElementDiagram({ items }: { items: typeof elementDistribution }) {
-  return (
-    <div className="element-orbit" aria-label="Ngũ hành phân bố">
-      {items.map((item, index) => (
-        <div className={`element-node ${item.className}`} style={{ ["--node-index" as string]: index }} key={item.name}>
-          <span>{item.name}</span>
-          <strong>{item.value}</strong>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function TenGodHighlightsPanel({ dayMaster = mockChartResult.dayMaster }: { dayMaster?: string }) {
-  return (
-    <article className="analysis-panel highlight-panel">
-      <h3>Thập thần nổi bật</h3>
-      <p className="panel-note">So với {dayMaster} — chỉ ghi nhận vị trí, không phán mệnh.</p>
-      <ul className="highlight-list">
-        {mockChartResult.tenGodHighlights.map((item) => (
-          <li key={item.name}>
-            <span className="highlight-name">{item.name}</span>
-            <span className="highlight-meta">
-              {item.count} lần · {item.positions}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </article>
-  );
-}
-
-function ResultContentSection({
-  content,
-  explanation
-}: {
-  content: ResultContentLayer;
-  explanation: ChartExplanationOutput;
-}) {
-  const elementTone: Record<string, string> = {
-    Kim: "metal",
-    Mộc: "wood",
-    Thủy: "water",
-    Hỏa: "fire",
-    Thổ: "earth"
-  };
-
-  const pillarGuide: Record<"year" | "month" | "day" | "hour", string> = {
-    year: explanation.pillarExplanations.year[0]?.body ?? content.pillars[0]?.note ?? "",
-    month: explanation.pillarExplanations.month[0]?.body ?? content.pillars[1]?.note ?? "",
-    day: explanation.pillarExplanations.day[0]?.body ?? content.pillars[2]?.note ?? "",
-    hour: explanation.pillarExplanations.hour[0]?.body ?? content.pillars[3]?.note ?? ""
-  };
-
-  const tenGodExplainByTitle = Object.fromEntries(explanation.tenGodExplanation.map((item) => [item.title, item.body]));
-
-  return (
-    <div className="result-content-stack">
-      {/* 1. BẢN ĐỘ TỨ TRỤ CỦA BẠN */}
-      <article className="analysis-panel personal-map-panel">
-        <h3>Bản đồ Tứ Trụ của bạn</h3>
-        <p className="panel-note result-pillar-line">
-          Năm {content.pillars.find((item) => item.key === "year")?.pillar} · Tháng {content.pillars.find((item) => item.key === "month")?.pillar} · Ngày {content.pillars.find((item) => item.key === "day")?.pillar} · Giờ {content.pillars.find((item) => item.key === "hour")?.pillar}
-        </p>
-        <p className="panel-note result-day-master">
-          Nhật chủ: {content.dayMasterSummary.name} {content.dayMasterSummary.element}
-        </p>
-        <p className="panel-description">
-          Bốn trụ trên được dựng từ ngày, giờ sinh bạn đã nhập. Nhật chủ là trục chính để đọc Ngũ hành, Thập thần và các quan hệ sinh khắc trong bản đồ này.
-        </p>
-      </article>
-
-      {/* 2. NHẬN XÉT CẤU TRÚC BAN ĐẦU */}
-      <article className="analysis-panel">
-        <h3>Nhận xét cấu trúc ban đầu</h3>
-        <div className="result-text-blocks">
-          {explanation.initialStructure.map((block) => (
-            <div className="result-text-block" key={block.title}>
-              <p>{block.body}</p>
-            </div>
-          ))}
-        </div>
-      </article>
-
-      {/* 3. NGŨ HÀNH TRONG BẢN NÀY */}
-      <article className="analysis-panel">
-        <h3>Ngũ hành trong bản này</h3>
-        <div className="result-element-cards">
-          {explanation.elementProfile.map((item) => (
-            <article className={`result-element-card ${elementTone[item.element] ?? "earth"}`} key={item.element}>
-              <p>{item.element}</p>
-              <strong>{item.count}</strong>
-              <small>{item.prominence}</small>
-            </article>
-          ))}
-        </div>
-        <div className="result-text-blocks">
-          {explanation.elementExplanation.map((block) => (
-            <div className="result-text-block" key={block.title}>
-              <p>{block.body}</p>
-            </div>
-          ))}
-        </div>
-      </article>
-
-      {/* 4. TÀNG CAN CẦN CHÚ Ý */}
-      <article className="analysis-panel">
-        <h3>Tàng can cần chú ý</h3>
-        <div className="result-text-blocks">
-          {explanation.hiddenStemExplanation.map((block) => (
-            <div className="result-text-block" key={block.title}>
-              <p>{block.body}</p>
-            </div>
-          ))}
-        </div>
-      </article>
-
-      {/* 5. THẬP THẦN ĐÁNG CHÚ Ý */}
-      <article className="analysis-panel">
-        <h3>Thập thần đáng chú ý</h3>
-        <p className="panel-description">
-          Thập thần là cách gọi quan hệ giữa các Thiên Can với Nhật chủ. Ở bản đọc cơ bản, phần này giúp nhận diện lớp quan hệ trong lá số, chưa dùng riêng để kết luận tính cách hay vận trình.
-        </p>
-        <div className="result-ten-god-list">
-          {content.tenGodOverview.filter(item => item.count > 0).map((item) => (
-            <div className="result-ten-god-row" key={item.name}>
-              <strong>{item.name}</strong>
-              <span>{item.count} lần · {item.positions}</span>
-              <small>{tenGodExplainByTitle[item.name] ?? item.note}</small>
-            </div>
-          ))}
-        </div>
-      </article>
-
-      {/* 6. BẠN NÊN XEM TIẾP */}
-      <article className="analysis-panel">
-        <h3>Bạn nên xem tiếp</h3>
-        <div className="result-text-blocks">
-          {explanation.finalReading.map((block) => (
-            <div className="result-text-block" key={block.title}>
-              <p>{block.body}</p>
-            </div>
-          ))}
-        </div>
-      </article>
-
-      {/* 7. TÀNG THƯ ĐỐI CHIẾU - đưa xuống cuối */}
-      <article className="analysis-panel archive-panel">
-        <h3>Tàng thư đối chiếu</h3>
-        <p className="panel-description">Xem quy tắc và thuật ngữ phía sau bản đọc.</p>
-        {explanation.relatedKnowledgeCards.length === 0 ? (
-          <p className="panel-note">Chưa có thẻ kiến thức liên quan.</p>
-        ) : (
-          <div className="result-text-blocks archive-blocks">
-            {explanation.relatedKnowledgeCards.map((card) => (
-              <div className="result-text-block archive-card" key={card.id}>
-                <h4>{card.title}</h4>
-                <p>{card.body}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </article>
-
-      {/* 8. LƯU Ý QUAN TRỌNG - cảnh báo đặt cuối */}
-      <article className="analysis-panel result-guardrail">
-        <h3>Lưu ý quan trọng</h3>
-        <p>{explanation.guardrails[0]?.body ?? content.guardrail}</p>
-      </article>
-
-      {/* 9. DẢI KỸ THUẬT - rất nhỏ ở cuối */}
-      <footer className="result-tech-footer">
-        <small>Máy tính {content.verification.engineVersion} · Quy tắc {content.verification.ruleSetVersion} · Bản đọc cấu trúc cơ bản</small>
-      </footer>
-    </div>
-  );
-}
-
-function OverviewBlocks({ compact = false }: { compact?: boolean }) {
-  return (
-    <>
-      <p className="result-id-line">Mã kết quả #{mockChartResult.resultId}</p>
-      <div className={`pillar-grid ${compact ? "pillar-grid-compact" : ""}`}>
-        {pillarDisplays.map((pillar) => (
-          <RichPillarCard pillar={pillar} key={pillar.key} />
-        ))}
-      </div>
-      <div className="analysis-grid">
-        <article className="analysis-panel element-panel">
-          <h3>Ngũ hành phân bố</h3>
-          <ElementDiagram items={mockChartResult.elementBalance} />
-        </article>
-        <TenGodHighlightsPanel />
-      </div>
-    </>
-  );
-}
-
-function InputControl({
-  row,
+function InputPanel({
   calendarType,
   gender,
+  isLeapMonth,
+  error,
   onCalendarChange,
-  onGenderChange
+  onGenderChange,
+  onLeapMonthChange,
+  onSubmit
 }: {
-  row: FormRow;
   calendarType: CalendarType;
   gender: GenderType;
+  isLeapMonth: boolean;
+  error: string | null;
   onCalendarChange: (value: CalendarType) => void;
   onGenderChange: (value: GenderType) => void;
+  onLeapMonthChange: (value: boolean) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
-  if (row.control === "date") {
-    return <input aria-label={row.label} name="birthDate" type="date" defaultValue="1990-10-12" />;
-  }
-
-  if (row.control === "time") {
-    return (
-      <div className="split-control">
-        <select aria-label="Giờ" name="birthHour" defaultValue="14">
-          {Array.from({ length: 24 }, (_, hour) => {
-            const value = String(hour).padStart(2, "0");
-            return (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            );
-          })}
-        </select>
-        <select aria-label="Phút" name="birthMinute" defaultValue="30">
-          {["00", "15", "30", "45"].map((minute) => (
-            <option key={minute} value={minute}>
-              {minute}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  }
-
-  if (row.control === "calendar") {
-    return (
-      <div className="choice-group" role="group" aria-label="Loại lịch">
-        <button className={`choice ${calendarType === "solar" ? "active" : ""}`} onClick={() => onCalendarChange("solar")} type="button">
-          Dương lịch
-        </button>
-        <button className={`choice ${calendarType === "lunar" ? "active" : ""}`} onClick={() => onCalendarChange("lunar")} type="button">
-          Âm lịch
-        </button>
-      </div>
-    );
-  }
-
-  if (row.control === "gender") {
-    return (
-      <div className="gender-control-wrap">
-        <div className="choice-group" role="group" aria-label="Giới tính">
-          <button className={`choice ${gender === "male" ? "active" : ""}`} onClick={() => onGenderChange("male")} type="button">
-            Nam
+  return (
+    <section className="panel input-panel" id="lap-phieu">
+      <SectionTitle
+        eyebrow="Nhập liệu"
+        title="Lập lá phiếu Tứ Trụ"
+        note="Dữ liệu được đưa thẳng vào engine, không dùng chart mock."
+      />
+      <form className="birth-form" onSubmit={onSubmit}>
+        <div className="choice-line" role="group" aria-label="Loại lịch">
+          <button className={cx("choice", calendarType === "solar" && "active")} type="button" onClick={() => onCalendarChange("solar")}>
+            Dương lịch
           </button>
-          <button className={`choice ${gender === "female" ? "active" : ""}`} onClick={() => onGenderChange("female")} type="button">
-            Nữ
+          <button className={cx("choice", calendarType === "lunar" && "active")} type="button" onClick={() => onCalendarChange("lunar")}>
+            Âm lịch
           </button>
         </div>
-        <p className="inline-note">Dùng cho một số quy tắc an vận truyền thống. Bốn trụ gốc không đổi theo giới tính.</p>
-      </div>
-    );
-  }
 
-  if (row.control === "timezone") {
-    return (
-      <select aria-label={row.label} name="timezone" defaultValue="Asia/Ho_Chi_Minh">
-        <option value="Asia/Ho_Chi_Minh">UTC+07:00 Việt Nam</option>
-        <option value="Asia/Shanghai">UTC+08:00</option>
-        <option value="Asia/Tokyo">UTC+09:00</option>
-      </select>
-    );
-  }
+        <div className="form-grid">
+          <label>
+            <span>{calendarType === "lunar" ? "Ngày âm lịch" : "Ngày dương lịch"}</span>
+            <input name="birthDate" type="date" defaultValue="1990-10-12" required />
+            <small>{calendarType === "lunar" ? "Engine sẽ quy đổi âm lịch sang dương lịch trước khi lập trụ." : "Dùng trực tiếp làm ngày sinh dương lịch."}</small>
+          </label>
 
-  return <input aria-label={row.label} name="birthPlace" type="text" defaultValue="Tiền Giang, Việt Nam" placeholder="Tùy chọn" />;
+          <label>
+            <span>Giờ sinh</span>
+            <div className="time-grid">
+              <select name="birthHour" defaultValue="14" aria-label="Giờ sinh">
+                {Array.from({ length: 24 }, (_, hour) => {
+                  const value = String(hour).padStart(2, "0");
+                  return <option key={value} value={value}>{value}</option>;
+                })}
+              </select>
+              <select name="birthMinute" defaultValue="30" aria-label="Phút sinh">
+                {Array.from({ length: 60 }, (_, minute) => {
+                  const value = String(minute).padStart(2, "0");
+                  return <option key={value} value={value}>{value}</option>;
+                })}
+              </select>
+            </div>
+            <small>Từ 23:00 dùng quy tắc giờ Tý đổi ngày cho trụ ngày.</small>
+          </label>
+
+          <label>
+            <span>Giới tính</span>
+            <div className="choice-line compact" role="group" aria-label="Giới tính">
+              <button className={cx("choice", gender === "male" && "active")} type="button" onClick={() => onGenderChange("male")}>Nam</button>
+              <button className={cx("choice", gender === "female" && "active")} type="button" onClick={() => onGenderChange("female")}>Nữ</button>
+              <button className={cx("choice", gender === "other" && "active")} type="button" onClick={() => onGenderChange("other")}>Khác</button>
+            </div>
+            <small>Dùng cho chiều thuận, nghịch Đại vận.</small>
+          </label>
+
+          <label>
+            <span>Múi giờ</span>
+            <select name="timezone" defaultValue="Asia/Ho_Chi_Minh">
+              <option value="Asia/Ho_Chi_Minh">UTC+07:00 Việt Nam</option>
+              <option value="Asia/Shanghai">UTC+08:00</option>
+              <option value="Asia/Tokyo">UTC+09:00</option>
+            </select>
+            <small>Lập trụ theo giờ địa phương của múi giờ đã chọn.</small>
+          </label>
+
+          <label className="wide">
+            <span>Nơi sinh</span>
+            <input name="birthPlace" type="text" defaultValue="Tiền Giang, Việt Nam" placeholder="Tùy chọn" />
+            <small>Ghi lên phiếu để đối chiếu, hiện chưa dùng tọa độ địa lý.</small>
+          </label>
+
+          {calendarType === "lunar" ? (
+            <label className="wide checkbox-row">
+              <input type="checkbox" checked={isLeapMonth} onChange={(event) => onLeapMonthChange(event.target.checked)} />
+              <span>Tháng nhuận âm lịch</span>
+            </label>
+          ) : null}
+        </div>
+
+        <button className="primary-action" type="submit">Dựng lá phiếu</button>
+        {error ? <p className="error-box">{error}</p> : null}
+      </form>
+    </section>
+  );
 }
-function labelForDetail(key: "stem" | "branch" | "hidden" | "relation" | "note") {
-  return {
-    stem: "Thiên Can",
-    branch: "Địa Chi",
-    hidden: "Tàng Can",
-    relation: "Ngũ hành",
-    note: "Ghi chú đọc"
-  }[key];
+
+function InputSummary({ result, content }: { result: DeriveFourPillarsOutput; content: ResultContentLayer }) {
+  const metaRows = [
+    ["Ngày nhập", `${content.inputSummary.birthDate} · ${content.inputSummary.calendarType}`],
+    ["Ngày dương dùng để tính", result.meta.normalizedSolarDate ?? content.inputSummary.birthDate],
+    ["Giờ sinh", content.inputSummary.birthTime],
+    ["Múi giờ", content.inputSummary.timezone],
+    ["Giới tính", toGenderLabel(result.majorLuck.gender)],
+    ["Nơi sinh", content.inputSummary.birthPlace ?? "Không ghi"],
+    ["Tiết khí tháng", result.meta.monthSolarTerm ? `${result.meta.monthSolarTerm} · ${result.meta.monthSolarTermUtc}` : "Không có"],
+    ["Quy tắc ngày", result.meta.isLateZiHour ? "23:00 trở đi đã chuyển ngày theo giờ Tý" : "Không chạm mốc giờ Tý đổi ngày"]
+  ];
+
+  return (
+    <section className="panel">
+      <SectionTitle eyebrow="Thông tin phiếu" title="Dữ liệu đã dùng để lập trụ" />
+      <dl className="summary-grid">
+        {metaRows.map(([label, value]) => (
+          <div key={label}>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+function DayMasterPanel({ content }: { content: ResultContentLayer }) {
+  return (
+    <section className="day-master-card">
+      <div>
+        <p>Nhật chủ</p>
+        <strong>{content.dayMasterSummary.name}</strong>
+        <span>{content.dayMasterSummary.han} · {content.dayMasterSummary.element}</span>
+      </div>
+      <p>{content.dayMasterSummary.note}</p>
+    </section>
+  );
+}
+
+function hiddenTenGod(card: ResultPillarCard, stemHan: string) {
+  return card.hiddenStems.find((item) => item.stemHan === stemHan)?.tenGod ?? "Đã nhận diện tàng can";
+}
+
+function PillarTable({ result, content }: { result: DeriveFourPillarsOutput; content: ResultContentLayer }) {
+  return (
+    <section className="panel chart-panel" id="la-so">
+      <SectionTitle eyebrow="Lá số" title="Bảng Tứ Trụ" note="Chỉ hiển thị phần engine đã tính." />
+      <DayMasterPanel content={content} />
+      <div className="table-wrap">
+        <table className="pillar-table">
+          <thead>
+            <tr>
+              <th>Trụ</th>
+              <th>Can</th>
+              <th>Chi</th>
+              <th>Tàng can</th>
+              <th>Thập thần</th>
+              <th>Ghi chú</th>
+            </tr>
+          </thead>
+          <tbody>
+            {content.pillars.map((card) => {
+              const enginePillar = getEnginePillar(result, card.key);
+              return (
+                <tr key={card.key}>
+                  <th scope="row">
+                    <span className="pillar-name">{card.label}</span>
+                    <strong>{card.pillar}</strong>
+                    <b>{card.pillarHan}</b>
+                  </th>
+                  <td>
+                    <strong>{card.stem} {card.stemHan}</strong>
+                    <small>{enginePillar.stemElement} · {enginePillar.stemPolarity}</small>
+                  </td>
+                  <td>
+                    <strong>{card.branch} {card.branchHan}</strong>
+                    <small>{enginePillar.branchElement} · {enginePillar.branchPolarity}</small>
+                  </td>
+                  <td>
+                    <ul className="mini-list">
+                      {enginePillar.hiddenStems.map((hidden) => (
+                        <li key={`${card.key}-${hidden.stemHan}-${hidden.qi}`}>
+                          <span>{hidden.qiLabel}: {hidden.stem} {hidden.stemHan}</span>
+                          <small>{hidden.element} · {hiddenTenGod(card, hidden.stemHan)}</small>
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                  <td>
+                    <strong>{card.tenGod}</strong>
+                  </td>
+                  <td>
+                    <small>{card.note}</small>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function ElementBalance({ content }: { content: ResultContentLayer }) {
+  const maxCount = Math.max(...elementOrder.map((element) => content.elementBalance.counts[element] ?? 0), 1);
+
+  return (
+    <section className="panel">
+      <SectionTitle eyebrow="Ngũ hành" title="Phân bố Can, Chi và Tàng can" />
+      <div className="element-grid">
+        {elementOrder.map((element) => {
+          const count = content.elementBalance.counts[element] ?? 0;
+          return (
+            <article className="element-card" key={element}>
+              <header>
+                <span>{element}</span>
+                <strong>{count}</strong>
+              </header>
+              <div className="bar"><span style={{ width: `${Math.max(8, (count / maxCount) * 100)}%` }} /></div>
+            </article>
+          );
+        })}
+      </div>
+      <p className="note-line">{content.elementBalance.note}</p>
+    </section>
+  );
+}
+
+function TenGodPanel({ content }: { content: ResultContentLayer }) {
+  const computed = content.tenGodOverview.filter((item) => item.status === "computed" && item.count > 0);
+
+  return (
+    <section className="panel">
+      <SectionTitle eyebrow="Thập thần" title="Các Thập thần đã xuất hiện" note="Không hiển thị mục chưa xuất hiện." />
+      <div className="ten-god-grid">
+        {computed.map((item) => (
+          <article className="ten-god-card" key={item.name}>
+            <header>
+              <strong>{item.name}</strong>
+              <span>{item.count}</span>
+            </header>
+            <p>{item.positions}</p>
+            <small>{item.note}</small>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function MajorLuckPanel({ content }: { content: ResultContentLayer }) {
+  return (
+    <section className="panel" id="dai-van">
+      <SectionTitle eyebrow="Đại vận" title="Danh sách Đại vận đã tính" note={toDirectionText(content)} />
+      <div className="major-luck-summary">
+        <p>{content.majorLuck.directionRule}</p>
+        <p>Khởi vận từ: <strong>{content.majorLuck.startTerm}</strong></p>
+        <p>{content.majorLuck.note}</p>
+      </div>
+      <div className="table-wrap">
+        <table className="luck-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Đại vận</th>
+              <th>Tuổi</th>
+              <th>Năm dương lịch</th>
+              <th>Ngày bắt đầu</th>
+              <th>Ngũ hành</th>
+            </tr>
+          </thead>
+          <tbody>
+            {content.majorLuck.cycles.map((cycle) => (
+              <tr key={`${cycle.index}-${cycle.pillarHan}`}>
+                <td>{cycle.index}</td>
+                <td><strong>{cycle.pillar}</strong><small>{cycle.pillarHan}</small></td>
+                <td>{cycle.ageLabel}</td>
+                <td>{cycle.years}</td>
+                <td>{cycle.startDate}</td>
+                <td>{cycle.stemElement} / {cycle.branchElement}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function VerificationPanel({ result, content }: { result: DeriveFourPillarsOutput; content: ResultContentLayer }) {
+  return (
+    <section className="panel verification-panel">
+      <SectionTitle eyebrow="Kiểm chứng" title="Phạm vi kết quả" />
+      <div className="verification-grid">
+        <article>
+          <h3>Đã hiển thị vì engine đã tính</h3>
+          <ul>
+            <li>Bốn trụ Năm, Tháng, Ngày, Giờ.</li>
+            <li>Tháng trụ theo tiết khí: {result.meta.monthSolarTerm ?? "đã tính"}.</li>
+            <li>Âm lịch có quy đổi khi người dùng chọn Âm lịch.</li>
+            <li>Giờ Tý 23:00 có xử lý đổi ngày.</li>
+            <li>Can, Chi, Ngũ hành, Âm Dương, Tàng can, Thập thần.</li>
+            <li>Đại vận, chiều vận, tuổi khởi vận.</li>
+          </ul>
+        </article>
+        <article>
+          <h3>Chưa đưa vào lá phiếu</h3>
+          <ul>
+            <li>Vượng suy, thân cường, thân nhược.</li>
+            <li>Dụng thần, hỷ thần, kỵ thần.</li>
+            <li>Lưu niên.</li>
+            <li>Luận đoán dài theo sách phái.</li>
+          </ul>
+        </article>
+      </div>
+      <p className="guardrail">{content.guardrail}</p>
+      <p className="engine-line">Engine {content.verification.engineVersion} · Quy tắc {content.verification.ruleSetVersion} · {content.verification.calculationMode}</p>
+    </section>
+  );
+}
+
+function ResultSheet({ result, content }: { result: DeriveFourPillarsOutput; content: ResultContentLayer }) {
+  return (
+    <div className="result-stack">
+      <InputSummary result={result} content={content} />
+      <PillarTable result={result} content={content} />
+      <ElementBalance content={content} />
+      <TenGodPanel content={content} />
+      <MajorLuckPanel content={content} />
+      <VerificationPanel result={result} content={content} />
+    </div>
+  );
 }
 
 export default function App() {
   const [calendarType, setCalendarType] = useState<CalendarType>("solar");
   const [gender, setGender] = useState<GenderType>("male");
-  const [hasChart, setHasChart] = useState(false);
+  const [isLeapMonth, setIsLeapMonth] = useState(false);
   const [chartResult, setChartResult] = useState<DeriveFourPillarsOutput | null>(null);
   const [engineError, setEngineError] = useState<string | null>(null);
-  const [analysisTab, setAnalysisTab] = useState<AnalysisTab>("overview");
-  const [activePillar, setActivePillar] = useState<PillarKey>("year");
-  const [elementLayer, setElementLayer] = useState<ElementLayerKey>("global");
-
-  const [archiveSearch, setArchiveSearch] = useState("");
-  const [archiveTopic, setArchiveTopic] = useState("Tất cả");
-  const [archiveLayer, setArchiveLayer] = useState("Tất cả");
-  const [archiveStatus, setArchiveStatus] = useState("Tất cả");
-  const [archiveContentType, setArchiveContentType] = useState("Tất cả");
-
-  const activePillarData = pillarDisplays.find((pillar) => pillar.key === activePillar)!;
-  const activeDetail = mockChartResult.detailCopy[activePillar];
-  const layerElements = mockChartResult.elementByLayer[elementLayer];
-
-  const filteredArchive = useMemo(() => {
-    const q = archiveSearch.trim().toLowerCase();
-    return archiveItems.filter((item) => {
-      if (archiveTopic !== "Tất cả" && item.topic !== archiveTopic) return false;
-      if (archiveLayer !== "Tất cả" && item.layer !== archiveLayer) return false;
-      if (archiveStatus !== "Tất cả" && item.status !== archiveStatus) return false;
-      if (archiveContentType !== "Tất cả" && item.contentType !== archiveContentType) return false;
-      if (!q) return true;
-      return [item.title, item.description, item.sources, item.topic, item.layer].join(" ").toLowerCase().includes(q);
-    });
-  }, [archiveSearch, archiveTopic, archiveLayer, archiveStatus, archiveContentType]);
 
   const resultContent = useMemo(() => {
     if (!chartResult) return null;
@@ -784,518 +423,57 @@ export default function App() {
     }
   }, [chartResult]);
 
-  const chartExplanation = useMemo(() => {
-    if (!resultContent) return null;
-    try {
-      return explainChartResult(resultContent, tuTruKnowledgeSeed);
-    } catch (error) {
-      console.error("explanation error", error);
-      return null;
-    }
-  }, [resultContent]);
-
-  const knowledgeSummary = useMemo(() => buildKnowledgeStatusSummary(), []);
-  const focusReferences = useMemo(() => {
-    if (chartExplanation) {
-      return chartExplanation.sourceRefs.map((item): FocusReference => ({
-        id: item.id,
-        label: item.title,
-        kind:
-          item.category === "glossary_seed"
-            ? "glossary"
-            : item.category === "rules_candidate"
-              ? "rule"
-              : item.category === "topic_map"
-                ? "topic"
-                : "license",
-        status: item.status
-      }));
-    }
-    return buildFocusReferences(resultContent);
-  }, [chartExplanation, resultContent]);
-
-  const handleBuildChart = (event: FormEvent) => {
+  const handleBuildChart = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = event.currentTarget as HTMLFormElement;
-    const birthDate = (form.querySelector('input[name="birthDate"]') as HTMLInputElement | null)?.value ?? "";
-    const birthHour = (form.querySelector('select[name="birthHour"]') as HTMLSelectElement | null)?.value ?? "";
-    const birthMinute = (form.querySelector('select[name="birthMinute"]') as HTMLSelectElement | null)?.value ?? "00";
-    const rawTimezone = (form.querySelector('select[name="timezone"]') as HTMLSelectElement | null)?.value ?? "Asia/Ho_Chi_Minh";
-    const birthPlace = (form.querySelector('input[name="birthPlace"]') as HTMLInputElement | null)?.value ?? "";
-
-    const input: DeriveFourPillarsInput = {
-      birthDate,
-      birthTime: `${birthHour}:${birthMinute}`,
-      calendarType,
-      timezone: normalizeTimezoneInput(rawTimezone),
-      gender,
-      birthPlace
-    };
-
-    console.log("derive input", input);
-
     try {
-      const nextChartResult = deriveFourPillars(input);
-      console.log("derive result", nextChartResult);
-      applyEngineResultToMockSurface(nextChartResult);
-      setChartResult(nextChartResult);
+      const input = buildInputFromForm(event.currentTarget, calendarType, gender, isLeapMonth);
+      const result = deriveFourPillars(input);
+      setChartResult(result);
       setEngineError(null);
-      setHasChart(true);
-      setActivePillar("year");
-      setAnalysisTab("overview");
-      window.setTimeout(() => scrollToSection("overview"), 50);
+      window.setTimeout(() => document.getElementById("la-so")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     } catch (error) {
-      console.error("derive error", error);
-      const message = error instanceof Error ? error.message : "Không thể dựng bốn trụ với dữ liệu hiện tại.";
+      const message = error instanceof Error ? error.message : "Không dựng được lá phiếu với dữ liệu hiện tại.";
       setChartResult(null);
-      setEngineError(`Không dựng được bốn trụ: ${message}`);
-      setHasChart(false);
+      setEngineError(message);
     }
-  };
-
-  const openAnalysis = (tab: AnalysisTab) => {
-    setAnalysisTab(tab);
-    window.setTimeout(() => scrollToSection("analysis"), 50);
   };
 
   return (
-    <>
-      <aside className="side-nav" aria-label="Điều hướng khu vực">
-        <nav>
-          {primaryNavItems.map((item) => (
-            <a href={`#${item.id}`} aria-label={item.label} key={item.id}>
-              <span className="nav-han">{item.icon}</span>
-              <span className="nav-short-label">{item.shortLabel}</span>
-            </a>
-          ))}
+    <main className="page-shell">
+      <header className="hero-panel">
+        <nav className="top-nav" aria-label="Điều hướng Tứ Trụ">
+          <a href="#lap-phieu">Nhập liệu</a>
+          <a href="#la-so">Lá số</a>
+          <a href="#dai-van">Đại vận</a>
         </nav>
-      </aside>
+        <div className="hero-copy">
+          <p className="eyebrow">Ngũ thuật · Mệnh · Tứ Trụ</p>
+          <h1>Lá phiếu Tứ Trụ</h1>
+          <p>
+            Giao diện này bỏ dữ liệu demo, chỉ hiển thị các phần engine đang tính thật: bốn trụ, Ngũ hành, Tàng can, Thập thần và Đại vận.
+          </p>
+        </div>
+      </header>
 
-      <main>
-        <section className="screen hero-screen" id="home">
-          <div className="hero-content">
-            <SectionHeader index="1" title="Trang chủ" eyebrow="四 → Chủ" />
-            <div className="hero-moon-area">
-              <div className="hero-title-wrap">
-                <h1>Tứ Trụ</h1>
-                <p className="kicker">Lập trụ · Hiểu mệnh · Thuận thiên</p>
-              </div>
-            </div>
-            <div className="hero-intro">
-              <ul className="hero-points">
-                <li>Dựng bốn trụ từ ngày giờ sinh.</li>
-                <li>Đối chiếu Can Chi, Ngũ hành và Thập thần.</li>
-                <li>Theo dõi Đại vận, Lưu niên như chu kỳ tham khảo.</li>
-                <li>Giữ dẫn nguồn để học và tự quan sát.</li>
-              </ul>
-            </div>
-            <div className="hero-cta-wrap">
-              <SealButton label="Lập trụ" href="#input" extraClass="hero-cta" />
-              <SealButton label="Xem cách đọc" href="#onboarding" secondary />
-            </div>
-          </div>
+      <InputPanel
+        calendarType={calendarType}
+        gender={gender}
+        isLeapMonth={isLeapMonth}
+        error={engineError}
+        onCalendarChange={setCalendarType}
+        onGenderChange={setGender}
+        onLeapMonthChange={setIsLeapMonth}
+        onSubmit={handleBuildChart}
+      />
+
+      {chartResult && resultContent ? (
+        <ResultSheet result={chartResult} content={resultContent} />
+      ) : (
+        <section className="panel empty-panel">
+          <h2>Chưa có lá phiếu</h2>
+          <p>Nhập ngày giờ sinh rồi bấm Dựng lá phiếu. Chưa có dữ liệu thì không hiển thị kết quả mẫu.</p>
         </section>
-
-        <section className="screen onboarding-screen" id="onboarding">
-          <div className="screen-inner onboarding-inner">
-            <SectionHeader index="·" title="Bắt đầu từ đâu?" eyebrow="Hướng dẫn đọc" />
-            <div className="guide-steps">
-              <article className="onboarding-step">
-                <span className="step-number">1</span>
-                <h3>Nhập ngày giờ sinh</h3>
-                <p>Chọn lịch âm hoặc dương, điền đầy đủ thông tin theo giấy khai sinh.</p>
-              </article>
-              <article className="onboarding-step">
-                <span className="step-number">2</span>
-                <h3>Dựng bốn trụ</h3>
-                <p>Hệ thống tính Can Chi cho năm, tháng, ngày, giờ theo lịch pháp.</p>
-              </article>
-              <article className="onboarding-step">
-                <span className="step-number">3</span>
-                <h3>Xem từng lớp thông tin</h3>
-                <p>Đối chiếu Can Chi, Ngũ hành, Thập thần và dòng vận theo từng tab.</p>
-              </article>
-              <article className="onboarding-step">
-                <span className="step-number">4</span>
-                <h3>Đối chiếu nguồn</h3>
-                <p>Tra Tàng thư quy tắc, ghi rõ trạng thái kiểm duyệt và nguồn ứng viên.</p>
-              </article>
-            </div>
-            <div className="onboarding-actions">
-              <SealButton label="Đi tới nhập liệu" href="#input" />
-            </div>
-          </div>
-        </section>
-
-        <section className="screen input-screen" id="input">
-          <div className="screen-inner input-layout">
-            <div>
-              <SectionHeader index="2" title="Nhập thông tin" eyebrow="門 → Nhập" />
-              <form className="ancient-form" onSubmit={handleBuildChart}>
-                {formRows.map((row) => (
-                  <label className="input-row" key={row.label}>
-                    <span className="row-icon">{row.icon}</span>
-                    <span className="row-copy">
-                      <strong>{row.label}</strong>
-                      <small>{row.note}</small>
-                    </span>
-                    <span className="row-control">
-                      <InputControl
-                        row={row}
-                        calendarType={calendarType}
-                        gender={gender}
-                        onCalendarChange={setCalendarType}
-                        onGenderChange={setGender}
-                      />
-                    </span>
-                  </label>
-                ))}
-                <div className="form-actions">
-                  <SealButton label="Dựng bốn trụ" type="submit" extraClass="hero-cta" />
-                </div>
-                {engineError ? <p className="source-footnote">{engineError}</p> : null}
-              </form>
-            </div>
-            <aside className="step-rail" aria-label="Tiến trình">
-              <div className="step active">
-                <span>1</span>
-                <p>Nhập thông tin</p>
-              </div>
-              <div className="rail-line" />
-              <div className={`step ${hasChart ? "active" : ""}`}>
-                <span>2</span>
-                <p>Dựng & xem kết quả</p>
-              </div>
-            </aside>
-          </div>
-        </section>
-
-        <section className="screen overview-screen" id="overview">
-          <div className="screen-inner">
-            <SectionHeader index="3" title="Kết quả tổng quan" eyebrow="柱 → Sau khi dựng trụ" />
-            {!hasChart ? (
-              <article className="empty-state">
-                <p>Chưa có bốn trụ. Vui lòng nhập ngày giờ sinh và bấm <strong>Dựng bốn trụ</strong>.</p>
-                <SealButton label="Đi tới nhập liệu" href="#input" secondary />
-              </article>
-            ) : (
-              <>
-                {resultContent && chartExplanation ? (
-                  <ResultContentSection content={resultContent} explanation={chartExplanation} />
-                ) : (
-                  <OverviewBlocks />
-                )}
-                <div className="overview-actions">
-                  <SealButton label="Xem từng trụ" onClick={() => openAnalysis("pillars")} />
-                  <SealButton label="Xem dòng vận" onClick={() => scrollToSection("cycles")} secondary />
-                  <SealButton label="Đối chiếu nguồn" onClick={() => scrollToSection("rules")} secondary />
-                </div>
-                {!chartResult ? <p className="source-footnote">
-                  Mức đọc hiện tại: đối chiếu cơ bản. Lớp này dùng quy tắc nền, cần đọc cùng toàn cục và nguồn trong mục Quy tắc.
-                </p> : null}
-              </>
-            )}
-          </div>
-        </section>
-
-        <section className="screen analysis-screen" id="analysis">
-          <div className="screen-inner">
-            <SectionHeader index="4" title="Luận trụ" eyebrow="柱 → Từng lớp thông tin" />
-            {!hasChart ? (
-              <article className="empty-state">
-                <p>Dựng bốn trụ trước khi mở Luận trụ.</p>
-                <SealButton label="Nhập & dựng trụ" href="#input" secondary />
-              </article>
-            ) : (
-              <>
-                <div className="analysis-tabs" role="tablist" aria-label="Luận trụ">
-                  {analysisTabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={analysisTab === tab.id}
-                      className={analysisTab === tab.id ? "active" : ""}
-                      onClick={() => setAnalysisTab(tab.id)}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-
-                {analysisTab === "overview" && (
-                  <div className="analysis-tab-panel" role="tabpanel">
-                    <OverviewBlocks compact />
-                    <p className="source-footnote">Tab tổng quan — cùng dữ liệu với màn sau khi dựng trụ, không có đoạn luận dài.</p>
-                  </div>
-                )}
-
-                {analysisTab === "pillars" && (
-                  <div className="analysis-tab-panel detail-layout" role="tabpanel">
-                    <nav className="pillar-tabs" aria-label="Chọn trụ">
-                      {pillarDisplays.map((pillar) => (
-                        <button
-                          className={pillar.key === activePillar ? "active" : ""}
-                          key={pillar.key}
-                          onClick={() => setActivePillar(pillar.key)}
-                          type="button"
-                        >
-                          {pillar.label}
-                        </button>
-                      ))}
-                    </nav>
-                    <article className="selected-pillar" aria-live="polite">
-                      <p>{activePillarData.stem}</p>
-                      <strong>{activePillarData.stemHan}</strong>
-                      <span>{activePillarData.branch}</span>
-                      <b>{activePillarData.branchHan}</b>
-                      <small>
-                        {activePillarData.stemElement} · {activePillarData.branchElement}
-                      </small>
-                    </article>
-                    <article className="detail-copy structured-detail">
-                      <h3>{activeDetail.title}</h3>
-                      <section>
-                        <h4>{labelForDetail("stem")}</h4>
-                        <p>{activeDetail.stem}</p>
-                      </section>
-                      <section>
-                        <h4>{labelForDetail("branch")}</h4>
-                        <p>{activeDetail.branch}</p>
-                      </section>
-                      <section>
-                        <h4>{labelForDetail("hidden")}</h4>
-                        <p>{activeDetail.hidden}</p>
-                        <p className="detail-extra">Tàng can chính: {activePillarData.hiddenStem}</p>
-                      </section>
-                      <section>
-                        <h4>{labelForDetail("relation")}</h4>
-                        <p>
-                          Can {activePillarData.stemElement}, Chi {activePillarData.branchElement}. {activeDetail.relation}
-                        </p>
-                      </section>
-                      <section>
-                        <h4>{labelForDetail("note")}</h4>
-                        <p>{activeDetail.note}</p>
-                      </section>
-                    </article>
-                  </div>
-                )}
-
-                {analysisTab === "elements" && (
-                  <div className="analysis-tab-panel" role="tabpanel">
-                    <div className="filter-chip-row" role="group" aria-label="Lọc lớp ngũ hành">
-                      {(Object.keys(elementLayerLabels) as ElementLayerKey[]).map((key) => (
-                        <button
-                          key={key}
-                          type="button"
-                          className={elementLayer === key ? "active" : ""}
-                          onClick={() => setElementLayer(key)}
-                        >
-                          {elementLayerLabels[key]}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="panel-note">Phân bố theo lớp {elementLayerLabels[elementLayer]} — quan sát cân bằng khí, không kết luận tốt/xấu tuyệt đối.</p>
-                    <article className="analysis-panel element-panel element-panel-wide">
-                      <ElementDiagram items={layerElements} />
-                    </article>
-                    <ul className="element-legend">
-                      {layerElements.map((item) => (
-                        <li key={item.name}>
-                          <span className={`legend-dot ${item.className}`} />
-                          {item.name}: <strong>{item.value}</strong>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {analysisTab === "ten-gods" && (
-                  <div className="analysis-tab-panel" role="tabpanel">
-                    <p className="panel-note">Thập thần so với {mockChartResult.dayMaster}. Mỗi card ghi vị trí và ghi chú đối chiếu.</p>
-                    <div className="ten-god-card-grid">
-                      {mockChartResult.tenGodCards.map((card) => (
-                        <article className="ten-god-card" key={card.key}>
-                          <header>
-                            <h4>{card.name}</h4>
-                            <span className="ten-god-count">{card.count}</span>
-                          </header>
-                          <p className="ten-god-pos">{card.positions}</p>
-                          <p>{card.summary}</p>
-                          <p className="ten-god-note">{card.note}</p>
-                        </article>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </section>
-
-        <section className="screen cycles-screen" id="cycles">
-          <div className="screen-inner">
-            <SectionHeader index="5" title="Dòng vận" eyebrow="運 → Đại vận & Lưu niên" />
-            {!hasChart ? (
-              <article className="empty-state">
-                <p>Dựng bốn trụ để xem chu kỳ tham khảo.</p>
-              </article>
-            ) : (
-              <>
-                <div className="cycle-block">
-                  <h3>
-                    Đại vận <span>({gender === "male" ? "Nam" : "Nữ"} — dữ liệu minh họa)</span>
-                  </h3>
-                  <div className="luck-timeline" aria-label="Đại vận">
-                    {mockChartResult.daiVan.map((cycle, index) => (
-                      <article className={`cycle-card ${index === 3 ? "active" : ""}`} key={`${cycle.age}-${cycle.stem}`}>
-                        <small>{cycle.age}</small>
-                        <span>{cycle.years}</span>
-                        <strong>{cycle.stem}</strong>
-                        <b>{cycle.branch}</b>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-                <div className="cycle-block">
-                  <h3>Lưu niên</h3>
-                  <div className="year-grid" aria-label="Lưu niên">
-                    {mockChartResult.luuNien.map((year, index) => (
-                      <article className={`year-card ${index === 2 ? "active" : ""}`} key={year.year}>
-                        <span>{year.year}</span>
-                        <strong>{year.stem}</strong>
-                        <b>{year.branch}</b>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-                <p className="source-footnote">
-                  Dòng vận hiện là dữ liệu minh họa. Phiên bản sau sẽ tính thuận/nghịch vận theo giới tính và quy tắc lịch pháp.
-                </p>
-                <p className="safety-note">
-                  Đại vận và lưu niên chỉ là chu kỳ tham khảo để đối chiếu cổ học, không phải kết luận chắc chắn về đời người.
-                </p>
-              </>
-            )}
-          </div>
-        </section>
-
-        <section className="screen rules-screen" id="rules">
-          <div className="screen-inner">
-            <SectionHeader index="6" title="Tàng thư đối chiếu" eyebrow="典 → Quy tắc & nguồn" />
-            <article className="analysis-panel rules-source-panel">
-              <h3>Trạng thái nguồn đối chiếu</h3>
-              <p className="panel-note">
-                Dữ liệu đang đọc từ <code>src/data/tuTruKnowledgeSeed.ts</code>. Bản đối chiếu nguồn đang ở mức thư mục tham khảo. Các mục ứng viên/cần đối chiếu chưa dùng làm kết luận tự động.
-              </p>
-              <div className="result-chip-row">
-                <span className="result-chip">{SEED_BUCKET_LABEL.glossary_seed}: {knowledgeSummary.glossaryCount}</span>
-                <span className="result-chip">{SEED_BUCKET_LABEL.rules_candidate}: {knowledgeSummary.rulesCount}</span>
-                <span className="result-chip">{SEED_BUCKET_LABEL.topic_map}: {knowledgeSummary.topicCount}</span>
-                <span className="result-chip">{SEED_BUCKET_LABEL.license_review}: {knowledgeSummary.licenseBucketCount}</span>
-              </div>
-              <div className="result-chip-row">
-                {Object.entries(knowledgeSummary.statusCounts).map(([status, count]) => (
-                  <span className="result-chip" key={status}>
-                    {toSourceStatusLabel(status)}: {count}
-                  </span>
-                ))}
-              </div>
-              {focusReferences.length > 0 ? (
-                <>
-                  <p className="source-footnote">Ưu tiên mục liên quan chart hiện tại:</p>
-                  <div className="focus-reference-list">
-                    {focusReferences.map((item) => (
-                      <span className="focus-reference-chip" key={item.id}>
-                        {toFocusReferenceTitle(item)} · {SOURCE_KIND_LABEL[item.kind]} · {toSourceStatusLabel(item.status)} · Không dùng làm kết luận tự động
-                      </span>
-                    ))}
-                  </div>
-                </>
-              ) : null}
-            </article>
-            <div className="archive-filters">
-              <label className="filter-field filter-search">
-                <span>Tìm kiếm</span>
-                <input
-                  type="search"
-                  value={archiveSearch}
-                  onChange={(e) => setArchiveSearch(e.target.value)}
-                  placeholder="Tên, mô tả, nguồn..."
-                />
-              </label>
-              <label className="filter-field">
-                <span>Chủ đề</span>
-                <select value={archiveTopic} onChange={(e) => setArchiveTopic(e.target.value)}>
-                  {archiveTopics.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="filter-field">
-                <span>Tầng dữ liệu</span>
-                <select value={archiveLayer} onChange={(e) => setArchiveLayer(e.target.value)}>
-                  {archiveLayers.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="filter-field">
-                <span>Trạng thái</span>
-                <select value={archiveStatus} onChange={(e) => setArchiveStatus(e.target.value)}>
-                  {archiveStatuses.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="filter-field">
-                <span>Loại nội dung</span>
-                <select value={archiveContentType} onChange={(e) => setArchiveContentType(e.target.value)}>
-                  {archiveContentTypes.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <p className="archive-count">{filteredArchive.length} mục phù hợp</p>
-            <div className="archive-list">
-              {filteredArchive.map((item) => (
-                <article className="archive-card" key={item.id}>
-                  <header className="archive-card-head">
-                    <h3>{item.title}</h3>
-                    <div className="archive-tags">
-                      <span>{item.topic}</span>
-                      <span>{item.layer}</span>
-                      <span>{item.contentType}</span>
-                      <span className={`status-${item.status === "Đã duyệt" ? "ok" : "pending"}`}>{item.status}</span>
-                    </div>
-                  </header>
-                  <p>{item.description}</p>
-                  <p className="archive-read-labels">
-                    Nhãn đọc: {toArchiveMethodLabel(item)} · {item.layer} · {item.status === "Đã duyệt" ? "Quy tắc nền" : "Cần đối chiếu"} · Không dùng làm kết luận tự động
-                  </p>
-                  <p className="archive-sources">
-                    <strong>Nguồn liên quan:</strong> {item.sources}
-                  </p>
-                  <p className="archive-usage">{item.usageNote}</p>
-                </article>
-              ))}
-            </div>
-            <footer className="version-seal" aria-label="Phiên bản dữ liệu">
-              Máy tính v{chartResult?.meta.engineVersion ?? "0.1.0"} · Quy tắc {chartResult?.meta.ruleSetVersion ?? "core-v0.1"} · Dữ liệu sách mức ứng viên · Mã kết quả #{mockChartResult.resultId}
-            </footer>
-          </div>
-        </section>
-      </main>
-    </>
+      )}
+    </main>
   );
 }
