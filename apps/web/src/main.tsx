@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
@@ -99,7 +99,7 @@ function Home() {
 
       <div className="home-cards-wrap">
         <div className="home-cards">
-          <InfoCard image="/images/app-home/card-account.webp" title="Tài khoản" desc="Đăng nhập Clerk, lưu token người dùng và kiểm tra API." href="/account" />
+          <InfoCard image="/images/app-home/card-account.webp" title="Tài khoản" desc="Đăng nhập Clerk và lưu phiên làm việc cho các ứng dụng Cổ học." href="/account" />
           <InfoCard image="/images/app-home/card-history.webp" title="Lịch sử tra cứu" desc="Xem lại các lần tra cứu, thực hành và ghi chú." />
           <InfoCard image="/images/app-home/card-credits.webp" title="Tín dụng" desc="Quản lý tín dụng, gói dịch vụ và lịch sử giao dịch." />
         </div>
@@ -157,52 +157,144 @@ function loadScript(src: string, attrs: Record<string, string> = {}) {
   });
 }
 
-type AccountStatus = "loading" | "ready" | "signed-in" | "signed-out" | "error";
+type AccountStatus = "loading" | "signed-in" | "signed-out" | "error";
+
+interface AccountProfile {
+  clerkUserId: string;
+  name: string;
+  email: string;
+  imageUrl?: string;
+}
+
+function readPrimaryEmail(user: any) {
+  const primaryId = user?.primaryEmailAddressId;
+  const emails = Array.isArray(user?.emailAddresses) ? user.emailAddresses : [];
+  const primary = emails.find((item: any) => item?.id === primaryId) || emails[0];
+  return String(primary?.emailAddress || user?.primaryEmailAddress?.emailAddress || "");
+}
+
+function readAccountProfile(user: any): AccountProfile | null {
+  const clerkUserId = String(user?.id || "");
+  if (!clerkUserId) return null;
+  const firstName = String(user?.firstName || "").trim();
+  const lastName = String(user?.lastName || "").trim();
+  const fullName = String(user?.fullName || "").trim();
+  const name = fullName || [firstName, lastName].filter(Boolean).join(" ") || "Tài khoản Cổ học";
+  return {
+    clerkUserId,
+    name,
+    email: readPrimaryEmail(user),
+    imageUrl: user?.imageUrl ? String(user.imageUrl) : undefined
+  };
+}
+
+function clearAccountSession() {
+  localStorage.removeItem("hontho_user_token");
+  localStorage.removeItem("hontho_user_clerk_id");
+  localStorage.removeItem("user-clerk-id");
+  localStorage.removeItem("hontho_user_profile");
+  localStorage.setItem("hontho_api_base", "/api");
+}
+
+function storeAccountSession(token: string, profile: AccountProfile) {
+  localStorage.setItem("hontho_user_token", token);
+  localStorage.setItem("hontho_user_clerk_id", profile.clerkUserId);
+  localStorage.setItem("user-clerk-id", profile.clerkUserId);
+  localStorage.setItem("hontho_user_profile", JSON.stringify(profile));
+  localStorage.setItem("hontho_api_base", "/api");
+}
 
 function AccountPage() {
+  const signInBoxRef = useRef<HTMLDivElement | null>(null);
+  const userBoxRef = useRef<HTMLDivElement | null>(null);
+  const mountedModeRef = useRef<"sign-in" | "user" | null>(null);
   const [status, setStatus] = useState<AccountStatus>("loading");
-  const [message, setMessage] = useState("Đang nạp Clerk...");
-  const [domain, setDomain] = useState("clerk.hontho.com");
+  const [message, setMessage] = useState("Đang nạp trang tài khoản...");
+  const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [clerk, setClerk] = useState<any>(null);
-  const [result, setResult] = useState("");
 
-  async function syncSession(instance = clerk) {
-    if (!instance?.session) {
-      localStorage.removeItem("hontho_user_token");
-      localStorage.setItem("hontho_api_base", "/api");
+  function resetMounts() {
+    if (signInBoxRef.current) signInBoxRef.current.innerHTML = "";
+    if (userBoxRef.current) userBoxRef.current.innerHTML = "";
+    mountedModeRef.current = null;
+  }
+
+  async function syncSession(instance: any) {
+    localStorage.setItem("hontho_api_base", "/api");
+    const account = readAccountProfile(instance?.user);
+    if (!instance?.session || !account) {
+      clearAccountSession();
+      setProfile(null);
       setStatus("signed-out");
-      setMessage("Chưa đăng nhập Clerk.");
-      return "";
+      setMessage("Đăng nhập để lưu phiên làm việc cho các ứng dụng Cổ học.");
+      return null;
     }
-    const token = await instance.session.getToken();
-    if (token) {
-      localStorage.setItem("hontho_user_token", token);
-      localStorage.setItem("hontho_api_base", "/api");
-      setStatus("signed-in");
-      setMessage("Đã đăng nhập và lưu hontho_user_token.");
-      return token;
+
+    const token = await instance.session.getToken().catch(() => "");
+    if (!token) {
+      clearAccountSession();
+      setProfile(account);
+      setStatus("signed-out");
+      setMessage("Chưa lấy được phiên đăng nhập. Hãy đăng nhập lại.");
+      return null;
     }
-    setStatus("signed-out");
-    setMessage("Đã có session nhưng chưa lấy được token.");
-    return "";
+
+    storeAccountSession(token, account);
+    setProfile(account);
+    setStatus("signed-in");
+    setMessage("Đã đăng nhập. Phiên làm việc đã sẵn sàng cho Tứ Trụ và các ứng dụng Cổ học.");
+    return account;
+  }
+
+  async function mountAccountUi(instance: any) {
+    if (!signInBoxRef.current || !userBoxRef.current) return;
+    const signedIn = Boolean(instance?.user && instance?.session);
+
+    if (signedIn) {
+      if (mountedModeRef.current !== "user") {
+        resetMounts();
+        if (typeof instance.mountUserButton === "function") {
+          instance.mountUserButton(userBoxRef.current, { afterSignOutUrl: "/account" });
+          mountedModeRef.current = "user";
+        }
+      }
+      return;
+    }
+
+    if (mountedModeRef.current !== "sign-in") {
+      resetMounts();
+      if (typeof instance.mountSignIn === "function") {
+        instance.mountSignIn(signInBoxRef.current, {
+          routing: "hash",
+          afterSignInUrl: "/account",
+          afterSignUpUrl: "/account"
+        });
+        mountedModeRef.current = "sign-in";
+      } else {
+        setStatus("error");
+        setMessage("Clerk đã tải nhưng chưa có SignIn UI để hiển thị.");
+      }
+    }
   }
 
   useEffect(() => {
     let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
+
     async function boot() {
       try {
         localStorage.setItem("hontho_api_base", "/api");
         const cfg = await fetch("/api/admin/public-config").then((res) => res.json());
         const publishableKey = String(cfg?.clerkPublishableKey || "");
-        if (!publishableKey) throw new Error("API chưa trả CLERK_PUBLISHABLE_KEY public.");
+        if (!publishableKey) throw new Error("Chưa có cấu hình đăng nhập Clerk.");
         const clerkDomain = decodePublishableKeyDomain(publishableKey);
-        if (cancelled) return;
-        setDomain(clerkDomain);
+
         await loadScript(`https://${clerkDomain}/npm/@clerk/ui@1/dist/ui.browser.js`);
         await loadScript(`https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, {
           "data-clerk-publishable-key": publishableKey
         });
         if (cancelled) return;
+
         const globalClerk = window.Clerk;
         let instance = globalClerk;
         if (typeof globalClerk === "function") {
@@ -214,95 +306,77 @@ function AccountPage() {
           throw new Error("Clerk script đã tải nhưng không khởi tạo được.");
         }
         if (cancelled) return;
+
         setClerk(instance);
-        setStatus("ready");
-        setMessage("Clerk đã sẵn sàng.");
-        if (instance?.addListener) {
-          instance.addListener(() => {
-            void syncSession(instance);
+        const refresh = async () => {
+          await syncSession(instance);
+          await mountAccountUi(instance);
+        };
+
+        if (typeof instance?.addListener === "function") {
+          const maybeUnsubscribe = instance.addListener(() => {
+            void refresh();
           });
+          if (typeof maybeUnsubscribe === "function") unsubscribe = maybeUnsubscribe;
         }
-        await syncSession(instance);
+
+        await refresh();
       } catch (error) {
         if (cancelled) return;
+        clearAccountSession();
         setStatus("error");
         setMessage(error instanceof Error ? error.message : "Không nạp được Clerk.");
       }
     }
+
     void boot();
+
     return () => {
       cancelled = true;
+      if (unsubscribe) unsubscribe();
+      resetMounts();
     };
   }, []);
 
-  async function handleSignIn() {
-    if (!clerk) return;
-    setResult("");
-    if (clerk.user || clerk.session) {
-      await syncSession(clerk);
-      return;
-    }
-    if (clerk.openSignIn) {
-      clerk.openSignIn({ afterSignInUrl: "/account", afterSignUpUrl: "/account" });
-      setMessage("Đang mở hộp đăng nhập Clerk...");
-      return;
-    }
-    if (clerk.redirectToSignIn) {
-      await clerk.redirectToSignIn({ redirectUrl: "/account" });
-      return;
-    }
-    setStatus("error");
-    setMessage("Clerk hiện chưa hỗ trợ mở đăng nhập trên trình duyệt này.");
-  }
-
   async function handleSignOut() {
     if (clerk?.signOut) await clerk.signOut();
-    localStorage.removeItem("hontho_user_token");
-    localStorage.setItem("hontho_api_base", "/api");
+    clearAccountSession();
+    setProfile(null);
     setStatus("signed-out");
-    setMessage("Đã đăng xuất và xoá hontho_user_token.");
-    setResult("");
+    setMessage("Đã đăng xuất. Phiên đăng nhập đã được xoá khỏi trình duyệt.");
+    await mountAccountUi(clerk);
   }
 
-  async function handleCheckApi() {
-    try {
-      const token = await syncSession(clerk);
-      if (!token) throw new Error("Chưa có token. Bấm Đăng nhập Clerk trước.");
-      const response = await fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } });
-      const data = await response.json().catch(() => ({ error: response.statusText }));
-      setResult(JSON.stringify(data, null, 2));
-      if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : "API /api/auth/me lỗi.");
-      setMessage("API /api/auth/me hoạt động.");
-    } catch (error) {
-      setStatus("error");
-      setMessage(error instanceof Error ? error.message : "Không kiểm tra được API.");
-    }
-  }
-
-  const busy = status === "loading";
   return (
     <Shell activePage="account">
       <div className="placeholder-hero">
         <div className="breadcrumb"><a href="/">🏠</a> / <span>Tài khoản</span></div>
         <div className="placeholder-icon">👤</div>
-        <h1>Tài khoản Clerk</h1>
-        <p className="lead">Đăng nhập người dùng cuối, lưu token cho các app nhỏ và kiểm tra kết nối API.</p>
+        <h1>Tài khoản</h1>
+        <p className="lead">Đăng nhập để dùng ứng dụng Cổ học và lưu phiên làm việc.</p>
       </div>
       <div className="placeholder-body">
         <div className="placeholder-notice">
-          <strong>Trạng thái: {status}</strong>
+          <strong>{status === "signed-in" ? "Tài khoản của bạn" : "Đăng nhập tài khoản"}</strong>
           <p>{message}</p>
-          <p>Frontend API: {domain}</p>
-          <p>Token lưu tại: <code>hontho_user_token</code>. API base lưu tại: <code>hontho_api_base=/api</code>.</p>
+          {profile ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 16 }}>
+              {profile.imageUrl ? <img src={profile.imageUrl} alt="" style={{ width: 44, height: 44, borderRadius: 999 }} /> : null}
+              <span>{profile.name}{profile.email ? ` · ${profile.email}` : ""}</span>
+            </div>
+          ) : null}
         </div>
+
+        <div ref={signInBoxRef} style={{ display: status === "signed-in" ? "none" : "flex", justifyContent: "center", marginTop: 24 }} />
+        <div ref={userBoxRef} style={{ display: status === "signed-in" ? "flex" : "none", justifyContent: "center", marginTop: 24 }} />
+
         <div className="placeholder-btn-row">
-          <button className="ph-btn-primary" type="button" disabled={busy} onClick={handleSignIn}>Đăng nhập Clerk</button>
-          <button className="ph-btn-secondary" type="button" disabled={busy} onClick={handleSignOut}>Đăng xuất</button>
-          <button className="ph-btn-secondary" type="button" disabled={busy} onClick={handleCheckApi}>Kiểm tra API /api/auth/me</button>
+          {status === "signed-in" ? (
+            <button className="ph-btn-secondary" type="button" onClick={handleSignOut}>Đăng xuất</button>
+          ) : null}
           <a className="ph-btn-primary" href="/nguthuat/menh/tutru/">Vào Tứ Trụ</a>
           <a className="ph-btn-secondary" href="/">Trang chủ</a>
         </div>
-        {result ? <pre style={{ textAlign: "left", marginTop: 24, whiteSpace: "pre-wrap" }}>{result}</pre> : null}
       </div>
     </Shell>
   );
