@@ -59,6 +59,17 @@ function preview(content: string) {
   return content.replace(/\s+/g, " ").trim().slice(0, 180);
 }
 
+function envNumber(name: string, fallback = 0) {
+  const parsed = Number(process.env[name]);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function estimateAiCost(tokenInput: number, tokenOutput: number) {
+  const inputPer1k = envNumber("AI_COST_INPUT_PER_1K", envNumber("OPENAI_COST_INPUT_PER_1K", 0));
+  const outputPer1k = envNumber("AI_COST_OUTPUT_PER_1K", envNumber("OPENAI_COST_OUTPUT_PER_1K", 0));
+  return Number((((tokenInput || 0) / 1000) * inputPer1k + ((tokenOutput || 0) / 1000) * outputPer1k).toFixed(6));
+}
+
 async function touchConversation(conversationId: string, content: string, client: QueryClient = pool) {
   await client.query(
     `UPDATE conversations
@@ -183,10 +194,11 @@ async function persistAiSuccess(args: {
   try {
     await client.query("BEGIN");
     const latencyMs = Math.max(0, Date.now() - args.startedAt);
+    const estimatedCost = estimateAiCost(args.result.tokenInput, args.result.tokenOutput);
     const aiRun = await client.query(
       `INSERT INTO ai_agent_runs(conversation_id, user_id, app_key, agent_id, provider, model, status,
                                  request_json, response_json, token_input, token_output, cost, latency_ms)
-       VALUES($1, $2, $3, $4, $5, $6, 'ok', $7::jsonb, $8::jsonb, $9, $10, 0, $11)
+       VALUES($1, $2, $3, $4, $5, $6, 'ok', $7::jsonb, $8::jsonb, $9, $10, $11, $12)
        RETURNING *`,
       [
         args.conversation.id,
@@ -199,6 +211,7 @@ async function persistAiSuccess(args: {
         JSON.stringify(args.result.responseJson || {}),
         args.result.tokenInput,
         args.result.tokenOutput,
+        estimatedCost,
         latencyMs
       ]
     );
@@ -214,7 +227,7 @@ async function persistAiSuccess(args: {
     const message = await client.query(
       `INSERT INTO messages(conversation_id, role, content, metadata_json, token_input, token_output, cost,
                             visible_to_user, created_by, sequence, ai_run_id, provider, model, provider_response_id)
-       VALUES($1, 'assistant', $2, $3::jsonb, $4, $5, 0, $6, NULL, $7, $8, $9, $10, $11)
+       VALUES($1, 'assistant', $2, $3::jsonb, $4, $5, $6, $7, NULL, $8, $9, $10, $11, $12)
        RETURNING *`,
       [
         args.conversation.id,
@@ -222,6 +235,7 @@ async function persistAiSuccess(args: {
         JSON.stringify(metadata),
         args.result.tokenInput,
         args.result.tokenOutput,
+        estimatedCost,
         args.visibleToUser,
         sequence,
         aiRun.rows[0].id,
@@ -234,8 +248,8 @@ async function persistAiSuccess(args: {
     const totalTokens = args.result.tokenInput + args.result.tokenOutput;
     await client.query(
       `INSERT INTO usage_ledger(user_id, app_key, conversation_id, tokens, cost, credits_delta, reason)
-       VALUES($1, $2, $3, $4, 0, 0, 'ai_reply')`,
-      [args.userId, args.conversation.app_key, args.conversation.id, totalTokens]
+       VALUES($1, $2, $3, $4, $5, 0, 'ai_reply')`,
+      [args.userId, args.conversation.app_key, args.conversation.id, totalTokens, estimatedCost]
     );
     await touchConversation(args.conversation.id, args.result.content, client);
     await client.query("COMMIT");
