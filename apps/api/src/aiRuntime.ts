@@ -1,3 +1,5 @@
+import { loadAiProviderSettings } from "./aiSettings.js";
+
 type ChatRole = "system" | "user" | "assistant" | "tool";
 
 type AgentRuntimeConfig = {
@@ -42,6 +44,7 @@ type AiRuntimeResult = {
   tokenOutput: number;
   responseJson: unknown;
   requestJson: unknown;
+  cost: number;
 };
 
 function compactJson(value: unknown, maxLength = 14000) {
@@ -53,6 +56,10 @@ function compactJson(value: unknown, maxLength = 14000) {
 function asNumber(value: number | string | null | undefined, fallback: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function estimateCost(tokenInput: number, tokenOutput: number, inputPer1K: number, outputPer1K: number) {
+  return Number(((tokenInput / 1000) * inputPer1K + (tokenOutput / 1000) * outputPer1K).toFixed(6));
 }
 
 function normalizeMessage(message: RuntimeMessage) {
@@ -84,16 +91,19 @@ function stubResponse(input: AiRuntimeInput, systemPrompt: string): AiRuntimeRes
     `Agent ${input.agent.name} đã nhận hội thoại.`,
     input.appRun ? `Đã gắn dữ liệu engine app_run ${input.appRun.id}.` : "Hội thoại này chưa có dữ liệu engine/app_run gắn kèm.",
     lastUser ? `Tin nhắn mới nhất: ${lastUser.slice(0, 500)}` : "Chưa có tin nhắn user để diễn giải.",
-    "AI provider đang ở chế độ stub hoặc thiếu OPENAI_API_KEY, nên chưa gọi model thật."
+    "AI provider đang ở chế độ stub hoặc chưa bật/cấu hình API key trong admin, nên chưa gọi model thật."
   ].join("\n");
+  const tokenInput = Math.ceil((systemPrompt.length + input.messages.map((m) => m.content).join(" ").length) / 4);
+  const tokenOutput = Math.ceil(content.length / 4);
 
   return {
     content,
     provider: "stub",
     model: input.agent.model,
     providerResponseId: null,
-    tokenInput: Math.ceil((systemPrompt.length + input.messages.map((m) => m.content).join(" ").length) / 4),
-    tokenOutput: Math.ceil(content.length / 4),
+    tokenInput,
+    tokenOutput,
+    cost: 0,
     requestJson: { mode: "stub", messageCount: input.messages.length },
     responseJson: { mode: "stub", content }
   };
@@ -101,16 +111,17 @@ function stubResponse(input: AiRuntimeInput, systemPrompt: string): AiRuntimeRes
 
 export async function runAgentRuntime(input: AiRuntimeInput): Promise<AiRuntimeResult> {
   const systemPrompt = buildAgentSystemPrompt(input);
-  const provider = input.agent.provider || process.env.AI_PROVIDER || "openai";
-  const apiKey = process.env.OPENAI_API_KEY;
-  const useStub = provider === "stub" || !apiKey;
+  const settings = await loadAiProviderSettings();
+  const provider = settings.provider || input.agent.provider || "stub";
+  const apiKey = settings.apiKey;
+  const useStub = !settings.enabled || provider === "stub" || !apiKey;
 
   if (useStub) return stubResponse(input, systemPrompt);
 
-  const model = input.agent.model || process.env.OPENAI_MODEL || "gpt-4.1-mini";
+  const model = input.agent.model || settings.model || "gpt-4.1-mini";
   const temperature = asNumber(input.agent.temperature, 0.3);
   const maxTokens = Number(input.agent.max_tokens || 1200);
-  const endpoint = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1/chat/completions";
+  const endpoint = settings.baseUrl || "https://api.openai.com/v1/chat/completions";
 
   const requestJson = {
     model,
@@ -140,13 +151,17 @@ export async function runAgentRuntime(input: AiRuntimeInput): Promise<AiRuntimeR
   const content = responseJson?.choices?.[0]?.message?.content || "";
   if (!content.trim()) throw new Error("AI provider trả về nội dung rỗng.");
 
+  const tokenInput = Number(responseJson?.usage?.prompt_tokens || 0);
+  const tokenOutput = Number(responseJson?.usage?.completion_tokens || 0);
+
   return {
     content,
     provider,
     model,
     providerResponseId: responseJson?.id || null,
-    tokenInput: Number(responseJson?.usage?.prompt_tokens || 0),
-    tokenOutput: Number(responseJson?.usage?.completion_tokens || 0),
+    tokenInput,
+    tokenOutput,
+    cost: estimateCost(tokenInput, tokenOutput, settings.costInputPer1K, settings.costOutputPer1K),
     requestJson,
     responseJson
   };
