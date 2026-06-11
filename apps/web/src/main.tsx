@@ -1,6 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+
+declare global {
+  interface Window {
+    Clerk?: any;
+  }
+}
 
 function route() {
   return window.location.pathname.replace(/\/$/, "") || "/";
@@ -23,15 +29,10 @@ function Shell({ children, activePage }: { children: React.ReactNode; activePage
           <a href="/tam-thuc" className={activePage === "tamthuc" ? "nav-active" : ""}>
             <span className="nav-icon">◎</span> Tam thức
           </a>
-          <a href="/account"><span className="nav-icon">👤</span> Tài khoản</a>
+          <a href="/account" className={activePage === "account" ? "nav-active" : ""}><span className="nav-icon">👤</span> Tài khoản</a>
           <a href="/history"><span className="nav-icon">🕐</span> Lịch sử</a>
         </div>
-        <button
-          className="nav-hamburger"
-          aria-label="Mở menu"
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
+        <button className="nav-hamburger" aria-label="Mở menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>
           <span className="ham-bar" />
           <span className="ham-bar" />
           <span className="ham-bar" />
@@ -39,20 +40,16 @@ function Shell({ children, activePage }: { children: React.ReactNode; activePage
       </nav>
       {menuOpen && (
         <div className="nav-dropdown" onClick={() => setMenuOpen(false)}>
-          <a href="/nguthuat" className={activePage === "nguthuat" ? "nav-active" : ""}>
-            <span className="nav-icon">☯</span> Ngũ thuật
-          </a>
-          <a href="/tam-thuc" className={activePage === "tamthuc" ? "nav-active" : ""}>
-            <span className="nav-icon">◎</span> Tam thức
-          </a>
-          <a href="/account"><span className="nav-icon">👤</span> Tài khoản</a>
+          <a href="/nguthuat" className={activePage === "nguthuat" ? "nav-active" : ""}><span className="nav-icon">☯</span> Ngũ thuật</a>
+          <a href="/tam-thuc" className={activePage === "tamthuc" ? "nav-active" : ""}><span className="nav-icon">◎</span> Tam thức</a>
+          <a href="/account" className={activePage === "account" ? "nav-active" : ""}><span className="nav-icon">👤</span> Tài khoản</a>
           <a href="/history"><span className="nav-icon">🕐</span> Lịch sử</a>
         </div>
       )}
       {children}
       <footer className="site-footer">
         <span className="footer-seal">☯</span>
-        <span>Cổ học – Tra cứu và thực hành có kiểm soát.</span>
+        <span>Cổ học - Tra cứu và thực hành có kiểm soát.</span>
       </footer>
     </div>
   );
@@ -67,7 +64,7 @@ function Home() {
           <div className="ornament">◆</div>
           <h1>Khu ứng dụng Cổ học</h1>
           <p className="lead">
-            Không gian ứng dụng cổ học – nơi tra cứu, thực hành<br />
+            Không gian ứng dụng cổ học - nơi tra cứu, thực hành<br />
             và tham khảo có kiểm soát, thận trọng và hệ thống.
           </p>
         </div>
@@ -102,7 +99,7 @@ function Home() {
 
       <div className="home-cards-wrap">
         <div className="home-cards">
-          <InfoCard image="/images/app-home/card-account.webp" title="Tài khoản" desc="Quản lý thông tin cá nhân, bảo mật và tuỳ chọn sử dụng." />
+          <InfoCard image="/images/app-home/card-account.webp" title="Tài khoản" desc="Đăng nhập Clerk, lưu token người dùng và kiểm tra API." href="/account" />
           <InfoCard image="/images/app-home/card-history.webp" title="Lịch sử tra cứu" desc="Xem lại các lần tra cứu, thực hành và ghi chú." />
           <InfoCard image="/images/app-home/card-credits.webp" title="Tín dụng" desc="Quản lý tín dụng, gói dịch vụ và lịch sử giao dịch." />
         </div>
@@ -111,16 +108,203 @@ function Home() {
   );
 }
 
-function InfoCard({ image, title, desc }: { image: string; title: string; desc: string }) {
-  return (
-    <div className="info-card">
+function InfoCard({ image, title, desc, href }: { image: string; title: string; desc: string; href?: string }) {
+  const body = (
+    <>
       <img src={image} className="info-card-img" alt={title} />
       <div className="info-card-body">
         <h3>{title}</h3>
         <p>{desc}</p>
-        <span className="coming-soon">🕐 Sắp ra mắt</span>
+        <span className="coming-soon">{href ? "Mở" : "🕐 Sắp ra mắt"}</span>
       </div>
-    </div>
+    </>
+  );
+  return href ? <a className="info-card" href={href}>{body}</a> : <div className="info-card">{body}</div>;
+}
+
+function decodePublishableKeyDomain(key: string) {
+  const encoded = key.replace(/^pk_(test|live)_/, "").trim();
+  if (!encoded) return "clerk.hontho.com";
+  try {
+    const base64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    return atob(padded).replace(/\$$/, "") || "clerk.hontho.com";
+  } catch {
+    return "clerk.hontho.com";
+  }
+}
+
+function loadScript(src: string, attrs: Record<string, string> = {}) {
+  return new Promise<void>((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
+    if (existing) {
+      if (existing.dataset.loaded === "true") return resolve();
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error(`Không tải được ${src}`)), { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    Object.entries(attrs).forEach(([key, value]) => script.setAttribute(key, value));
+    script.onload = () => {
+      script.dataset.loaded = "true";
+      resolve();
+    };
+    script.onerror = () => reject(new Error(`Không tải được ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+type AccountStatus = "loading" | "ready" | "signed-in" | "signed-out" | "error";
+
+function AccountPage() {
+  const [status, setStatus] = useState<AccountStatus>("loading");
+  const [message, setMessage] = useState("Đang nạp Clerk...");
+  const [domain, setDomain] = useState("clerk.hontho.com");
+  const [clerk, setClerk] = useState<any>(null);
+  const [result, setResult] = useState("");
+
+  async function syncSession(instance = clerk) {
+    if (!instance?.session) {
+      localStorage.removeItem("hontho_user_token");
+      localStorage.setItem("hontho_api_base", "/api");
+      setStatus("signed-out");
+      setMessage("Chưa đăng nhập Clerk.");
+      return "";
+    }
+    const token = await instance.session.getToken();
+    if (token) {
+      localStorage.setItem("hontho_user_token", token);
+      localStorage.setItem("hontho_api_base", "/api");
+      setStatus("signed-in");
+      setMessage("Đã đăng nhập và lưu hontho_user_token.");
+      return token;
+    }
+    setStatus("signed-out");
+    setMessage("Đã có session nhưng chưa lấy được token.");
+    return "";
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    async function boot() {
+      try {
+        localStorage.setItem("hontho_api_base", "/api");
+        const cfg = await fetch("/api/admin/public-config").then((res) => res.json());
+        const publishableKey = String(cfg?.clerkPublishableKey || "");
+        if (!publishableKey) throw new Error("API chưa trả CLERK_PUBLISHABLE_KEY public.");
+        const clerkDomain = decodePublishableKeyDomain(publishableKey);
+        if (cancelled) return;
+        setDomain(clerkDomain);
+        await loadScript(`https://${clerkDomain}/npm/@clerk/ui@1/dist/ui.browser.js`);
+        await loadScript(`https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, {
+          "data-clerk-publishable-key": publishableKey
+        });
+        if (cancelled) return;
+        const globalClerk = window.Clerk;
+        let instance = globalClerk;
+        if (typeof globalClerk === "function") {
+          instance = new globalClerk(publishableKey);
+          await instance.load();
+        } else if (globalClerk?.load) {
+          await globalClerk.load({ publishableKey });
+        } else {
+          throw new Error("Clerk script đã tải nhưng không khởi tạo được.");
+        }
+        if (cancelled) return;
+        setClerk(instance);
+        setStatus("ready");
+        setMessage("Clerk đã sẵn sàng.");
+        if (instance?.addListener) {
+          instance.addListener(() => {
+            void syncSession(instance);
+          });
+        }
+        await syncSession(instance);
+      } catch (error) {
+        if (cancelled) return;
+        setStatus("error");
+        setMessage(error instanceof Error ? error.message : "Không nạp được Clerk.");
+      }
+    }
+    void boot();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleSignIn() {
+    if (!clerk) return;
+    setResult("");
+    if (clerk.user || clerk.session) {
+      await syncSession(clerk);
+      return;
+    }
+    if (clerk.openSignIn) {
+      clerk.openSignIn({ afterSignInUrl: "/account", afterSignUpUrl: "/account" });
+      setMessage("Đang mở hộp đăng nhập Clerk...");
+      return;
+    }
+    if (clerk.redirectToSignIn) {
+      await clerk.redirectToSignIn({ redirectUrl: "/account" });
+      return;
+    }
+    setStatus("error");
+    setMessage("Clerk hiện chưa hỗ trợ mở đăng nhập trên trình duyệt này.");
+  }
+
+  async function handleSignOut() {
+    if (clerk?.signOut) await clerk.signOut();
+    localStorage.removeItem("hontho_user_token");
+    localStorage.setItem("hontho_api_base", "/api");
+    setStatus("signed-out");
+    setMessage("Đã đăng xuất và xoá hontho_user_token.");
+    setResult("");
+  }
+
+  async function handleCheckApi() {
+    try {
+      const token = await syncSession(clerk);
+      if (!token) throw new Error("Chưa có token. Bấm Đăng nhập Clerk trước.");
+      const response = await fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+      const data = await response.json().catch(() => ({ error: response.statusText }));
+      setResult(JSON.stringify(data, null, 2));
+      if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : "API /api/auth/me lỗi.");
+      setMessage("API /api/auth/me hoạt động.");
+    } catch (error) {
+      setStatus("error");
+      setMessage(error instanceof Error ? error.message : "Không kiểm tra được API.");
+    }
+  }
+
+  const busy = status === "loading";
+  return (
+    <Shell activePage="account">
+      <div className="placeholder-hero">
+        <div className="breadcrumb"><a href="/">🏠</a> / <span>Tài khoản</span></div>
+        <div className="placeholder-icon">👤</div>
+        <h1>Tài khoản Clerk</h1>
+        <p className="lead">Đăng nhập người dùng cuối, lưu token cho các app nhỏ và kiểm tra kết nối API.</p>
+      </div>
+      <div className="placeholder-body">
+        <div className="placeholder-notice">
+          <strong>Trạng thái: {status}</strong>
+          <p>{message}</p>
+          <p>Frontend API: {domain}</p>
+          <p>Token lưu tại: <code>hontho_user_token</code>. API base lưu tại: <code>hontho_api_base=/api</code>.</p>
+        </div>
+        <div className="placeholder-btn-row">
+          <button className="ph-btn-primary" type="button" disabled={busy} onClick={handleSignIn}>Đăng nhập Clerk</button>
+          <button className="ph-btn-secondary" type="button" disabled={busy} onClick={handleSignOut}>Đăng xuất</button>
+          <button className="ph-btn-secondary" type="button" disabled={busy} onClick={handleCheckApi}>Kiểm tra API /api/auth/me</button>
+          <a className="ph-btn-primary" href="/nguthuat/menh/tutru/">Vào Tứ Trụ</a>
+          <a className="ph-btn-secondary" href="/">Trang chủ</a>
+        </div>
+        {result ? <pre style={{ textAlign: "left", marginTop: 24, whiteSpace: "pre-wrap" }}>{result}</pre> : null}
+      </div>
+    </Shell>
   );
 }
 
@@ -163,9 +347,7 @@ function BranchCard({ title, sub, desc, art, href, cta = "Khám phá" }: BranchC
   return (
     <a className="branch-card" href={href}>
       <div className="branch-card-inner">
-        <div className="branch-card-art">
-          <img src={art} className="branch-card-art-img" alt={title} />
-        </div>
+        <div className="branch-card-art"><img src={art} className="branch-card-art-img" alt={title} /></div>
         <h2>{title}</h2>
         <div className="branch-divider">◆</div>
         {sub ? <p className="branch-sub">{sub}</p> : null}
@@ -262,14 +444,10 @@ function TamThucHub() {
           <div className="breadcrumb"><a href="/">🏠</a> / <a href="/">Trang chủ</a> / <span>Tam thức</span></div>
           <div className="ornament">◆</div>
           <h1>Tam thức</h1>
-          <p className="lead">Khu vực hệ thống hoá các bộ môn Tam thức – thực dụng, ứng nghiệm,<br />phục vụ tra cứu, tham khảo và ứng dụng thực hành.</p>
+          <p className="lead">Khu vực hệ thống hoá các bộ môn Tam thức - thực dụng, ứng nghiệm,<br />phục vụ tra cứu, tham khảo và ứng dụng thực hành.</p>
         </div>
       </div>
-      <div className="branch-cards-wrap">
-        <div className="branch-cards three">
-          {tamThucCards.map((card) => <BranchCard key={card.key} {...card} cta="Khám phá" />)}
-        </div>
-      </div>
+      <div className="branch-cards-wrap"><div className="branch-cards three">{tamThucCards.map((card) => <BranchCard key={card.key} {...card} cta="Khám phá" />)}</div></div>
       <Principles items={[
         ["📚", "Tham khảo có hệ thống", "Tổng hợp kiến thức cổ học một cách có cấu trúc, dễ tra cứu và đối chiếu."],
         ["✒", "Giữ ngôn từ thận trọng", "Không khẳng định tuyệt đối, ưu tiên cách diễn giải khách quan."],
@@ -281,16 +459,7 @@ function TamThucHub() {
 }
 
 function Principles({ items }: { items: [string, string, string][] }) {
-  return (
-    <div className="principles-bar">
-      {items.map(([icon, title, desc]) => (
-        <div className="principle" key={title}>
-          <div className="principle-icon">{icon}</div>
-          <div><strong>{title}</strong><p>{desc}</p></div>
-        </div>
-      ))}
-    </div>
-  );
+  return <div className="principles-bar">{items.map(([icon, title, desc]) => <div className="principle" key={title}><div className="principle-icon">{icon}</div><div><strong>{title}</strong><p>{desc}</p></div></div>)}</div>;
 }
 
 interface PlaceholderConfig {
@@ -309,26 +478,15 @@ function PlaceholderPage({ cfg }: { cfg: PlaceholderConfig }) {
   return (
     <Shell>
       <div className="placeholder-hero">
-        <div className="breadcrumb">
-          <a href="/">🏠</a>{" / "}
-          {grandParent && grandParentHref ? <><a href={grandParentHref}>{grandParent}</a>{" / "}</> : null}
-          <a href={parentHref}>{parent}</a>{" / "}<span>{title}</span>
-        </div>
+        <div className="breadcrumb"><a href="/">🏠</a>{" / "}{grandParent && grandParentHref ? <><a href={grandParentHref}>{grandParent}</a>{" / "}</> : null}<a href={parentHref}>{parent}</a>{" / "}<span>{title}</span></div>
         <div className="placeholder-icon">{icon}</div>
         <h1>{title}</h1>
         {subtitle && <p style={{ color: "var(--gold)", fontSize: "14px", letterSpacing: ".08em", marginBottom: "16px" }}>{subtitle}</p>}
         <p className="lead">{desc}</p>
       </div>
       <div className="placeholder-body">
-        <div className="placeholder-notice">
-          <strong>Ứng dụng đang được chuẩn bị</strong>
-          Nội dung sẽ được biên soạn theo hướng tra cứu có kiểm soát, không phán đoán cực đoan.
-          Thông tin mang tính tham khảo, không thay thế phán xét độc lập của người dùng.
-        </div>
-        <div className="placeholder-btn-row">
-          <a className="ph-btn-primary" href={parentHref}>← Quay về {parent}</a>
-          <a className="ph-btn-secondary" href="/">Về trang chủ</a>
-        </div>
+        <div className="placeholder-notice"><strong>Ứng dụng đang được chuẩn bị</strong>Nội dung sẽ được biên soạn theo hướng tra cứu có kiểm soát, không phán đoán cực đoan. Thông tin mang tính tham khảo, không thay thế phán xét độc lập của người dùng.</div>
+        <div className="placeholder-btn-row"><a className="ph-btn-primary" href={parentHref}>← Quay về {parent}</a><a className="ph-btn-secondary" href="/">Về trang chủ</a></div>
       </div>
     </Shell>
   );
@@ -348,7 +506,6 @@ const PLACEHOLDER_ROUTES: Record<string, PlaceholderConfig> = {
   "/tam-thuc/ky-mon": { title: "Kỳ Môn", subtitle: "Kỳ Môn Độn Giáp", icon: "🧭", desc: "Cục bàn thời không, trạch hướng, lựa chọn thời cơ và phương vị theo Kỳ Môn Độn Giáp.", parent: "Tam thức", parentHref: "/tam-thuc", grandParent: "Trang chủ", grandParentHref: "/" },
   "/tam-thuc/thai-at": { title: "Thái Ất", subtitle: "Thái Ất Thần Số", icon: "🌙", desc: "Dự đoán cát hung, thiên thời, nhân sự và vận hạn theo hệ thống Thái Ất. Tham khảo có kiểm soát.", parent: "Tam thức", parentHref: "/tam-thuc", grandParent: "Trang chủ", grandParentHref: "/" },
   "/tam-thuc/luc-nham": { title: "Lục Nhâm", subtitle: "Đại Lục Nhâm", icon: "⚖", desc: "Phán đoán sự việc, công việc, hành trình và các tình huống thực tế theo Đại Lục Nhâm.", parent: "Tam thức", parentHref: "/tam-thuc", grandParent: "Trang chủ", grandParentHref: "/" },
-  "/account": { title: "Tài khoản", subtitle: "", icon: "👤", desc: "Quản lý thông tin cá nhân, bảo mật và tuỳ chọn sử dụng. Tính năng đang được phát triển.", parent: "Trang chủ", parentHref: "/" },
   "/history": { title: "Lịch sử tra cứu", subtitle: "", icon: "🕐", desc: "Xem lại các lần tra cứu, thực hành và ghi chú. Tính năng đang được phát triển.", parent: "Trang chủ", parentHref: "/" },
 };
 
@@ -356,6 +513,7 @@ function App() {
   const path = route();
   if (path === "/nguthuat") return <NguThuatHub />;
   if (path === "/tam-thuc") return <TamThucHub />;
+  if (path === "/account") return <AccountPage />;
   const nguThuatLanding = NGU_THUAT_BRANCH_LANDINGS[path];
   if (nguThuatLanding) return <NguThuatBranchLanding cfg={nguThuatLanding} />;
   if (path === "/nguthuat/menh/tutru") return <TuTruRedirect />;
