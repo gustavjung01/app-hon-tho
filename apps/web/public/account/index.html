@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tài khoản - Cổ học</title>
+  <style>
+    :root{color-scheme:dark;--bg:#070402;--panel:#150d07;--line:rgba(245,217,130,.28);--gold:#f5d982;--gold2:#fff0b8;--text:#fff4d0;--muted:#d5b978;--danger:#ff9f85;--ok:#9ff0b2}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% -10%,rgba(176,128,42,.22),transparent 38%),linear-gradient(180deg,#090503,#130c07 58%,#050302);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}.top{height:58px;border-bottom:1px solid rgba(245,217,130,.22);display:flex;align-items:center;justify-content:space-between;padding:0 22px;background:rgba(7,4,2,.9);position:sticky;top:0}.brand{color:var(--gold);font-family:Georgia,serif;font-weight:900;text-decoration:none;font-size:20px}.nav{display:flex;gap:18px;align-items:center}.nav a{color:var(--muted);text-decoration:none;font-weight:800;font-size:14px}.wrap{max-width:860px;margin:0 auto;padding:86px 22px 70px;text-align:center}.icon{font-size:48px;margin-bottom:12px}h1{font-family:Georgia,serif;color:var(--gold2);font-size:clamp(42px,8vw,78px);line-height:.95;margin:0 0 16px}.lead{color:var(--muted);line-height:1.7;margin:0 auto 34px;max-width:620px}.card{max-width:560px;margin:0 auto;border:1px solid var(--line);border-radius:22px;background:rgba(19,12,7,.88);padding:28px;text-align:left;box-shadow:0 22px 70px rgba(0,0,0,.34)}.status{display:flex;align-items:center;gap:10px;font-weight:900;color:var(--gold);font-size:18px}.dot{width:11px;height:11px;border-radius:99px;background:#78643a}.dot.ok{background:var(--ok)}.dot.err{background:var(--danger)}.msg{color:var(--muted);line-height:1.7;margin:14px 0 0}.email{color:var(--gold2);margin-top:8px;font-weight:850}.actions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:24px}button,.btn{border:1px solid rgba(245,217,130,.48);border-radius:999px;padding:13px 18px;background:rgba(255,235,160,.05);color:var(--gold);font-weight:900;text-decoration:none;cursor:pointer;min-width:128px}button.primary,.btn.primary{background:linear-gradient(180deg,#f8df91,#bd832c);color:#170c04;border-color:transparent}button:disabled{opacity:.55;cursor:not-allowed}.small{margin-top:18px;color:#9f8758;font-size:12px;text-align:center}@media(max-width:680px){.top{height:auto;align-items:flex-start;gap:10px;flex-direction:column;padding:14px 18px}.nav{flex-wrap:wrap}.wrap{padding-top:52px}.card{text-align:center}.status{justify-content:center}}
+  </style>
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="/">◯ Cổ học</a>
+    <nav class="nav" aria-label="Điều hướng">
+      <a href="/nguthuat">☯ Ngũ thuật</a>
+      <a href="/tam-thuc">◎ Tam thức</a>
+      <a href="/history">◉ Lịch sử</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <div class="icon">👤</div>
+    <h1>Tài khoản</h1>
+    <p class="lead">Đăng nhập một lần để các app nhỏ dùng chung phiên đăng nhập.</p>
+
+    <section class="card" aria-live="polite">
+      <div class="status"><span id="dot" class="dot"></span><span id="statusText">Đang kiểm tra...</span></div>
+      <p id="message" class="msg">Đang tải đăng nhập.</p>
+      <div id="email" class="email"></div>
+      <div class="actions">
+        <button id="signInBtn" class="primary" type="button" disabled>Đăng nhập</button>
+        <button id="signOutBtn" type="button" disabled>Đăng xuất</button>
+        <a class="btn" href="/nguthuat/menh/tutru/">Vào Tứ Trụ</a>
+        <a class="btn" href="/">Trang chủ</a>
+      </div>
+      <div id="hint" class="small"></div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const state = { clerk: null, ready: false };
+
+    function setUi(kind, text, message, email = '') {
+      $('statusText').textContent = text;
+      $('message').textContent = message;
+      $('email').textContent = email;
+      $('dot').className = 'dot' + (kind === 'ok' ? ' ok' : kind === 'err' ? ' err' : '');
+      $('signInBtn').disabled = !state.ready || kind === 'ok';
+      $('signOutBtn').disabled = !state.ready || kind !== 'ok';
+    }
+
+    function clerkDomainFromPublishableKey(key) {
+      const encoded = String(key || '').replace(/^pk_(test|live)_/, '').trim();
+      if (!encoded) throw new Error('Thiếu Clerk publishable key.');
+      const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+      return atob(padded).replace(/\$$/, '');
+    }
+
+    function loadScript(src, attrs = {}) {
+      return new Promise((resolve, reject) => {
+        const old = document.querySelector(`script[src="${src}"]`);
+        if (old) return resolve();
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.crossOrigin = 'anonymous';
+        Object.entries(attrs).forEach(([k, v]) => script.setAttribute(k, v));
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Không tải được ' + src));
+        document.head.appendChild(script);
+      });
+    }
+
+    async function syncSession() {
+      const clerk = state.clerk;
+      if (!clerk || !clerk.user || !clerk.session) {
+        localStorage.removeItem('hontho_user_token');
+        localStorage.setItem('hontho_api_base', '/api');
+        setUi('idle', 'Chưa đăng nhập', 'Bấm Đăng nhập để tiếp tục.');
+        return;
+      }
+      const token = await clerk.session.getToken();
+      if (token) localStorage.setItem('hontho_user_token', token);
+      localStorage.setItem('hontho_api_base', '/api');
+      const email = clerk.user.primaryEmailAddress?.emailAddress || clerk.user.emailAddresses?.[0]?.emailAddress || '';
+      setUi('ok', 'Đã đăng nhập', 'Phiên đăng nhập đã sẵn sàng cho các app nhỏ.', email);
+    }
+
+    async function boot() {
+      try {
+        setUi('idle', 'Đang kiểm tra...', 'Đang tải đăng nhập.');
+        const cfg = await fetch('/api/admin/public-config').then((r) => r.json());
+        const key = cfg.clerkPublishableKey;
+        const domain = clerkDomainFromPublishableKey(key);
+        await loadScript(`https://${domain}/npm/@clerk/ui@1/dist/ui.browser.js`);
+        await loadScript(`https://${domain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, {
+          'data-clerk-publishable-key': key
+        });
+        if (!window.Clerk) throw new Error('Không khởi tạo được Clerk.');
+        await window.Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
+        state.clerk = window.Clerk;
+        state.ready = true;
+        window.Clerk.addListener(() => syncSession());
+        await syncSession();
+      } catch (error) {
+        state.ready = false;
+        setUi('err', 'Lỗi đăng nhập', error?.message || 'Không tải được đăng nhập.');
+        $('hint').textContent = 'Tải lại trang hoặc kiểm tra Clerk domain.';
+      }
+    }
+
+    $('signInBtn').onclick = async () => {
+      try {
+        if (!state.clerk) return;
+        $('signInBtn').disabled = true;
+        if (state.clerk.openSignIn) {
+          state.clerk.openSignIn({ afterSignInUrl: location.href, afterSignUpUrl: location.href });
+        } else if (state.clerk.redirectToSignIn) {
+          await state.clerk.redirectToSignIn({ redirectUrl: location.href });
+        }
+      } catch (error) {
+        setUi('err', 'Lỗi đăng nhập', error?.message || 'Không mở được đăng nhập.');
+      } finally {
+        $('signInBtn').disabled = false;
+      }
+    };
+
+    $('signOutBtn').onclick = async () => {
+      if (!state.clerk) return;
+      await state.clerk.signOut();
+      localStorage.removeItem('hontho_user_token');
+      await syncSession();
+    };
+
+    boot();
+  </script>
+</body>
+</html>
