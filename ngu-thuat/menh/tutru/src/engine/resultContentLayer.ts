@@ -1,123 +1,21 @@
 import type { DeriveFourPillarsOutput, Pillar } from "./types";
-
-type Polarity = "yang" | "yin";
-type ElementName = "Kim" | "Mộc" | "Thủy" | "Hỏa" | "Thổ";
-
-type StemRecord = {
-  name: string;
-  han: string;
-  element: ElementName;
-  polarity: Polarity;
-};
-
-type BranchRecord = {
-  name: string;
-  han: string;
-  element: ElementName;
-};
-
-export type TenGodName =
-  | "Tỷ kiên"
-  | "Kiếp tài"
-  | "Thực thần"
-  | "Thương quan"
-  | "Chính tài"
-  | "Thiên tài"
-  | "Chính quan"
-  | "Thất sát"
-  | "Chính ấn"
-  | "Thiên ấn";
-
-export const TEN_GOD_ORDER: TenGodName[] = [
-  "Tỷ kiên",
-  "Kiếp tài",
-  "Thực thần",
-  "Thương quan",
-  "Chính tài",
-  "Thiên tài",
-  "Chính quan",
-  "Thất sát",
-  "Chính ấn",
-  "Thiên ấn"
-];
-
-const STEM_TABLE: StemRecord[] = [
-  { name: "Giáp", han: "甲", element: "Mộc", polarity: "yang" },
-  { name: "Ất", han: "乙", element: "Mộc", polarity: "yin" },
-  { name: "Bính", han: "丙", element: "Hỏa", polarity: "yang" },
-  { name: "Đinh", han: "丁", element: "Hỏa", polarity: "yin" },
-  { name: "Mậu", han: "戊", element: "Thổ", polarity: "yang" },
-  { name: "Kỷ", han: "己", element: "Thổ", polarity: "yin" },
-  { name: "Canh", han: "庚", element: "Kim", polarity: "yang" },
-  { name: "Tân", han: "辛", element: "Kim", polarity: "yin" },
-  { name: "Nhâm", han: "壬", element: "Thủy", polarity: "yang" },
-  { name: "Quý", han: "癸", element: "Thủy", polarity: "yin" }
-];
-
-const BRANCH_TABLE: BranchRecord[] = [
-  { name: "Tý", han: "子", element: "Thủy" },
-  { name: "Sửu", han: "丑", element: "Thổ" },
-  { name: "Dần", han: "寅", element: "Mộc" },
-  { name: "Mão", han: "卯", element: "Mộc" },
-  { name: "Thìn", han: "辰", element: "Thổ" },
-  { name: "Tỵ", han: "巳", element: "Hỏa" },
-  { name: "Ngọ", han: "午", element: "Hỏa" },
-  { name: "Mùi", han: "未", element: "Thổ" },
-  { name: "Thân", han: "申", element: "Kim" },
-  { name: "Dậu", han: "酉", element: "Kim" },
-  { name: "Tuất", han: "戌", element: "Thổ" },
-  { name: "Hợi", han: "亥", element: "Thủy" }
-];
-
-const HIDDEN_STEMS_BY_BRANCH_HAN: Record<string, string[]> = {
-  子: ["癸"],
-  丑: ["己", "癸", "辛"],
-  寅: ["甲", "丙", "戊"],
-  卯: ["乙"],
-  辰: ["戊", "乙", "癸"],
-  巳: ["丙", "戊", "庚"],
-  午: ["丁", "己"],
-  未: ["己", "丁", "乙"],
-  申: ["庚", "壬", "戊"],
-  酉: ["辛"],
-  戌: ["戊", "辛", "丁"],
-  亥: ["壬", "甲"]
-};
+import {
+  TEN_GOD_NOTES,
+  TEN_GOD_ORDER,
+  deriveTenGod,
+  findBranchByHan,
+  findStemByHan,
+  getHiddenStemsForBranch,
+  type ElementName,
+  type StemDefinition,
+  type TenGodName
+} from "./coreTables";
 
 const PILLAR_ROLE_NOTES: Record<"year" | "month" | "day" | "hour", string> = {
   year: "Trụ năm thường dùng để quan sát bối cảnh gốc, không dùng riêng để kết luận.",
   month: "Trụ tháng phản ánh khí mùa và nền lịch pháp trong bố cục bốn trụ.",
   day: "Trụ ngày chứa Nhật chủ, là điểm trung tâm để đối chiếu các quan hệ.",
   hour: "Trụ giờ bổ sung lớp quan sát theo nhịp thời gian trong ngày."
-};
-
-const TEN_GOD_NOTES: Record<TenGodName, string> = {
-  "Tỷ kiên": "Cùng hành với Nhật chủ, tạo lớp đồng hành trong bản đồ.",
-  "Kiếp tài": "Cùng hành nhưng khác cực, mang tính đối ứng cạnh tranh.",
-  "Thực thần": "Nhật chủ sinh ra theo đồng cực, là lớp biểu đạt.",
-  "Thương quan": "Nhật chủ sinh ra theo dị cực, là lớp xuất khí.",
-  "Chính tài": "Nhật chủ khắc theo dị cực, là quan hệ tài theo quy ước.",
-  "Thiên tài": "Nhật chủ khắc theo đồng cực, là quan hệ tài linh hoạt.",
-  "Chính quan": "Khắc Nhật chủ theo dị cực, là lớp quy tắc tạo áp lực.",
-  "Thất sát": "Khắc Nhật chủ theo đồng cực, là lớp áp lực mạnh.",
-  "Chính ấn": "Sinh trợ Nhật chủ theo dị cực, là lớp hỗ trợ trực tiếp.",
-  "Thiên ấn": "Sinh trợ Nhật chủ theo đồng cực, là lớp hỗ trợ ổn định."
-};
-
-const GENERATES: Record<ElementName, ElementName> = {
-  "Mộc": "Hỏa",
-  "Hỏa": "Thổ",
-  "Thổ": "Kim",
-  "Kim": "Thủy",
-  "Thủy": "Mộc"
-};
-
-const CONTROLS: Record<ElementName, ElementName> = {
-  "Mộc": "Thổ",
-  "Thổ": "Thủy",
-  "Thủy": "Hỏa",
-  "Hỏa": "Kim",
-  "Kim": "Mộc"
 };
 
 export interface HiddenStemDetail {
@@ -192,41 +90,6 @@ export interface ResultContentLayer {
   guardrail: string;
 }
 
-function findStemByHan(han: string) {
-  return STEM_TABLE.find((item) => item.han === han);
-}
-
-function findBranchByHan(han: string) {
-  return BRANCH_TABLE.find((item) => item.han === han);
-}
-
-function getHiddenStems(branchHan: string) {
-  return HIDDEN_STEMS_BY_BRANCH_HAN[branchHan] ?? [];
-}
-
-type RelationType = "same" | "day-produces" | "target-produces" | "day-controls" | "target-controls" | "unknown";
-
-function resolveRelation(dayElement: ElementName, targetElement: ElementName): RelationType {
-  if (dayElement === targetElement) return "same";
-  if (GENERATES[dayElement] === targetElement) return "day-produces";
-  if (GENERATES[targetElement] === dayElement) return "target-produces";
-  if (CONTROLS[dayElement] === targetElement) return "day-controls";
-  if (CONTROLS[targetElement] === dayElement) return "target-controls";
-  return "unknown";
-}
-
-function deriveTenGod(dayStem: StemRecord, targetStem: StemRecord) {
-  const samePolarity = dayStem.polarity === targetStem.polarity;
-  const relation = resolveRelation(dayStem.element, targetStem.element);
-
-  if (relation === "same") return samePolarity ? "Tỷ kiên" : "Kiếp tài";
-  if (relation === "day-produces") return samePolarity ? "Thực thần" : "Thương quan";
-  if (relation === "target-produces") return samePolarity ? "Thiên ấn" : "Chính ấn";
-  if (relation === "day-controls") return samePolarity ? "Thiên tài" : "Chính tài";
-  if (relation === "target-controls") return samePolarity ? "Thất sát" : "Chính quan";
-  return "Chưa đủ dữ liệu để diễn giải sâu hơn.";
-}
-
 function asElementName(value: string): ElementName {
   if (value === "Kim" || value === "Mộc" || value === "Thủy" || value === "Hỏa" || value === "Thổ") {
     return value;
@@ -234,16 +97,13 @@ function asElementName(value: string): ElementName {
   return "Thổ";
 }
 
-function buildHiddenStemDetails(pillar: Pillar, dayStem: StemRecord): HiddenStemDetail[] {
-  return getHiddenStems(pillar.branchHan)
-    .map((stemHan) => findStemByHan(stemHan))
-    .filter((stem): stem is StemRecord => Boolean(stem))
-    .map((stem) => ({
-      stem: stem.name,
-      stemHan: stem.han,
-      element: stem.element,
-      tenGod: deriveTenGod(dayStem, stem)
-    }));
+function buildHiddenStemDetails(pillar: Pillar, dayStem: StemDefinition): HiddenStemDetail[] {
+  return getHiddenStemsForBranch(pillar.branchHan).map((hiddenStem) => ({
+    stem: hiddenStem.stem,
+    stemHan: hiddenStem.stemHan,
+    element: hiddenStem.element,
+    tenGod: deriveTenGod(dayStem, hiddenStem)
+  }));
 }
 
 export function buildResultContentLayer(result: DeriveFourPillarsOutput): ResultContentLayer {
@@ -286,11 +146,11 @@ export function buildResultContentLayer(result: DeriveFourPillarsOutput): Result
   });
 
   const elementCounts: Record<ElementName, number> = {
-    "Kim": 0,
-    "Mộc": 0,
-    "Thủy": 0,
-    "Hỏa": 0,
-    "Thổ": 0
+    Kim: 0,
+    Mộc: 0,
+    Thủy: 0,
+    Hỏa: 0,
+    Thổ: 0
   };
 
   cards.forEach((card) => {
@@ -332,9 +192,7 @@ export function buildResultContentLayer(result: DeriveFourPillarsOutput): Result
       name,
       count: bucket.count,
       positions: hasValue ? bucket.positions.join(", ") : "Mức đọc hiện tại: chưa thấy trong lớp tính cơ bản.",
-      note: hasValue
-        ? TEN_GOD_NOTES[name]
-        : "Chưa diễn giải sâu ở bản này. Mục này chỉ dùng để nhận diện vị trí và tần suất.",
+      note: hasValue ? TEN_GOD_NOTES[name] : "Chưa diễn giải sâu ở bản này. Mục này chỉ dùng để nhận diện vị trí và tần suất.",
       status: hasValue ? "computed" : "pending"
     };
   });
