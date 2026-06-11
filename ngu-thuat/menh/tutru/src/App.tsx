@@ -1,4 +1,5 @@
 import { FormEvent, useMemo, useState } from "react";
+import homeTuTruImage from "../../../../home-tu-tru.png";
 import { deriveFourPillars } from "./engine/deriveFourPillars";
 import { buildResultContentLayer, type ResultContentLayer, type ResultPillarCard } from "./engine/resultContentLayer";
 import type { CalendarType, DeriveFourPillarsInput, DeriveFourPillarsOutput, GenderType, Pillar } from "./engine/types";
@@ -19,14 +20,14 @@ const elementClass: Record<(typeof elementOrder)[number], string> = {
   Thủy: "water"
 };
 
+type PillarKey = (typeof pillarOrder)[number]["key"];
+
 const pillarWatermark: Record<PillarKey, string> = {
   year: "年",
   month: "月",
   day: "日",
   hour: "時"
 };
-
-type PillarKey = (typeof pillarOrder)[number]["key"];
 
 function cx(...items: Array<string | false | null | undefined>) {
   return items.filter(Boolean).join(" ");
@@ -488,19 +489,25 @@ export default function App() {
 
   return (
     <main className="page-shell">
-      <header className="hero-panel">
+      <header className="hero-panel compact-hero">
         <nav className="top-nav" aria-label="Điều hướng Tứ Trụ">
           <a href="#lap-phieu">Nhập liệu</a>
           <a href="#la-so">Lá số</a>
           <a href="#dai-van">Đại vận</a>
         </nav>
-        <div className="hero-copy">
-          <p className="eyebrow">Cổ học · Ngũ thuật · Mệnh</p>
-          <h1>Tứ Trụ Mệnh Bàn</h1>
-          <p>
-            An bốn trụ theo ngày giờ sinh, tiết khí, âm dương Can Chi, Ngũ hành, Tàng can, Thập thần và Đại vận. Phiếu chỉ trình bày phần đã tính được, không thêm lời luận chưa kiểm chứng.
-          </p>
-        </div>
+        <img
+          className="home-hero-card"
+          src={homeTuTruImage}
+          alt="Mệnh Bàn"
+          style={{
+            width: "100%",
+            display: "block",
+            marginTop: "18px",
+            borderRadius: "18px",
+            border: "1px solid rgba(255, 220, 137, 0.36)",
+            boxShadow: "0 22px 60px rgba(0, 0, 0, 0.46)"
+          }}
+        />
       </header>
 
       <InputPanel
