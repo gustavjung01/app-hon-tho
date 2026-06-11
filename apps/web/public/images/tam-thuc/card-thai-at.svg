@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200" role="img" aria-labelledby="title desc">
+  <title id="title">Thái Ất Thần Số</title>
+  <desc id="desc">Thiên bàn, tinh đồ và vầng nhật nguyệt cho card Thái Ất.</desc>
+  <defs>
+    <radialGradient id="sky" cx="50%" cy="30%" r="72%">
+      <stop offset="0" stop-color="#ead18d" stop-opacity="0.95"/>
+      <stop offset="0.38" stop-color="#6d552d" stop-opacity="0.86"/>
+      <stop offset="1" stop-color="#100a05"/>
+    </radialGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="10"/></filter>
+  </defs>
+  <rect width="900" height="1200" fill="#100a05"/>
+  <rect width="900" height="1200" fill="url(#sky)" opacity="0.84"/>
+  <circle cx="610" cy="300" r="108" fill="#e8c97a" opacity="0.78" filter="url(#blur)"/>
+  <circle cx="610" cy="300" r="78" fill="#d6a84d" opacity="0.92"/>
+  <g transform="translate(450 590)" fill="none" stroke="#f3dfaa" stroke-opacity="0.52">
+    <circle r="280" stroke-width="5"/>
+    <circle r="220" stroke-width="3"/>
+    <circle r="160" stroke-width="3"/>
+    <circle r="92" stroke-width="3"/>
+    <path d="M0 -280 V280 M-280 0 H280" stroke-width="3"/>
+    <path d="M-198 -198 L198 198 M198 -198 L-198 198" stroke-width="3"/>
+  </g>
+  <g transform="translate(450 590)" fill="#f7df9b" opacity="0.88" font-family="serif" font-size="38" text-anchor="middle">
+    <text y="-232">天</text><text x="232" y="12">人</text><text y="252">地</text><text x="-232" y="12">數</text>
+  </g>
+  <g fill="#f3dfaa" opacity="0.8">
+    <circle cx="180" cy="220" r="5"/><circle cx="245" cy="330" r="3"/><circle cx="725" cy="470" r="4"/>
+    <circle cx="190" cy="720" r="4"/><circle cx="740" cy="780" r="3"/><circle cx="555" cy="930" r="4"/>
+  </g>
+  <path d="M210 1000 C330 940 420 990 520 940 C610 895 690 935 780 880" fill="none" stroke="#e8c97a" stroke-opacity="0.22" stroke-width="9"/>
+  <path d="M255 645 C330 520 456 505 545 585 C450 565 375 610 330 710 Z" fill="#120c06" opacity="0.42"/>
+  <circle cx="450" cy="590" r="30" fill="#e8c97a" opacity="0.9"/>
+  <rect x="48" y="48" width="804" height="1104" rx="28" fill="none" stroke="#d6b46a" stroke-opacity="0.36" stroke-width="4"/>
+</svg>
