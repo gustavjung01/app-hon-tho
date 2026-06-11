@@ -1,213 +1,178 @@
 <!doctype html>
-<html lang='vi'>
+<html lang="vi">
 <head>
-  <meta charset='UTF-8'>
-  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cổ học Admin</title>
   <style>
     :root{color-scheme:dark;--bg:#090705;--panel:#17110b;--line:#6f5425;--gold:#f5d982;--muted:#c7aa68;--text:#fff4cf;--danger:#ff9f85;--ok:#9ee6a7}
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 15% 0%,rgba(182,135,47,.24),transparent 32%),linear-gradient(135deg,#070504,#140d08 55%,#050302);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}.shell{max-width:1380px;margin:0 auto;padding:24px 18px 56px}.top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:16px}.eyebrow{color:var(--muted);letter-spacing:.16em;text-transform:uppercase;font-size:12px;font-weight:800}h1{margin:4px 0 8px;font-family:Georgia,Times New Roman,serif;font-size:clamp(34px,6vw,68px);line-height:.95;color:var(--gold)}.lead{color:#ddc99a;max-width:820px;line-height:1.55}.token{display:flex;gap:8px;min-width:min(520px,100%)}.token input{min-width:280px}.tabs{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.tab{border:1px solid rgba(245,217,130,.32);background:rgba(255,235,160,.05);color:var(--gold);border-radius:999px;padding:10px 14px;font-weight:900;cursor:pointer}.tab.active{background:linear-gradient(180deg,#f8dc86,#b98b39);color:#1b1005}.panel{border:1px solid rgba(245,217,130,.26);border-radius:22px;padding:18px;background:rgba(15,10,7,.82);box-shadow:0 18px 60px rgba(0,0,0,.24);margin-top:14px}.panel h2{margin:0 0 14px;color:var(--gold)}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card{border:1px solid rgba(245,217,130,.22);border-radius:18px;padding:16px;background:linear-gradient(180deg,rgba(35,26,16,.92),rgba(13,9,6,.94))}.metric{font-size:34px;color:#fff1bd;font-family:Georgia,Times New Roman,serif}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.form-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}label{display:grid;gap:7px;color:#ead59e;font-weight:800;font-size:13px}input,textarea,select{width:100%;border:1px solid rgba(245,217,130,.28);border-radius:13px;background:#070504;color:var(--text);padding:11px 12px;font:inherit}textarea{min-height:92px;resize:vertical}.tall{min-height:180px}button{cursor:pointer;border:1px solid rgba(245,217,130,.52);background:linear-gradient(180deg,#f8dc86,#b98b39);color:#1b1005;font-weight:900;border-radius:13px;padding:11px 14px}button.secondary{background:rgba(255,235,160,.06);color:var(--gold)}button.danger{background:rgba(255,159,133,.12);color:var(--danger);border-color:rgba(255,159,133,.45)}button:disabled{opacity:.55;cursor:not-allowed}.muted{color:#c1aa74;font-size:13px}.ok{color:var(--ok)}.dangerText{color:var(--danger)}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{text-align:left;border-bottom:1px solid rgba(245,217,130,.15);padding:10px 8px;color:#d9c18b;font-size:14px;vertical-align:top}th{color:var(--gold)}pre{white-space:pre-wrap;word-break:break-word;background:#050302;border:1px solid rgba(245,217,130,.2);padding:13px;border-radius:14px;color:#e4d09c;max-height:360px;overflow:auto}.hidden{display:none!important}.badge{display:inline-flex;border:1px solid rgba(245,217,130,.24);border-radius:999px;padding:4px 8px;color:#f5d982;background:rgba(255,235,160,.04);font-size:12px;font-weight:800}.modal{position:fixed;inset:0;background:rgba(0,0,0,.68);display:flex;align-items:flex-start;justify-content:center;padding:30px 14px;z-index:20;overflow:auto}.modal-card{width:min(1100px,100%);border:1px solid rgba(245,217,130,.32);border-radius:24px;background:#120c08;padding:18px}.modal-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}.modal-head h2{margin:0;color:var(--gold)}.split{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}.status{margin-top:10px;color:#d8bd82}.section{display:none}.section.active{display:block}@media(max-width:920px){.grid,.form-grid,.split{grid-template-columns:1fr}.top{display:block}.token{margin-top:14px}}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 15% 0%,rgba(182,135,47,.24),transparent 32%),linear-gradient(135deg,#070504,#140d08 55%,#050302);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}.shell{max-width:1380px;margin:0 auto;padding:24px 18px 56px}.top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.eyebrow{color:var(--muted);letter-spacing:.16em;text-transform:uppercase;font-size:12px;font-weight:800}h1{margin:4px 0 8px;font-family:Georgia,Times New Roman,serif;font-size:clamp(34px,6vw,68px);line-height:.95;color:var(--gold)}h2,h3{color:var(--gold)}.lead{color:#ddc99a;max-width:900px;line-height:1.55}.tabs{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.tab{border:1px solid rgba(245,217,130,.32);background:rgba(255,235,160,.05);color:var(--gold);border-radius:999px;padding:10px 14px;font-weight:900;cursor:pointer}.tab.active{background:linear-gradient(180deg,#f8dc86,#b98b39);color:#1b1005}.section{display:none}.section.active{display:block}.panel{border:1px solid rgba(245,217,130,.26);border-radius:22px;padding:18px;background:rgba(15,10,7,.82);box-shadow:0 18px 60px rgba(0,0,0,.24);margin-top:14px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.form-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}.card{border:1px solid rgba(245,217,130,.22);border-radius:18px;padding:16px;background:linear-gradient(180deg,rgba(35,26,16,.92),rgba(13,9,6,.94))}.metric{font-size:34px;color:#fff1bd;font-family:Georgia,Times New Roman,serif}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.right{margin-left:auto}.muted{color:#c1aa74;font-size:13px}.dangerText{color:var(--danger)}.ok{color:var(--ok)}label{display:grid;gap:7px;color:#ead59e;font-weight:800;font-size:13px}input,textarea,select{width:100%;border:1px solid rgba(245,217,130,.28);border-radius:13px;background:#070504;color:var(--text);padding:11px 12px;font:inherit}textarea{min-height:92px;resize:vertical}.tall{min-height:170px}button{cursor:pointer;border:1px solid rgba(245,217,130,.52);background:linear-gradient(180deg,#f8dc86,#b98b39);color:#1b1005;font-weight:900;border-radius:13px;padding:11px 14px}button.secondary{background:rgba(255,235,160,.06);color:var(--gold)}button.danger{background:rgba(255,159,133,.12);color:var(--danger);border-color:rgba(255,159,133,.45)}button:disabled{opacity:.55;cursor:not-allowed}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{text-align:left;border-bottom:1px solid rgba(245,217,130,.15);padding:10px 8px;color:#d9c18b;font-size:14px;vertical-align:top}th{color:var(--gold)}pre{white-space:pre-wrap;word-break:break-word;background:#050302;border:1px solid rgba(245,217,130,.2);padding:13px;border-radius:14px;color:#e4d09c;max-height:260px;overflow:auto}.badge{display:inline-flex;border:1px solid rgba(245,217,130,.24);border-radius:999px;padding:4px 8px;color:#f5d982;background:rgba(255,235,160,.04);font-size:12px;font-weight:800}.hidden{display:none!important}.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:flex-start;justify-content:center;padding:28px 14px;z-index:20;overflow:auto}.modal-card{width:min(1160px,100%);border:1px solid rgba(245,217,130,.32);border-radius:24px;background:#120c08;padding:18px}.modal-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}.modal-head h2{margin:0}.step{border:1px solid rgba(245,217,130,.18);border-radius:16px;padding:14px;background:rgba(255,235,160,.035);margin-bottom:12px}.schema{font-size:12px;color:#d9c18b}.status{margin-top:10px;color:#d8bd82}@media(max-width:940px){.grid,.form-grid,.two{grid-template-columns:1fr}.top{display:block}}
   </style>
 </head>
 <body>
-  <div class='shell'>
-    <div class='top'>
-      <div>
-        <div class='eyebrow'>Cổ học Admin</div>
-        <h1>Quản trị App & Agent</h1>
-        <div class='lead'>Luồng chính: app nhỏ gắn đúng một AI agent riêng. Agent lấy persona, playbook, data store từ JSON của anh. Provider key nằm ở System, không lẫn với agent.</div>
-      </div>
-      <div class='token'>
-        <input id='tokenInput' placeholder='Admin token / Clerk bearer token'>
-        <button id='saveTokenBtn'>Lưu token</button>
-      </div>
+<div class="shell">
+  <div class="top">
+    <div>
+      <div class="eyebrow">Cổ học Admin</div>
+      <h1>Quản trị App & Agent</h1>
+      <div class="lead">Mỗi app gắn đúng một agent riêng. Agent được nạp từ JSON gồm persona, playbook, data store. API key/model chung nằm trong System.</div>
     </div>
-
-    <div class='tabs' id='tabs'></div>
-
-    <section id='dashboard' class='section active'>
-      <div class='grid' id='dashboardCards'></div>
-      <div class='panel'><h2>Việc chính</h2><div class='muted'>1. Apps: xem app nào đang gắn agent nào. 2. Agents: import JSON, sửa persona/playbook/data store, test agent. 3. Users: quota. 4. Logs: kiểm tra chạy AI.</div></div>
-    </section>
-
-    <section id='apps' class='section'>
-      <div class='panel'>
-        <div class='row' style='justify-content:space-between'><h2>Apps và Agent đang gắn</h2><button id='reloadAppsBtn'>Refresh</button></div>
-        <div id='appsTable'></div>
-      </div>
-    </section>
-
-    <section id='agents' class='section'>
-      <div class='panel'>
-        <div class='row' style='justify-content:space-between'>
-          <h2>AI Agents theo từng app</h2>
-          <div class='row'>
-            <input id='agentSearch' placeholder='Tìm agent'>
-            <button id='newAgentBtn'>Tạo agent</button>
-            <button id='importAgentBtn' class='secondary'>Import JSON</button>
-          </div>
-        </div>
-        <div class='muted'>Mỗi app dùng agent riêng. Bấm Import JSON để load playbook/data store/persona vào form agent.</div>
-        <div id='agentsTable'></div>
-      </div>
-    </section>
-
-    <section id='users' class='section'>
-      <div class='panel'>
-        <div class='row' style='justify-content:space-between'><h2>Users / Quota</h2><button id='reloadUsersBtn'>Refresh</button></div>
-        <div id='usersTable'></div>
-      </div>
-    </section>
-
-    <section id='logs' class='section'>
-      <div class='panel'>
-        <div class='row' style='justify-content:space-between'><h2>Usage / Logs</h2><button id='reloadLogsBtn'>Refresh</button></div>
-        <h3>AI Runs gần nhất</h3>
-        <div id='runsTable'></div>
-        <h3>Audit logs</h3>
-        <div id='auditTable'></div>
-      </div>
-    </section>
-
-    <section id='system' class='section'>
-      <div class='panel'>
-        <h2>System</h2>
-        <div class='muted'>Chỉ để cấu hình provider chung. Không phải nơi tạo agent.</div>
-        <div class='form-grid' style='margin-top:14px'>
-          <label>Bật provider thật<select id='sysEnabled'><option value='false'>Tắt / Stub</option><option value='true'>Bật</option></select></label>
-          <label>Provider<select id='sysProvider'><option value='stub'>stub</option><option value='openai'>openai</option></select></label>
-          <label>Model mặc định<input id='sysModel' value='gpt-4.1-mini'></label>
-          <label>Base URL<input id='sysBaseUrl' value='https://api.openai.com/v1/chat/completions'></label>
-          <label>API Key<input id='sysApiKey' type='password' placeholder='Dán key, bỏ trống để giữ key cũ'></label>
-          <label>Cost input / 1K<input id='sysCostIn' type='number' step='0.000001' value='0'></label>
-          <label>Cost output / 1K<input id='sysCostOut' type='number' step='0.000001' value='0'></label>
-        </div>
-        <div class='row' style='margin-top:14px'><button id='saveSystemBtn'>Lưu system config</button><button id='testSystemBtn' class='secondary'>Test provider</button></div>
-        <pre id='systemResult'></pre>
-      </div>
-    </section>
-  </div>
-
-  <div id='agentModal' class='modal hidden'>
-    <div class='modal-card'>
-      <div class='modal-head'><h2 id='agentModalTitle'>Agent</h2><button class='secondary' onclick='closeAgentModal()'>Đóng</button></div>
-      <div class='split'>
-        <div>
-          <div class='form-grid'>
-            <label>App key<select id='agentAppKey'></select></label>
-            <label>Tên agent<input id='agentName'></label>
-            <label>Status<select id='agentStatus'><option value='draft'>draft</option><option value='active'>active</option><option value='disabled'>disabled</option><option value='archived'>archived</option></select></label>
-            <label>Model<input id='agentModel' value='gpt-4.1-mini'></label>
-            <label>Provider<input id='agentProvider' value='openai'></label>
-            <label>Temperature<input id='agentTemp' type='number' step='0.01' value='0.3'></label>
-            <label>Max tokens<input id='agentMaxTokens' type='number' value='1600'></label>
-            <label>Prompt key<input id='agentPromptKey' placeholder='tự sinh nếu bỏ trống'></label>
-          </div>
-          <label style='margin-top:12px'>Persona / nhân cách<textarea id='agentPersona' class='tall'></textarea></label>
-          <label style='margin-top:12px'>System prompt<textarea id='agentPrompt' class='tall'></textarea></label>
-          <div class='form-grid' style='margin-top:12px'>
-            <label>Allowed tools<textarea id='agentTools' placeholder='Mỗi dòng 1 tool'></textarea></label>
-            <label>Allowed data<textarea id='agentData' placeholder='Mỗi dòng 1 data key'></textarea></label>
-          </div>
-        </div>
-        <div>
-          <label>Import agent JSON<input id='agentJsonFile' type='file' accept='.json,application/json'></label>
-          <button id='loadJsonBtn' style='margin-top:10px'>Load JSON vào form</button>
-          <label style='margin-top:12px'>Playbook JSON<textarea id='agentPlaybook' class='tall'>{}</textarea></label>
-          <label style='margin-top:12px'>Data store JSON<textarea id='agentDataStore' class='tall'>{}</textarea></label>
-          <pre id='jsonPreview'></pre>
-        </div>
-      </div>
-      <div class='row' style='margin-top:14px'><button id='saveAgentBtn'>Lưu agent</button><button id='activateAgentBtn' class='secondary'>Kích hoạt agent cho app</button></div>
-      <div id='agentStatusLine' class='status'></div>
+    <div class="row">
+      <input id="tokenInput" placeholder="Admin token / Clerk bearer token" style="min-width:320px">
+      <button id="saveTokenBtn">Lưu token</button>
     </div>
   </div>
 
-  <div id='testModal' class='modal hidden'>
-    <div class='modal-card'>
-      <div class='modal-head'><h2>Test Agent</h2><button class='secondary' onclick='closeTestModal()'>Đóng</button></div>
-      <div class='form-grid'>
-        <label>Agent<input id='testAgentName' disabled></label>
-        <label>App run ID tùy chọn<input id='testAppRunId'></label>
-      </div>
-      <label style='margin-top:12px'>Tin nhắn test<textarea id='testMessage'>Hãy trả lời ngắn: agent này đang phục vụ app nào, persona là gì?</textarea></label>
-      <button id='runAgentTestBtn' style='margin-top:12px'>Chạy test</button>
-      <pre id='testResult'></pre>
+  <div class="tabs" id="tabs"></div>
+
+  <section id="dashboard" class="section active">
+    <div class="grid" id="dashboardCards"></div>
+    <div class="panel"><h2>Luồng đúng</h2><div class="muted">Apps xem app nào dùng agent nào. Agents import JSON agent và test. Users quản quota. Usage/Logs kiểm tra lượt chạy. System chỉ giữ provider key.</div></div>
+  </section>
+
+  <section id="apps" class="section">
+    <div class="panel"><div class="row"><h2>Apps và agent đang gắn</h2><button id="reloadAppsBtn" class="right">Refresh</button></div><div id="appsTable"></div></div>
+  </section>
+
+  <section id="agents" class="section">
+    <div class="panel">
+      <div class="row"><h2>AI Agents</h2><input id="agentSearch" placeholder="Tìm agent"><button id="newAgentBtn">Tạo agent</button><button id="importAgentBtn" class="secondary">Import agent JSON</button></div>
+      <div class="muted">Không import API key Google/OpenAI ở đây. Chỉ import file agent JSON có persona/playbook/data store.</div>
+      <div id="agentsTable"></div>
     </div>
-  </div>
+  </section>
 
-  <div id='quotaModal' class='modal hidden'>
-    <div class='modal-card'>
-      <div class='modal-head'><h2>Sửa quota user</h2><button class='secondary' onclick='closeQuotaModal()'>Đóng</button></div>
-      <div class='form-grid'>
-        <label>User<input id='quotaUserLabel' disabled></label>
-        <label>Role<select id='quotaRole'><option value='user'>user</option><option value='reviewer'>reviewer</option><option value='operator'>operator</option><option value='admin'>admin</option><option value='super_admin'>super_admin</option></select></label>
-        <label>Status<select id='quotaStatus'><option value='active'>active</option><option value='disabled'>disabled</option><option value='deleted'>deleted</option></select></label>
-        <label>Credit balance<input id='quotaBalance' type='number'></label>
-        <label>Daily quota<input id='quotaDaily' type='number'></label>
-        <label>Monthly quota<input id='quotaMonthly' type='number'></label>
-        <label>Ghi chú<input id='quotaNote'></label>
+  <section id="users" class="section"><div class="panel"><div class="row"><h2>Users / Quota</h2><button id="reloadUsersBtn" class="right">Refresh</button></div><div id="usersTable"></div></div></section>
+
+  <section id="logs" class="section"><div class="panel"><div class="row"><h2>Usage / Logs</h2><button id="reloadLogsBtn" class="right">Refresh</button></div><h3>AI Runs</h3><div id="runsTable"></div><h3>Audit</h3><div id="auditTable"></div></div></section>
+
+  <section id="system" class="section">
+    <div class="panel">
+      <h2>System provider</h2><div class="muted">Chỉ cấu hình provider chung. Không phải nơi tạo agent.</div>
+      <div class="form-grid" style="margin-top:14px">
+        <label>Bật provider thật<select id="sysEnabled"><option value="false">Tắt / Stub</option><option value="true">Bật</option></select></label>
+        <label>Provider<select id="sysProvider"><option value="stub">stub</option><option value="openai">openai</option></select></label>
+        <label>Model mặc định<input id="sysModel" value="gpt-4.1-mini"></label>
+        <label>Base URL<input id="sysBaseUrl" value="https://api.openai.com/v1/chat/completions"></label>
+        <label>API Key<input id="sysApiKey" type="password" placeholder="Dán key, bỏ trống để giữ key cũ"></label>
+        <label>Cost input / 1K<input id="sysCostIn" type="number" step="0.000001" value="0"></label>
+        <label>Cost output / 1K<input id="sysCostOut" type="number" step="0.000001" value="0"></label>
       </div>
-      <button id='saveQuotaBtn' style='margin-top:12px'>Lưu quota</button>
-      <pre id='quotaResult'></pre>
+      <div class="row" style="margin-top:14px"><button id="saveSystemBtn">Lưu system config</button><button id="testSystemBtn" class="secondary">Test provider</button></div>
+      <pre id="systemResult"></pre>
     </div>
+  </section>
+</div>
+
+<div id="agentModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-head"><h2 id="agentModalTitle">Agent</h2><button class="secondary" onclick="closeAgentModal()">Đóng</button></div>
+    <div class="step">
+      <h3>1. Nạp agent JSON</h3>
+      <div class="row">
+        <input id="agentJsonFile" type="file" accept=".json,application/json">
+        <button id="loadJsonBtn">Phân tích JSON</button>
+        <button id="sampleJsonBtn" class="secondary">Xem mẫu JSON đúng</button>
+      </div>
+      <div class="muted">File đúng phải là cấu hình agent. File chứa private_key, service_account, client_email sẽ bị chặn.</div>
+      <pre id="jsonPreview" class="schema"></pre>
+    </div>
+    <div class="step">
+      <h3>2. Thông tin agent</h3>
+      <div class="form-grid">
+        <label>App key<select id="agentAppKey"></select></label>
+        <label>Tên agent<input id="agentName"></label>
+        <label>Status<select id="agentStatus"><option value="draft">draft</option><option value="active">active</option><option value="disabled">disabled</option><option value="archived">archived</option></select></label>
+        <label>Provider<input id="agentProvider" value="openai"></label>
+        <label>Model<input id="agentModel" value="gpt-4.1-mini"></label>
+        <label>Temperature<input id="agentTemp" type="number" step="0.01" value="0.3"></label>
+        <label>Max tokens<input id="agentMaxTokens" type="number" value="1600"></label>
+        <label>Prompt key<input id="agentPromptKey" placeholder="tự sinh nếu bỏ trống"></label>
+      </div>
+    </div>
+    <div class="two">
+      <div class="step">
+        <h3>3. Persona & Prompt</h3>
+        <label>Persona / nhân cách<textarea id="agentPersona" class="tall"></textarea></label>
+        <label style="margin-top:12px">System prompt<textarea id="agentPrompt" class="tall"></textarea></label>
+      </div>
+      <div class="step">
+        <h3>4. Playbook & Data store</h3>
+        <label>Playbook JSON<textarea id="agentPlaybook" class="tall">{}</textarea></label>
+        <label style="margin-top:12px">Data store JSON<textarea id="agentDataStore" class="tall">{}</textarea></label>
+      </div>
+    </div>
+    <div class="step">
+      <h3>5. Quyền dùng dữ liệu</h3>
+      <div class="form-grid">
+        <label>Allowed tools<textarea id="agentTools" placeholder="Mỗi dòng 1 tool"></textarea></label>
+        <label>Allowed data<textarea id="agentData" placeholder="Mỗi dòng 1 data key"></textarea></label>
+      </div>
+    </div>
+    <div class="row"><button id="saveAgentBtn">Lưu agent</button><button id="activateAgentBtn" class="secondary">Kích hoạt agent cho app</button></div>
+    <div id="agentStatusLine" class="status"></div>
   </div>
+</div>
 
-  <script>
-    const tabs = [
-      ['dashboard','Dashboard'],['apps','Apps'],['agents','Agents'],['users','Users'],['logs','Usage / Logs'],['system','System']
-    ];
-    const state = { token: localStorage.getItem('hontho_admin_token') || localStorage.getItem('hontho_user_token') || '', apps: [], agents: [], users: [], editingAgentId: null, testingAgentId: null, quotaUserId: null, importedJson: null };
-    const $ = id => document.getElementById(id);
-    function esc(v){return String(v ?? '').replace(/[&<>']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;'}[s]));}
-    function json(v){try{return JSON.stringify(v ?? {}, null, 2)}catch{return '{}'}}
-    function parseJsonField(id){const text=$(id).value.trim(); if(!text) return {}; try{return JSON.parse(text)}catch(e){throw new Error(id+' JSON sai: '+e.message)}}
-    function lines(id){return $(id).value.split('\n').map(x=>x.trim()).filter(Boolean)}
-    function headers(){return {'Content-Type':'application/json', Authorization:'Bearer '+state.token}}
-    async function api(path, opts={}){const res=await fetch(path,{...opts,headers:{...headers(),...(opts.headers||{})}}); const data=await res.json().catch(()=>({})); if(!res.ok) throw new Error(data.error || data.detail || res.statusText); return data}
-    function toast(msg,id){if(id) $(id).textContent=msg; else console.log(msg)}
-    $('tokenInput').value=state.token;
-    $('saveTokenBtn').onclick=()=>{state.token=$('tokenInput').value.trim(); localStorage.setItem('hontho_admin_token',state.token); boot()};
-    $('tabs').innerHTML=tabs.map(([id,label])=>`<button class='tab ${id==='dashboard'?'active':''}' data-tab='${id}'>${label}</button>`).join('');
-    document.querySelectorAll('.tab').forEach(btn=>btn.onclick=()=>switchTab(btn.dataset.tab));
-    function switchTab(id){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===id)); if(id==='apps') loadApps(); if(id==='agents') loadAgents(); if(id==='users') loadUsers(); if(id==='logs') loadLogs(); if(id==='system') loadSystem();}
+<div id="testModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><h2>Test Agent</h2><button class="secondary" onclick="closeTestModal()">Đóng</button></div><div class="form-grid"><label>Agent<input id="testAgentName" disabled></label><label>App run ID tùy chọn<input id="testAppRunId"></label></div><label style="margin-top:12px">Tin nhắn test<textarea id="testMessage">Hãy trả lời ngắn: agent này phục vụ app nào, persona là gì?</textarea></label><button id="runAgentTestBtn" style="margin-top:12px">Chạy test</button><pre id="testResult"></pre></div></div>
 
-    async function boot(){await Promise.allSettled([loadDashboard(),loadApps(),loadAgents()]);}
-    async function loadDashboard(){try{const d=await api('/api/admin/dashboard'); const t=d.totals||{}; $('dashboardCards').innerHTML=[['Users',t.users],['Apps',t.apps],['Active agents',t.activeAgents],['AI runs 30d',t.aiRuns30d],['AI errors 30d',t.aiErrors30d],['Conversations 30d',t.conversations30d]].map(([k,v])=>`<div class='card'><div class='muted'>${k}</div><div class='metric'>${v??0}</div></div>`).join('')}catch(e){$('dashboardCards').innerHTML=`<div class='card dangerText'>${esc(e.message)}</div>`}}
-    async function loadApps(){const d=await api('/api/admin/apps-with-agents'); state.apps=d.items||[]; renderApps(); fillAppSelect();}
-    function renderApps(){const rows=state.apps.map(app=>`<tr><td><b>${esc(app.name)}</b><br><span class='muted'>${esc(app.key)}</span></td><td>${esc(app.category)}</td><td><span class='badge'>${esc(app.status)}</span></td><td>${app.active_agent_name?esc(app.active_agent_name):'<span class="dangerText">Chưa gắn agent active</span>'}</td><td>${app.agent_count}</td><td><button onclick="openAgentForApp('${esc(app.key)}')">Tạo agent</button></td></tr>`).join(''); $('appsTable').innerHTML=`<table><thead><tr><th>App</th><th>Nhóm</th><th>Status</th><th>Agent đang gắn</th><th>Số agent</th><th></th></tr></thead><tbody>${rows}</tbody></table>`}
-    function fillAppSelect(){const html=state.apps.map(a=>`<option value='${esc(a.key)}'>${esc(a.name)} (${esc(a.key)})</option>`).join(''); $('agentAppKey').innerHTML=html;}
-    $('reloadAppsBtn').onclick=loadApps;
+<div id="quotaModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><h2>Sửa quota user</h2><button class="secondary" onclick="closeQuotaModal()">Đóng</button></div><div class="form-grid"><label>User<input id="quotaUserLabel" disabled></label><label>Role<select id="quotaRole"><option value="user">user</option><option value="reviewer">reviewer</option><option value="operator">operator</option><option value="admin">admin</option><option value="super_admin">super_admin</option></select></label><label>Status<select id="quotaStatus"><option value="active">active</option><option value="disabled">disabled</option><option value="deleted">deleted</option></select></label><label>Credit balance<input id="quotaBalance" type="number"></label><label>Daily quota<input id="quotaDaily" type="number"></label><label>Monthly quota<input id="quotaMonthly" type="number"></label><label>Ghi chú<input id="quotaNote"></label></div><button id="saveQuotaBtn" style="margin-top:12px">Lưu quota</button><pre id="quotaResult"></pre></div></div>
 
-    async function loadAgents(){const q=$('agentSearch')?.value||''; const d=await api('/api/admin/agents'+(q?'?q='+encodeURIComponent(q):'')); state.agents=d.items||[]; renderAgents();}
-    function renderAgents(){const rows=state.agents.map(a=>`<tr><td><b>${esc(a.name)}</b><br><span class='muted'>${esc(a.id)}</span></td><td>${esc(a.app_key)}</td><td><span class='badge'>${esc(a.status)}</span></td><td>${esc(a.model)}</td><td>${a.metadata?.persona?'Có':'-'}</td><td>${a.metadata?.playbook?'Có':'-'}</td><td>${a.metadata?.dataStore?'Có':'-'}</td><td class='row'><button onclick="editAgent('${a.id}')">Sửa</button><button class='secondary' onclick="testAgent('${a.id}')">Test</button><button class='secondary' onclick="activateAgent('${a.id}')">Active</button></td></tr>`).join(''); $('agentsTable').innerHTML=`<table><thead><tr><th>Agent</th><th>App</th><th>Status</th><th>Model</th><th>Persona</th><th>Playbook</th><th>Data store</th><th></th></tr></thead><tbody>${rows}</tbody></table>`}
-    $('agentSearch').oninput=()=>loadAgents().catch(e=>toast(e.message)); $('newAgentBtn').onclick=()=>openAgentModal(); $('importAgentBtn').onclick=()=>openAgentModal(null,true);
-    function defaultPrompt(appKey){return `Bạn là AI agent riêng của app ${appKey}. Chỉ dùng persona, playbook, data store và dữ liệu app_run được cấp. Thiếu dữ liệu thì nói rõ thiếu, không bịa.`}
-    function openAgentForApp(appKey){openAgentModal(); $('agentAppKey').value=appKey; $('agentName').value='Agent '+appKey; $('agentPrompt').value=defaultPrompt(appKey)}
-    window.openAgentForApp=openAgentForApp;
-    function openAgentModal(agent=null, importMode=false){state.editingAgentId=agent?.id||null; state.importedJson=null; $('agentModalTitle').textContent=agent?'Sửa agent':'Tạo agent'; $('agentName').value=agent?.name||''; $('agentAppKey').value=agent?.app_key||state.apps[0]?.key||'tu_tru'; $('agentStatus').value=agent?.status||'draft'; $('agentModel').value=agent?.model||'gpt-4.1-mini'; $('agentProvider').value=agent?.provider||'openai'; $('agentTemp').value=Number(agent?.temperature ?? .3); $('agentMaxTokens').value=agent?.max_tokens||1600; $('agentPromptKey').value=agent?.system_prompt_key||''; $('agentPersona').value=agent?.metadata?.persona||''; $('agentPrompt').value=agent?.system_prompt||defaultPrompt($('agentAppKey').value); $('agentTools').value=(agent?.allowed_tools||[]).join('\n'); $('agentData').value=(agent?.allowed_data||[]).join('\n'); $('agentPlaybook').value=json(agent?.metadata?.playbook||{}); $('agentDataStore').value=json(agent?.metadata?.dataStore||{}); $('jsonPreview').textContent=importMode?'Chọn file JSON rồi bấm Load JSON vào form.':''; $('agentStatusLine').textContent=''; $('activateAgentBtn').disabled=!agent; $('agentModal').classList.remove('hidden')}
-    window.closeAgentModal=()=>$('agentModal').classList.add('hidden');
-    window.editAgent=id=>{const a=state.agents.find(x=>x.id===id); if(a) openAgentModal(a)};
-    $('loadJsonBtn').onclick=async()=>{const f=$('agentJsonFile').files[0]; if(!f) return toast('Chưa chọn file JSON','agentStatusLine'); const data=JSON.parse(await f.text()); state.importedJson=data; $('jsonPreview').textContent=json(data); $('agentName').value=data.name||data.agent_name||data.agentName||$('agentName').value; $('agentAppKey').value=data.app_key||data.appKey||data.app||$('agentAppKey').value; $('agentPersona').value=typeof(data.persona||data.personality||data.profile)==='string'?(data.persona||data.personality||data.profile):json(data.persona||data.personality||data.profile||{}); $('agentPrompt').value=data.system_prompt||data.systemPrompt||data.prompt||data.instructions||$('agentPrompt').value; $('agentPlaybook').value=json(data.playbook||data.rules||data.workflow||{}); $('agentDataStore').value=json(data.data_store||data.dataStore||data.knowledge||data.datastore||{}); $('agentTools').value=(data.allowed_tools||data.allowedTools||data.tools||[]).join('\n'); $('agentData').value=(data.allowed_data||data.allowedData||data.data_keys||[]).join('\n'); toast('Đã load JSON vào form agent','agentStatusLine')};
-    function agentPayload(){return {appKey:$('agentAppKey').value,name:$('agentName').value.trim(),provider:$('agentProvider').value.trim()||'openai',model:$('agentModel').value.trim()||'gpt-4.1-mini',systemPromptKey:$('agentPromptKey').value.trim()||undefined,systemPrompt:$('agentPrompt').value,persona:$('agentPersona').value,playbook:parseJsonField('agentPlaybook'),dataStore:parseJsonField('agentDataStore'),importedJson:state.importedJson,allowedTools:lines('agentTools'),allowedData:lines('agentData'),status:$('agentStatus').value,temperature:Number($('agentTemp').value||.3),maxTokens:Number($('agentMaxTokens').value||1600)}}
-    $('saveAgentBtn').onclick=async()=>{try{const payload=agentPayload(); const path=state.editingAgentId?'/api/admin/agents/'+state.editingAgentId:'/api/admin/agents'; const method=state.editingAgentId?'PUT':'POST'; const d=await api(path,{method,body:JSON.stringify(payload)}); toast('Đã lưu agent '+d.agent.name,'agentStatusLine'); await loadAgents(); await loadApps(); state.editingAgentId=d.agent.id; $('activateAgentBtn').disabled=false}catch(e){toast(e.message,'agentStatusLine')}};
-    async function activateAgent(id){await api('/api/admin/agents/'+id+'/activate',{method:'POST'}); await loadAgents(); await loadApps()} window.activateAgent=activateAgent; $('activateAgentBtn').onclick=()=>state.editingAgentId&&activateAgent(state.editingAgentId).then(()=>toast('Đã active agent cho app','agentStatusLine'));
-
-    function testAgent(id){const a=state.agents.find(x=>x.id===id); state.testingAgentId=id; $('testAgentName').value=a?`${a.name} / ${a.app_key}`:id; $('testResult').textContent=''; $('testModal').classList.remove('hidden')} window.testAgent=testAgent; window.closeTestModal=()=>$('testModal').classList.add('hidden');
-    $('runAgentTestBtn').onclick=async()=>{try{const d=await api('/api/admin/agents/'+state.testingAgentId+'/test',{method:'POST',body:JSON.stringify({message:$('testMessage').value,appRunId:$('testAppRunId').value.trim()||undefined})}); $('testResult').textContent=json(d)}catch(e){$('testResult').textContent=e.message}};
-
-    async function loadUsers(){const d=await api('/api/admin/users-quota'); state.users=d.items||[]; renderUsers()} $('reloadUsersBtn').onclick=loadUsers;
-    function renderUsers(){const rows=state.users.map(u=>`<tr><td><b>${esc(u.email||'(no email)')}</b><br><span class='muted'>${esc(u.display_name||u.id)}</span></td><td>${esc(u.role)}</td><td>${esc(u.status)}</td><td>${u.balance}</td><td>${u.ai_runs}</td><td>${u.ai_tokens}</td><td><button onclick="openQuota('${u.id}')">Sửa quota</button></td></tr>`).join(''); $('usersTable').innerHTML=`<table><thead><tr><th>User</th><th>Role</th><th>Status</th><th>Credits</th><th>AI runs</th><th>Tokens</th><th></th></tr></thead><tbody>${rows}</tbody></table>`}
-    window.openQuota=id=>{const u=state.users.find(x=>x.id===id); state.quotaUserId=id; $('quotaUserLabel').value=u?.email||id; $('quotaRole').value=u?.role||'user'; $('quotaStatus').value=u?.status||'active'; $('quotaBalance').value=u?.balance||0; $('quotaDaily').value=u?.metadata?.quota?.daily||0; $('quotaMonthly').value=u?.metadata?.quota?.monthly||0; $('quotaNote').value=u?.metadata?.adminNote||''; $('quotaResult').textContent=''; $('quotaModal').classList.remove('hidden')}; window.closeQuotaModal=()=>$('quotaModal').classList.add('hidden');
-    $('saveQuotaBtn').onclick=async()=>{try{const body={role:$('quotaRole').value,status:$('quotaStatus').value,balance:Number($('quotaBalance').value||0),dailyQuota:Number($('quotaDaily').value||0),monthlyQuota:Number($('quotaMonthly').value||0),note:$('quotaNote').value}; const d=await api('/api/admin/users/'+state.quotaUserId+'/quota',{method:'PATCH',body:JSON.stringify(body)}); $('quotaResult').textContent=json(d); await loadUsers()}catch(e){$('quotaResult').textContent=e.message}};
-
-    async function loadLogs(){const [u,a]=await Promise.all([api('/api/admin/usage/summary'),api('/api/admin/audit-logs?limit=80')]); const runs=u.latestRuns||[]; $('runsTable').innerHTML=`<table><thead><tr><th>Time</th><th>User</th><th>App</th><th>Agent</th><th>Status</th><th>Tokens</th><th>Error</th></tr></thead><tbody>${runs.map(r=>`<tr><td>${esc(r.created_at)}</td><td>${esc(r.user_email)}</td><td>${esc(r.app_key)}</td><td>${esc(r.agent_name)}</td><td>${esc(r.status)}</td><td>${Number(r.token_input||0)+Number(r.token_output||0)}</td><td>${esc(r.error||'')}</td></tr>`).join('')}</tbody></table>`; const audits=a.items||[]; $('auditTable').innerHTML=`<table><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th></tr></thead><tbody>${audits.map(x=>`<tr><td>${esc(x.created_at)}</td><td>${esc(x.actor_email||x.actor_user_id||'')}</td><td>${esc(x.action)}</td><td>${esc(x.target_type)} / ${esc(x.target_id||'')}</td></tr>`).join('')}</tbody></table>`} $('reloadLogsBtn').onclick=loadLogs;
-
-    async function loadSystem(){try{const d=await api('/api/admin/ai-settings'); const s=d.settings||{}; $('sysEnabled').value=String(!!s.enabled); $('sysProvider').value=s.provider||'stub'; $('sysModel').value=s.model||'gpt-4.1-mini'; $('sysBaseUrl').value=s.baseUrl||'https://api.openai.com/v1/chat/completions'; $('sysCostIn').value=s.costInputPer1K||0; $('sysCostOut').value=s.costOutputPer1K||0; $('systemResult').textContent=json(s)}catch(e){$('systemResult').textContent=e.message}}
-    $('saveSystemBtn').onclick=async()=>{try{const body={enabled:$('sysEnabled').value==='true',provider:$('sysProvider').value,model:$('sysModel').value,baseUrl:$('sysBaseUrl').value,apiKey:$('sysApiKey').value||undefined,costInputPer1K:Number($('sysCostIn').value||0),costOutputPer1K:Number($('sysCostOut').value||0)}; const d=await api('/api/admin/ai-settings',{method:'PUT',body:JSON.stringify(body)}); $('systemResult').textContent=json(d)}catch(e){$('systemResult').textContent=e.message}};
-    $('testSystemBtn').onclick=async()=>{try{$('systemResult').textContent=json(await api('/api/admin/ai-settings/test',{method:'POST'}))}catch(e){$('systemResult').textContent=e.message}};
-
-    boot();
-  </script>
+<script>
+const tabs=[['dashboard','Dashboard'],['apps','Apps'],['agents','Agents'],['users','Users'],['logs','Usage / Logs'],['system','System']];
+const state={token:localStorage.getItem('hontho_admin_token')||localStorage.getItem('hontho_user_token')||'',apps:[],agents:[],users:[],editingAgentId:null,testingAgentId:null,quotaUserId:null,importedJson:null};
+const $=id=>document.getElementById(id);
+function esc(v){return String(v??'').replace(/[&<>']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;'}[s]));}
+function json(v){try{return JSON.stringify(v??{},null,2)}catch{return '{}'}}
+function parseJsonField(id){const t=$(id).value.trim();if(!t)return {};try{return JSON.parse(t)}catch(e){throw new Error(id+' JSON sai: '+e.message)}}
+function lines(id){return $(id).value.split('\n').map(x=>x.trim()).filter(Boolean)}
+function headers(){return {'Content-Type':'application/json',Authorization:'Bearer '+state.token}}
+async function api(path,opts={}){const res=await fetch(path,{...opts,headers:{...headers(),...(opts.headers||{})}});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.error||data.detail||res.statusText);return data}
+function toast(msg,id='agentStatusLine'){if($(id))$(id).textContent=msg;else console.log(msg)}
+$('tokenInput').value=state.token;$('saveTokenBtn').onclick=()=>{state.token=$('tokenInput').value.trim();localStorage.setItem('hontho_admin_token',state.token);boot()};
+$('tabs').innerHTML=tabs.map(([id,l])=>`<button class="tab ${id==='dashboard'?'active':''}" data-tab="${id}">${l}</button>`).join('');
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+function switchTab(id){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===id));if(id==='apps')loadApps();if(id==='agents')loadAgents();if(id==='users')loadUsers();if(id==='logs')loadLogs();if(id==='system')loadSystem()}
+async function boot(){await Promise.allSettled([loadDashboard(),loadApps(),loadAgents()])}
+async function loadDashboard(){try{const d=await api('/api/admin/dashboard');const t=d.totals||{};$('dashboardCards').innerHTML=[['Users',t.users],['Apps',t.apps],['Active agents',t.activeAgents],['AI runs 30d',t.aiRuns30d],['AI errors 30d',t.aiErrors30d],['Conversations 30d',t.conversations30d]].map(([k,v])=>`<div class="card"><div class="muted">${k}</div><div class="metric">${v??0}</div></div>`).join('')}catch(e){$('dashboardCards').innerHTML=`<div class="card dangerText">${esc(e.message)}</div>`}}
+async function loadApps(){const d=await api('/api/admin/apps-with-agents');state.apps=d.items||[];renderApps();fillAppSelect()}
+function renderApps(){const rows=state.apps.map(a=>`<tr><td><b>${esc(a.name)}</b><br><span class="muted">${esc(a.key)}</span></td><td>${esc(a.category)}</td><td><span class="badge">${esc(a.status)}</span></td><td>${a.active_agent_name?esc(a.active_agent_name):'<span class="dangerText">Chưa có agent active</span>'}</td><td>${a.agent_count}</td><td><button onclick="openAgentForApp('${esc(a.key)}')">Tạo agent</button></td></tr>`).join('');$('appsTable').innerHTML=`<table><thead><tr><th>App</th><th>Nhóm</th><th>Status</th><th>Agent active</th><th>Số agent</th><th></th></tr></thead><tbody>${rows}</tbody></table>`}
+function fillAppSelect(){const html=state.apps.map(a=>`<option value="${esc(a.key)}">${esc(a.name)} (${esc(a.key)})</option>`).join('');$('agentAppKey').innerHTML=html}
+$('reloadAppsBtn').onclick=loadApps;
+async function loadAgents(){const q=$('agentSearch')?.value||'';const d=await api('/api/admin/agents'+(q?'?q='+encodeURIComponent(q):''));state.agents=d.items||[];renderAgents()}
+function renderAgents(){const rows=state.agents.map(a=>`<tr><td><b>${esc(a.name)}</b><br><span class="muted">${esc(a.id)}</span></td><td>${esc(a.app_key)}</td><td><span class="badge">${esc(a.status)}</span></td><td>${esc(a.model)}</td><td>${a.metadata?.persona?'Có':'-'}</td><td>${a.metadata?.playbook?'Có':'-'}</td><td>${a.metadata?.dataStore?'Có':'-'}</td><td class="row"><button onclick="editAgent('${a.id}')">Sửa</button><button class="secondary" onclick="testAgent('${a.id}')">Test</button><button class="secondary" onclick="activateAgent('${a.id}')">Active</button></td></tr>`).join('');$('agentsTable').innerHTML=`<table><thead><tr><th>Agent</th><th>App</th><th>Status</th><th>Model</th><th>Persona</th><th>Playbook</th><th>Data store</th><th></th></tr></thead><tbody>${rows}</tbody></table>`}
+$('agentSearch').oninput=()=>loadAgents().catch(e=>toast(e.message));$('newAgentBtn').onclick=()=>openAgentModal();$('importAgentBtn').onclick=()=>openAgentModal(null,true);
+function defaultPrompt(appKey){return `Bạn là AI agent riêng của app ${appKey}. Chỉ dùng persona, playbook, data store và dữ liệu app_run được cấp. Thiếu dữ liệu thì nói rõ thiếu, không bịa.`}
+function openAgentForApp(appKey){openAgentModal();$('agentAppKey').value=appKey;$('agentName').value='Agent '+appKey;$('agentPrompt').value=defaultPrompt(appKey)} window.openAgentForApp=openAgentForApp;
+function openAgentModal(agent=null,importMode=false){state.editingAgentId=agent?.id||null;state.importedJson=null;$('agentModalTitle').textContent=agent?'Sửa agent':'Tạo agent';$('agentName').value=agent?.name||'';$('agentAppKey').value=agent?.app_key||state.apps[0]?.key||'tu_tru';$('agentStatus').value=agent?.status||'draft';$('agentModel').value=agent?.model||'gpt-4.1-mini';$('agentProvider').value=agent?.provider||'openai';$('agentTemp').value=Number(agent?.temperature??.3);$('agentMaxTokens').value=agent?.max_tokens||1600;$('agentPromptKey').value=agent?.system_prompt_key||'';$('agentPersona').value=agent?.metadata?.persona||'';$('agentPrompt').value=agent?.system_prompt||defaultPrompt($('agentAppKey').value);$('agentTools').value=(agent?.allowed_tools||[]).join('\n');$('agentData').value=(agent?.allowed_data||[]).join('\n');$('agentPlaybook').value=json(agent?.metadata?.playbook||{});$('agentDataStore').value=json(agent?.metadata?.dataStore||{});$('jsonPreview').textContent=importMode?'Chọn đúng agent JSON rồi bấm Phân tích JSON.':'';$('agentStatusLine').textContent='';$('activateAgentBtn').disabled=!agent;$('agentModal').classList.remove('hidden')}
+window.closeAgentModal=()=>$('agentModal').classList.add('hidden');window.editAgent=id=>{const a=state.agents.find(x=>x.id===id);if(a)openAgentModal(a)};
+function normalizeAgentJson(data){
+  const badKeys=['private_key','client_email','token_uri','auth_uri','project_id','private_key_id'];
+  if(data?.type==='service_account'||badKeys.some(k=>Object.prototype.hasOwnProperty.call(data,k))) throw new Error('File này là API key/service account, không phải agent JSON. Hãy nạp JSON agent có persona/playbook/data_store.');
+  const agent=data.agent||data.ai_agent||data;
+  const playbook=agent.playbook||agent.rules||agent.workflow||agent.instructions_set||{};
+  const dataStore=agent.data_store||agent.dataStore||agent.knowledge||agent.datastore||agent.vector_store||{};
+  const persona=agent.persona||agent.personality||agent.profile||agent.role||'';
+  const systemPrompt=agent.system_prompt||agent.systemPrompt||agent.prompt||agent.instructions||'';
+  if(!persona&&!systemPrompt&&!Object.keys(playbook||{}).length&&!Object.keys(dataStore||{}).length) throw new Error('JSON không có persona/system_prompt/playbook/data_store. Không phải file agent hợp lệ.');
+  return {name:agent.name||agent.agent_name||agent.agentName||'',appKey:agent.app_key||agent.appKey||agent.app||'',provider:agent.provider||'openai',model:agent.model||'gpt-4.1-mini',temperature:agent.temperature,maxTokens:agent.max_tokens||agent.maxTokens,persona,systemPrompt,playbook,dataStore,allowedTools:agent.allowed_tools||agent.allowedTools||agent.tools||[],allowedData:agent.allowed_data||agent.allowedData||agent.data_keys||agent.dataKeys||[],raw:data};
+}
+$('sampleJsonBtn').onclick=()=>{$('jsonPreview').textContent=json({agent_name:'Agent Tứ Trụ',app_key:'tu_tru',persona:'Thầy luận Tứ Trụ điềm tĩnh, chỉ luận theo lá số đã dựng.',system_prompt:'Chỉ dùng app_run, playbook và data_store. Không bịa dụng thần nếu engine chưa có.',playbook:{rules:['Đọc bốn trụ','Đọc ngũ hành','Đọc thập thần'],do_not:['Không chẩn đoán y khoa','Không bịa dữ liệu']},data_store:{terms:{can_chi:'...'},templates:{overview:'...'}},allowed_tools:['read_app_run'],allowed_data:['pillars','ten_gods','major_luck'],model:'gpt-4.1-mini',provider:'openai'})};
+$('loadJsonBtn').onclick=async()=>{try{const f=$('agentJsonFile').files[0];if(!f)throw new Error('Chưa chọn file JSON');const data=JSON.parse(await f.text());const a=normalizeAgentJson(data);state.importedJson=a.raw;$('jsonPreview').textContent='Đã nhận agent JSON hợp lệ:\n'+json({name:a.name,app_key:a.appKey,hasPersona:!!a.persona,hasPrompt:!!a.systemPrompt,playbookKeys:Object.keys(a.playbook||{}),dataStoreKeys:Object.keys(a.dataStore||{}),allowedTools:a.allowedTools,allowedData:a.allowedData});if(a.name)$('agentName').value=a.name;if(a.appKey)$('agentAppKey').value=a.appKey;if(a.provider)$('agentProvider').value=a.provider;if(a.model)$('agentModel').value=a.model;if(a.temperature!==undefined)$('agentTemp').value=a.temperature;if(a.maxTokens)$('agentMaxTokens').value=a.maxTokens;if(a.persona)$('agentPersona').value=typeof a.persona==='string'?a.persona:json(a.persona);if(a.systemPrompt)$('agentPrompt').value=a.systemPrompt;$('agentPlaybook').value=json(a.playbook||{});$('agentDataStore').value=json(a.dataStore||{});$('agentTools').value=(a.allowedTools||[]).join('\n');$('agentData').value=(a.allowedData||[]).join('\n');toast('Đã load agent JSON vào form')}catch(e){$('jsonPreview').textContent='LỖI: '+e.message;toast(e.message)}};
+function agentPayload(){return {appKey:$('agentAppKey').value,name:$('agentName').value.trim(),provider:$('agentProvider').value.trim()||'openai',model:$('agentModel').value.trim()||'gpt-4.1-mini',systemPromptKey:$('agentPromptKey').value.trim()||undefined,systemPrompt:$('agentPrompt').value,persona:$('agentPersona').value,playbook:parseJsonField('agentPlaybook'),dataStore:parseJsonField('agentDataStore'),importedJson:state.importedJson,allowedTools:lines('agentTools'),allowedData:lines('agentData'),status:$('agentStatus').value,temperature:Number($('agentTemp').value||.3),maxTokens:Number($('agentMaxTokens').value||1600)}}
+$('saveAgentBtn').onclick=async()=>{try{const payload=agentPayload();const path=state.editingAgentId?'/api/admin/agents/'+state.editingAgentId:'/api/admin/agents';const method=state.editingAgentId?'PUT':'POST';const d=await api(path,{method,body:JSON.stringify(payload)});toast('Đã lưu agent '+d.agent.name);await loadAgents();await loadApps();state.editingAgentId=d.agent.id;$('activateAgentBtn').disabled=false}catch(e){toast(e.message)}};
+async function activateAgent(id){await api('/api/admin/agents/'+id+'/activate',{method:'POST'});await loadAgents();await loadApps()} window.activateAgent=activateAgent;$('activateAgentBtn').onclick=()=>state.editingAgentId&&activateAgent(state.editingAgentId).then(()=>toast('Đã active agent cho app'));
+function testAgent(id){const a=state.agents.find(x=>x.id===id);state.testingAgentId=id;$('testAgentName').value=a?`${a.name} / ${a.app_key}`:id;$('testResult').textContent='';$('testModal').classList.remove('hidden')} window.testAgent=testAgent;window.closeTestModal=()=>$('testModal').classList.add('hidden');
+$('runAgentTestBtn').onclick=async()=>{try{const d=await api('/api/admin/agents/'+state.testingAgentId+'/test',{method:'POST',body:JSON.stringify({message:$('testMessage').value,appRunId:$('testAppRunId').value.trim()||undefined})});$('testResult').textContent=json(d)}catch(e){$('testResult').textContent=e.message}};
+async function loadUsers(){const d=await api('/api/admin/users-quota');state.users=d.items||[];renderUsers()} $('reloadUsersBtn').onclick=loadUsers;
+function renderUsers(){const rows=state.users.map(u=>`<tr><td><b>${esc(u.email||'(no email)')}</b><br><span class="muted">${esc(u.display_name||u.id)}</span></td><td>${esc(u.role)}</td><td>${esc(u.status)}</td><td>${u.balance}</td><td>${u.ai_runs}</td><td>${u.ai_tokens}</td><td><button onclick="openQuota('${u.id}')">Sửa quota</button></td></tr>`).join('');$('usersTable').innerHTML=`<table><thead><tr><th>User</th><th>Role</th><th>Status</th><th>Credits</th><th>AI runs</th><th>Tokens</th><th></th></tr></thead><tbody>${rows}</tbody></table>`}
+window.openQuota=id=>{const u=state.users.find(x=>x.id===id);state.quotaUserId=id;$('quotaUserLabel').value=u?.email||id;$('quotaRole').value=u?.role||'user';$('quotaStatus').value=u?.status||'active';$('quotaBalance').value=u?.balance||0;$('quotaDaily').value=u?.metadata?.quota?.daily||0;$('quotaMonthly').value=u?.metadata?.quota?.monthly||0;$('quotaNote').value=u?.metadata?.adminNote||'';$('quotaResult').textContent='';$('quotaModal').classList.remove('hidden')};window.closeQuotaModal=()=>$('quotaModal').classList.add('hidden');
+$('saveQuotaBtn').onclick=async()=>{try{const body={role:$('quotaRole').value,status:$('quotaStatus').value,balance:Number($('quotaBalance').value||0),dailyQuota:Number($('quotaDaily').value||0),monthlyQuota:Number($('quotaMonthly').value||0),note:$('quotaNote').value};const d=await api('/api/admin/users/'+state.quotaUserId+'/quota',{method:'PATCH',body:JSON.stringify(body)});$('quotaResult').textContent=json(d);await loadUsers()}catch(e){$('quotaResult').textContent=e.message}};
+async function loadLogs(){const [u,a]=await Promise.all([api('/api/admin/usage/summary'),api('/api/admin/audit-logs?limit=80')]);const runs=u.latestRuns||[];$('runsTable').innerHTML=`<table><thead><tr><th>Time</th><th>User</th><th>App</th><th>Agent</th><th>Status</th><th>Tokens</th><th>Error</th></tr></thead><tbody>${runs.map(r=>`<tr><td>${esc(r.created_at)}</td><td>${esc(r.user_email)}</td><td>${esc(r.app_key)}</td><td>${esc(r.agent_name)}</td><td>${esc(r.status)}</td><td>${Number(r.token_input||0)+Number(r.token_output||0)}</td><td>${esc(r.error||'')}</td></tr>`).join('')}</tbody></table>`;const audits=a.items||[];$('auditTable').innerHTML=`<table><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th></tr></thead><tbody>${audits.map(x=>`<tr><td>${esc(x.created_at)}</td><td>${esc(x.actor_email||x.actor_user_id||'')}</td><td>${esc(x.action)}</td><td>${esc(x.target_type)} / ${esc(x.target_id||'')}</td></tr>`).join('')}</tbody></table>`} $('reloadLogsBtn').onclick=loadLogs;
+async function loadSystem(){try{const d=await api('/api/admin/ai-settings');const s=d.settings||{};$('sysEnabled').value=String(!!s.enabled);$('sysProvider').value=s.provider||'stub';$('sysModel').value=s.model||'gpt-4.1-mini';$('sysBaseUrl').value=s.baseUrl||'https://api.openai.com/v1/chat/completions';$('sysCostIn').value=s.costInputPer1K||0;$('sysCostOut').value=s.costOutputPer1K||0;$('systemResult').textContent=json(s)}catch(e){$('systemResult').textContent=e.message}}
+$('saveSystemBtn').onclick=async()=>{try{const body={enabled:$('sysEnabled').value==='true',provider:$('sysProvider').value,model:$('sysModel').value,baseUrl:$('sysBaseUrl').value,apiKey:$('sysApiKey').value,costInputPer1K:Number($('sysCostIn').value||0),costOutputPer1K:Number($('sysCostOut').value||0)};const d=await api('/api/admin/ai-settings',{method:'PUT',body:JSON.stringify(body)});$('systemResult').textContent=json(d);$('sysApiKey').value=''}catch(e){$('systemResult').textContent=e.message}};
+$('testSystemBtn').onclick=async()=>{try{$('systemResult').textContent=json(await api('/api/admin/ai-settings/test',{method:'POST'}))}catch(e){$('systemResult').textContent=e.message}};
+boot();
+</script>
 </body>
 </html>
