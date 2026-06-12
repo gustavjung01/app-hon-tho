@@ -10,7 +10,6 @@ import { registerAdminPromptUsageRoutes } from "./adminPromptUsageRoutes.js";
 import { registerAdminAgentManagementRoutes } from "./adminAgentManagementRoutes.js";
 import { registerAdminDialogflowRoutes } from "./adminDialogflowRoutes.js";
 import { registerTuTruRoutes } from "./tuTruRoutes.js";
-import { registerStrictConversationCreateRoute } from "./strictConversationCreateRoute.js";
 import { sendEmail } from "./email.js";
 
 const app = express();
@@ -200,7 +199,6 @@ app.get("/api/admin/ai-agents", requireAuth, requireAdmin, async (_req, res) => 
 });
 
 registerTuTruRoutes(app);
-registerStrictConversationCreateRoute(app);
 registerConversationRoutes(app);
 registerAiRoutes(app);
 registerAdminAgentManagementRoutes(app);
