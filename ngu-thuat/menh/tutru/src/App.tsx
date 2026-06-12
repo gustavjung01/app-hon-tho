@@ -4,6 +4,17 @@ import { deriveFourPillars } from "./engine/deriveFourPillars";
 import { buildResultContentLayer, type ResultContentLayer } from "./engine/resultContentLayer";
 import type { CalendarType, DeriveFourPillarsInput, DeriveFourPillarsOutput, GenderType } from "./engine/types";
 
+declare global {
+  interface Window {
+    Clerk?: {
+      load?: (options?: unknown) => Promise<void>;
+      session?: { getToken: () => Promise<string | null> } | null;
+      user?: { primaryEmailAddress?: { emailAddress?: string }; emailAddresses?: Array<{ emailAddress?: string }> } | null;
+    };
+    __internal_ClerkUICtor?: unknown;
+  }
+}
+
 const elementOrder = ["Mộc", "Hỏa", "Thổ", "Kim", "Thủy"] as const;
 const elementClass: Record<string, string> = {
   Mộc: "wood",
@@ -12,6 +23,15 @@ const elementClass: Record<string, string> = {
   Kim: "metal",
   Thủy: "water"
 };
+
+const ACCOUNT_RETURN_URL = "/account?next=/nguthuat/menh/tutru/";
+
+class AuthSessionError extends Error {
+  constructor(message: string, public expired = false) {
+    super(message);
+    this.name = "AuthSessionError";
+  }
+}
 
 type InterpretStatus = "idle" | "saving" | "running" | "done" | "error";
 
@@ -23,6 +43,7 @@ type InterpretationState = {
   reply?: string;
   provider?: string;
   model?: string;
+  authAction?: boolean;
 };
 
 function cx(...items: Array<string | false | null | undefined>) {
@@ -39,16 +60,61 @@ function getApiBase() {
   return (localStorage.getItem("hontho_api_base") || "/api").replace(/\/$/, "");
 }
 
-function getAuthToken() {
-  return localStorage.getItem("hontho_user_token") || "";
+function clerkDomainFromPublishableKey(key: string) {
+  const encoded = String(key || "").replace(/^pk_(test|live)_/, "").trim();
+  if (!encoded) throw new Error("Thiếu Clerk publishable key.");
+  const base64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+  return atob(padded).replace(/\$$/, "");
+}
+
+function loadScript(src: string, attrs: Record<string, string> = {}) {
+  return new Promise<void>((resolve, reject) => {
+    const old = document.querySelector(`script[src="${src}"]`);
+    if (old) return resolve();
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    Object.entries(attrs).forEach(([key, value]) => script.setAttribute(key, value));
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Không tải được đăng nhập Clerk."));
+    document.head.appendChild(script);
+  });
+}
+
+async function ensureClerkLoaded() {
+  if (window.Clerk?.session) return window.Clerk;
+  const cfg = await fetch("/api/admin/public-config").then((response) => response.json().catch(() => ({})));
+  const publishableKey = String(cfg.clerkPublishableKey || "");
+  if (!publishableKey) return window.Clerk || null;
+  const domain = clerkDomainFromPublishableKey(publishableKey);
+  await loadScript(`https://${domain}/npm/@clerk/ui@1/dist/ui.browser.js`);
+  await loadScript(`https://${domain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, { "data-clerk-publishable-key": publishableKey });
+  if (window.Clerk?.load) await window.Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
+  return window.Clerk || null;
+}
+
+async function getFreshAuthToken() {
+  try {
+    const clerk = await ensureClerkLoaded();
+    const token = await clerk?.session?.getToken?.();
+    if (token) {
+      localStorage.setItem("hontho_user_token", token);
+      localStorage.setItem("hontho_api_base", "/api");
+      return token;
+    }
+  } catch {
+    // Fall back to the cached token below. User-facing errors are handled by apiRequest.
+  }
+
+  const cached = localStorage.getItem("hontho_user_token")?.trim() || "";
+  if (cached) return cached;
+  throw new AuthSessionError("Phiên đăng nhập chưa sẵn sàng. Vui lòng vào trang Tài khoản đăng nhập lại.");
 }
 
 async function apiRequest<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
-  const token = getAuthToken().trim();
-  if (!token) {
-    throw new Error("Chưa đăng nhập. Vào /account đăng nhập trước, sau đó quay lại bấm Luận.");
-  }
-
+  const token = await getFreshAuthToken();
   const response = await fetch(`${getApiBase()}${path}`, {
     method: options.method || "GET",
     headers: {
@@ -59,6 +125,10 @@ async function apiRequest<T>(path: string, options: { method?: string; body?: un
   });
 
   const data = await response.json().catch(() => ({ error: response.statusText }));
+  if (response.status === 401) {
+    localStorage.removeItem("hontho_user_token");
+    throw new AuthSessionError("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.", true);
+  }
   if (!response.ok) {
     const message = typeof data?.error === "string" ? data.error : "API chưa xử lý được yêu cầu.";
     const detail = typeof data?.detail === "string" ? ` ${data.detail}` : "";
@@ -328,19 +398,16 @@ function InterpretationPanel({ state, onInterpret }: { state: InterpretationStat
   const isBusy = state.status === "saving" || state.status === "running";
   return (
     <section className="panel interpretation-panel" id="luan">
-      <SectionTitle
-        eyebrow="Luận"
-        title="Luận tổng quan theo dữ liệu đã an"
-        note="Lưu dữ liệu trước, sau đó gọi đúng agent đang active cho app này."
-      />
+      <SectionTitle eyebrow="Luận" title="Luận tổng quan theo dữ liệu đã an" note="Lưu dữ liệu trước, sau đó gọi đúng agent đang active cho app này." />
       <div className="interpretation-actions">
         <button className="primary-action" type="button" onClick={onInterpret} disabled={isBusy}>
           {state.status === "saving" ? "Đang lưu..." : state.status === "running" ? "Đang luận..." : "Luận"}
         </button>
-        <a className="history-link" href="/account">Đăng nhập</a>
+        <a className="history-link" href={ACCOUNT_RETURN_URL}>{state.authAction ? "Đăng nhập lại" : "Đăng nhập"}</a>
         <a className="history-link" href="/">Trang chủ</a>
       </div>
       {state.message ? <p className={cx("interpretation-status", state.status === "error" && "error-text")}>{state.message}</p> : null}
+      {state.authAction ? <p className="interpretation-status"><a href={ACCOUNT_RETURN_URL}>Vào trang Tài khoản để đăng nhập lại</a></p> : null}
       {state.appRunId || state.conversationId ? (
         <div className="interpretation-meta">
           {state.appRunId ? <span>App run: {state.appRunId}</span> : null}
@@ -353,17 +420,7 @@ function InterpretationPanel({ state, onInterpret }: { state: InterpretationStat
   );
 }
 
-function ResultSheet({
-  result,
-  content,
-  interpretation,
-  onInterpret
-}: {
-  result: DeriveFourPillarsOutput;
-  content: ResultContentLayer;
-  interpretation: InterpretationState;
-  onInterpret: () => void;
-}) {
+function ResultSheet({ result, content, interpretation, onInterpret }: { result: DeriveFourPillarsOutput; content: ResultContentLayer; interpretation: InterpretationState; onInterpret: () => void }) {
   return (
     <div className="result-stack">
       <InputSummary result={result} content={content} />
@@ -371,9 +428,7 @@ function ResultSheet({
       <ElementBalance content={content} />
       <TenGodPanel content={content} />
       <MajorLuckPanel content={content} />
-      <section className="panel">
-        <SectionTitle eyebrow="Lưu ý" title="Giới hạn diễn giải" note={content.guardrail} />
-      </section>
+      <section className="panel"><SectionTitle eyebrow="Lưu ý" title="Giới hạn diễn giải" note={content.guardrail} /></section>
       <InterpretationPanel state={interpretation} onInterpret={onInterpret} />
     </div>
   );
@@ -392,8 +447,7 @@ export default function App() {
     if (!chartResult) return null;
     try {
       return buildResultContentLayer(chartResult);
-    } catch (error) {
-      console.error("result content error", error);
+    } catch {
       return null;
     }
   }, [chartResult]);
@@ -425,16 +479,11 @@ export default function App() {
 
     try {
       const title = `Luận Tứ Trụ ${chartInput.birthDate} ${chartInput.birthTime}`;
-      setInterpretation({ status: "saving", message: "Đang lưu dữ liệu trước khi gọi agent..." });
+      setInterpretation({ status: "saving", message: "Đang kiểm tra phiên đăng nhập và lưu dữ liệu..." });
 
       const saved = await apiRequest<{ appRun: { id: string } }>("/nguthuat/tutru/app-runs", {
         method: "POST",
-        body: {
-          input: chartInput,
-          result: chartResult,
-          contentLayer: resultContent,
-          title
-        }
+        body: { input: chartInput, result: chartResult, contentLayer: resultContent, title }
       });
 
       setInterpretation({ status: "running", appRunId: saved.appRun.id, message: "Đã lưu dữ liệu. Đang tạo hội thoại và gọi agent đang active cho app tu_tru..." });
@@ -449,15 +498,9 @@ export default function App() {
         }
       });
 
-      const ai = await apiRequest<{
-        message: { content: string };
-        provider: string;
-        model: string;
-      }>(`/conversations/${conversation.conversation.id}/ai-reply`, {
+      const ai = await apiRequest<{ message: { content: string }; provider: string; model: string }>(`/conversations/${conversation.conversation.id}/ai-reply`, {
         method: "POST",
-        body: {
-          extraInstruction: "Trả lời thành các mục ngắn: Tổng quan, Nhật chủ, Ngũ hành, Thập thần, Đại vận, Phần chưa đủ dữ liệu. Không phán tuyệt đối."
-        }
+        body: { extraInstruction: "Trả lời thành các mục ngắn: Tổng quan, Nhật chủ, Ngũ hành, Thập thần, Đại vận, Phần chưa đủ dữ liệu. Không phán tuyệt đối." }
       });
 
       setInterpretation({
@@ -471,6 +514,10 @@ export default function App() {
       });
       window.setTimeout(() => document.getElementById("luan")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     } catch (error) {
+      if (error instanceof AuthSessionError) {
+        setInterpretation({ status: "error", message: error.message, authAction: true });
+        return;
+      }
       const message = error instanceof Error ? error.message : "Không gọi được phần luận.";
       setInterpretation({ status: "error", message });
     }
@@ -486,39 +533,15 @@ export default function App() {
           <a href="#dai-van">Đại vận</a>
           <a href="#luan">Luận</a>
         </nav>
-        <img
-          className="home-hero-card"
-          src={homeTuTruImage}
-          alt="Mệnh Bàn"
-          style={{
-            width: "100%",
-            display: "block",
-            marginTop: "18px",
-            borderRadius: "18px",
-            border: "1px solid rgba(255, 220, 137, 0.36)",
-            boxShadow: "0 22px 60px rgba(0, 0, 0, 0.46)"
-          }}
-        />
+        <img className="home-hero-card" src={homeTuTruImage} alt="Mệnh Bàn" style={{ width: "100%", display: "block", marginTop: "18px", borderRadius: "18px", border: "1px solid rgba(255, 220, 137, 0.36)", boxShadow: "0 22px 60px rgba(0, 0, 0, 0.46)" }} />
       </header>
 
-      <InputPanel
-        calendarType={calendarType}
-        gender={gender}
-        isLeapMonth={isLeapMonth}
-        error={chartError}
-        onCalendarChange={setCalendarType}
-        onGenderChange={setGender}
-        onLeapMonthChange={setIsLeapMonth}
-        onSubmit={handleBuildChart}
-      />
+      <InputPanel calendarType={calendarType} gender={gender} isLeapMonth={isLeapMonth} error={chartError} onCalendarChange={setCalendarType} onGenderChange={setGender} onLeapMonthChange={setIsLeapMonth} onSubmit={handleBuildChart} />
 
       {chartResult && resultContent ? (
         <ResultSheet result={chartResult} content={resultContent} interpretation={interpretation} onInterpret={handleInterpretChart} />
       ) : (
-        <section className="panel empty-panel">
-          <h2>Chưa có lá phiếu</h2>
-          <p>Nhập ngày giờ sinh rồi bấm Dựng lá phiếu. Chưa có dữ liệu thì trang không dựng kết quả mẫu.</p>
-        </section>
+        <section className="panel empty-panel"><h2>Chưa có lá phiếu</h2><p>Nhập ngày giờ sinh rồi bấm Dựng lá phiếu. Chưa có dữ liệu thì trang không dựng kết quả mẫu.</p></section>
       )}
     </main>
   );
