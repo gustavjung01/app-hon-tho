@@ -39,6 +39,7 @@ type BuiltInApp = {
 const builtInApps: BuiltInApp[] = [
   { key: "tu_tru", name: "Tứ Trụ", category: "nguthuat.menh", status: "active", description: "Lập mệnh bàn Tứ Trụ và diễn giải có kiểm soát.", defaultCreditCost: 1 },
   { key: "mai_hoa", name: "Mai Hoa Dịch Số", category: "nguthuat.boc", status: "active", description: "Lập quẻ và đọc tượng số theo Mai Hoa.", defaultCreditCost: 1 },
+  { key: "nhan_tuong", name: "Nhân tướng", category: "nguthuat.tuong", status: "draft", description: "Nhánh Tướng trong Ngũ thuật.", defaultCreditCost: 1 },
   { key: "y_hoc", name: "Y học cổ học", category: "nguthuat.y", status: "active", description: "Dưỡng sinh, tiết khí, khí huyết và tham khảo y học cổ học.", defaultCreditCost: 1 },
   { key: "phong_thuy", name: "Phong thủy an cư", category: "nguthuat.son", status: "draft", description: "Bát trạch, hướng nhà và bố cục không gian.", defaultCreditCost: 1 },
   { key: "ky_mon", name: "Kỳ Môn", category: "tamthuc", status: "draft", description: "Kỳ Môn Độn Giáp theo cục bàn thời không.", defaultCreditCost: 1 },
