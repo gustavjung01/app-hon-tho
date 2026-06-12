@@ -1,4 +1,5 @@
 import { loadAiProviderSettings } from "./aiSettings.js";
+import { getDialogflowAccessToken } from "./dialogflowCxAuth.js";
 
 type ChatRole = "system" | "user" | "assistant" | "tool";
 type AgentRuntimeConfig = { id: string; app_key: string; name: string; provider?: string | null; model: string; system_prompt: string; temperature: number | string; max_tokens: number; allowed_tools?: unknown; allowed_data?: unknown };
@@ -42,8 +43,7 @@ function cxPrompt(input: AiRuntimeInput, systemPrompt: string) {
 function cxOutput(json: any) { const msgs = json?.queryResult?.responseMessages || []; const parts = msgs.flatMap((m: any) => m?.text?.text || []).filter(Boolean); return parts.join("\n").trim() || String(json?.queryResult?.fulfillmentText || "").trim(); }
 
 async function runDialogflowCx(input: AiRuntimeInput, systemPrompt: string): Promise<AiRuntimeResult> {
-  const token = process.env.DIALOGFLOW_CX_ACCESS_TOKEN?.trim();
-  if (!token) throw new Error("Thiếu DIALOGFLOW_CX_ACCESS_TOKEN cho Dialogflow CX runtime.");
+  const token = await getDialogflowAccessToken();
   const parsed = parseCxPath(input.agent.model || "");
   const session = `${parsed.path}/sessions/${cleanSessionId(input.conversationId || input.appRun?.id || input.agent.id)}`;
   const endpoint = `${cxBaseUrl(parsed.location)}/v3/${session}:detectIntent`;
