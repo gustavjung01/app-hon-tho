@@ -52,17 +52,15 @@ const agentInputSchema = z.object({
   provider: z.string().trim().min(1).max(80).default("openai"),
   model: z.string().trim().min(1).max(2000).default("gpt-4.1-mini"),
   systemPromptKey: z.string().trim().min(1).max(120).optional(),
-  systemPrompt: z.string().min(1).max(80000),
+  systemPrompt: z.string().max(80000).optional(),
   persona: z.string().max(20000).optional(),
-  playbook: z.unknown().optional(),
-  dataStore: z.unknown().optional(),
   importedJson: z.unknown().optional(),
-  allowedTools: z.array(z.string()).default([]),
-  allowedData: z.array(z.string()).default([]),
   status: agentStatusSchema.default("draft"),
   temperature: z.number().min(0).max(2).default(0.3),
   maxTokens: z.number().int().min(100).max(12000).default(1600)
 });
+
+type AgentInput = z.infer<typeof agentInputSchema>;
 
 function keyFromName(value: string) {
   return value
@@ -148,14 +146,18 @@ async function writeAudit(args: {
   );
 }
 
-function buildAgentMetadata(data: z.infer<typeof agentInputSchema>) {
+function buildSystemPrompt(data: AgentInput) {
+  return data.systemPrompt?.trim() || data.persona?.trim() || `Agent ${data.name} phục vụ app ${data.appKey}.`;
+}
+
+function buildAgentMetadata(data: AgentInput) {
+  const googleAgentManaged = data.provider === "dialogflow_cx";
   return {
     persona: data.persona || "",
-    playbook: data.playbook ?? null,
-    dataStore: data.dataStore ?? null,
     importedJson: data.importedJson ?? null,
     managerVersion: 2,
-    appBinding: "explicit_app_key"
+    appBinding: "explicit_app_key",
+    ...(googleAgentManaged ? { externalAgentManaged: true, googleAgentManaged: true } : {})
   };
 }
 
@@ -191,6 +193,7 @@ function registerAgentWriteOverrides(app: Express) {
     if (!(await ensureAppExists(data.appKey))) return res.status(400).json({ error: "App key không tồn tại." });
 
     const promptKey = data.systemPromptKey || `${keyFromName(data.appKey)}_${keyFromName(data.name)}`;
+    const systemPrompt = buildSystemPrompt(data);
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
@@ -205,7 +208,7 @@ function registerAgentWriteOverrides(app: Express) {
       const inserted = await client.query<AgentRow>(
         `INSERT INTO ai_agents(app_key, name, provider, model, system_prompt_key, system_prompt, version, status,
                                temperature, max_tokens, allowed_tools, allowed_data, metadata)
-         VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::jsonb, $13::jsonb)
+         VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, '[]'::jsonb, '[]'::jsonb, $11::jsonb)
          RETURNING id, app_key, name, provider, model, system_prompt_key, system_prompt, version, status,
                    temperature, max_tokens, allowed_tools, allowed_data, metadata, created_at, updated_at`,
         [
@@ -214,13 +217,11 @@ function registerAgentWriteOverrides(app: Express) {
           data.provider,
           data.model,
           promptKey,
-          data.systemPrompt,
+          systemPrompt,
           version,
           data.status,
           data.temperature,
           data.maxTokens,
-          JSON.stringify(data.allowedTools),
-          JSON.stringify(data.allowedData),
           JSON.stringify(buildAgentMetadata(data))
         ]
       );
@@ -242,6 +243,7 @@ function registerAgentWriteOverrides(app: Express) {
     if (!(await ensureAppExists(data.appKey))) return res.status(400).json({ error: "App key không tồn tại." });
 
     const promptKey = data.systemPromptKey || before.system_prompt_key || `${keyFromName(data.appKey)}_${keyFromName(data.name)}`;
+    const systemPrompt = buildSystemPrompt(data);
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
@@ -259,9 +261,9 @@ function registerAgentWriteOverrides(app: Express) {
              status=$8,
              temperature=$9,
              max_tokens=$10,
-             allowed_tools=$11::jsonb,
-             allowed_data=$12::jsonb,
-             metadata=$13::jsonb,
+             allowed_tools='[]'::jsonb,
+             allowed_data='[]'::jsonb,
+             metadata=$11::jsonb,
              updated_at=now()
          WHERE id=$1
          RETURNING id, app_key, name, provider, model, system_prompt_key, system_prompt, version, status,
@@ -273,12 +275,10 @@ function registerAgentWriteOverrides(app: Express) {
           data.provider,
           data.model,
           promptKey,
-          data.systemPrompt,
+          systemPrompt,
           data.status,
           data.temperature,
           data.maxTokens,
-          JSON.stringify(data.allowedTools),
-          JSON.stringify(data.allowedData),
           JSON.stringify(buildAgentMetadata(data))
         ]
       );
