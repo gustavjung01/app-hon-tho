@@ -39,9 +39,10 @@ type BuiltInApp = {
 const builtInApps: BuiltInApp[] = [
   { key: "tu_tru", name: "Tứ Trụ", category: "nguthuat.menh", status: "active", description: "Lập mệnh bàn Tứ Trụ và diễn giải có kiểm soát.", defaultCreditCost: 1 },
   { key: "mai_hoa", name: "Mai Hoa Dịch Số", category: "nguthuat.boc", status: "active", description: "Lập quẻ và đọc tượng số theo Mai Hoa.", defaultCreditCost: 1 },
-  { key: "nhan_tuong", name: "Nhân tướng", category: "nguthuat.tuong", status: "draft", description: "Nhánh Tướng trong Ngũ thuật.", defaultCreditCost: 1 },
+  { key: "luc_hao", name: "Lục Hào", category: "nguthuat.boc", status: "draft", description: "Lập quẻ Lục Hào và diễn giải hào động.", defaultCreditCost: 1 },
   { key: "y_hoc", name: "Y học cổ học", category: "nguthuat.y", status: "active", description: "Dưỡng sinh, tiết khí, khí huyết và tham khảo y học cổ học.", defaultCreditCost: 1 },
   { key: "phong_thuy", name: "Phong thủy an cư", category: "nguthuat.son", status: "draft", description: "Bát trạch, hướng nhà và bố cục không gian.", defaultCreditCost: 1 },
+  { key: "nhan_tuong", name: "Nhân tướng", category: "nguthuat.tuong", status: "draft", description: "Tướng pháp và quan sát hình tướng theo hướng tham khảo.", defaultCreditCost: 1 },
   { key: "ky_mon", name: "Kỳ Môn", category: "tamthuc", status: "draft", description: "Kỳ Môn Độn Giáp theo cục bàn thời không.", defaultCreditCost: 1 },
   { key: "thai_at", name: "Thái Ất", category: "tamthuc", status: "draft", description: "Thái Ất Thần Số.", defaultCreditCost: 1 },
   { key: "luc_nham", name: "Lục Nhâm", category: "tamthuc", status: "draft", description: "Đại Lục Nhâm.", defaultCreditCost: 1 }
@@ -104,10 +105,8 @@ async function ensureAppExists(appKey: string) {
   const normalizedKey = appKey.trim();
   const rows = await query<{ key: string }>(`SELECT key FROM apps WHERE key=$1`, [normalizedKey]);
   if (rows[0]) return true;
-
   const builtInApp = builtInAppFor(normalizedKey);
   if (!builtInApp) return false;
-
   await upsertBuiltInApp(builtInApp);
   return true;
 }
@@ -192,7 +191,6 @@ function registerAgentWriteOverrides(app: Express) {
   app.post("/api/admin/agents", requireAuth, requireAdmin, async (req: AuthedRequest, res) => {
     const data = agentInputSchema.parse(req.body);
     if (!(await ensureAppExists(data.appKey))) return res.status(400).json({ error: "App key không tồn tại." });
-
     const promptKey = data.systemPromptKey || `${keyFromName(data.appKey)}_${keyFromName(data.name)}`;
     const systemPrompt = buildSystemPrompt(data);
     const client = await pool.connect();
@@ -212,19 +210,7 @@ function registerAgentWriteOverrides(app: Express) {
          VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, '[]'::jsonb, '[]'::jsonb, $11::jsonb)
          RETURNING id, app_key, name, provider, model, system_prompt_key, system_prompt, version, status,
                    temperature, max_tokens, allowed_tools, allowed_data, metadata, created_at, updated_at`,
-        [
-          data.appKey,
-          data.name,
-          data.provider,
-          data.model,
-          promptKey,
-          systemPrompt,
-          version,
-          data.status,
-          data.temperature,
-          data.maxTokens,
-          JSON.stringify(buildAgentMetadata(data))
-        ]
+        [data.appKey, data.name, data.provider, data.model, promptKey, systemPrompt, version, data.status, data.temperature, data.maxTokens, JSON.stringify(buildAgentMetadata(data))]
       );
       await writeAudit({ actorUserId: req.user!.id, action: "agent.create", targetType: "ai_agent", targetId: inserted.rows[0].id, after: inserted.rows[0], client });
       await client.query("COMMIT");
@@ -242,7 +228,6 @@ function registerAgentWriteOverrides(app: Express) {
     const before = await loadAgent(req.params.id);
     if (!before) return res.status(404).json({ error: "Không tìm thấy agent." });
     if (!(await ensureAppExists(data.appKey))) return res.status(400).json({ error: "App key không tồn tại." });
-
     const promptKey = data.systemPromptKey || before.system_prompt_key || `${keyFromName(data.appKey)}_${keyFromName(data.name)}`;
     const systemPrompt = buildSystemPrompt(data);
     const client = await pool.connect();
@@ -269,19 +254,7 @@ function registerAgentWriteOverrides(app: Express) {
          WHERE id=$1
          RETURNING id, app_key, name, provider, model, system_prompt_key, system_prompt, version, status,
                    temperature, max_tokens, allowed_tools, allowed_data, metadata, created_at, updated_at`,
-        [
-          req.params.id,
-          data.appKey,
-          data.name,
-          data.provider,
-          data.model,
-          promptKey,
-          systemPrompt,
-          data.status,
-          data.temperature,
-          data.maxTokens,
-          JSON.stringify(buildAgentMetadata(data))
-        ]
+        [req.params.id, data.appKey, data.name, data.provider, data.model, promptKey, systemPrompt, data.status, data.temperature, data.maxTokens, JSON.stringify(buildAgentMetadata(data))]
       );
       await writeAudit({ actorUserId: req.user!.id, action: "agent.update", targetType: "ai_agent", targetId: req.params.id, before, after: updated.rows[0], client });
       await client.query("COMMIT");
