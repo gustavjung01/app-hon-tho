@@ -39,7 +39,6 @@ type BuiltInApp = {
 const builtInApps: BuiltInApp[] = [
   { key: "tu_tru", name: "Tứ Trụ", category: "nguthuat.menh", status: "active", description: "Lập mệnh bàn Tứ Trụ và diễn giải có kiểm soát.", defaultCreditCost: 1 },
   { key: "mai_hoa", name: "Mai Hoa Dịch Số", category: "nguthuat.boc", status: "active", description: "Lập quẻ và đọc tượng số theo Mai Hoa.", defaultCreditCost: 1 },
-  { key: "luc_hao", name: "Lục Hào", category: "nguthuat.boc", status: "draft", description: "Lập quẻ Lục Hào và diễn giải hào động.", defaultCreditCost: 1 },
   { key: "y_hoc", name: "Y học cổ học", category: "nguthuat.y", status: "active", description: "Dưỡng sinh, tiết khí, khí huyết và tham khảo y học cổ học.", defaultCreditCost: 1 },
   { key: "phong_thuy", name: "Phong thủy an cư", category: "nguthuat.son", status: "draft", description: "Bát trạch, hướng nhà và bố cục không gian.", defaultCreditCost: 1 },
   { key: "nhan_tuong", name: "Nhân tướng", category: "nguthuat.tuong", status: "draft", description: "Tướng pháp và quan sát hình tướng theo hướng tham khảo.", defaultCreditCost: 1 },
@@ -135,14 +134,7 @@ async function writeAudit(args: {
   await client.query(
     `INSERT INTO audit_logs(actor_user_id, action, target_type, target_id, before_json, after_json)
      VALUES($1, $2, $3, $4, $5::jsonb, $6::jsonb)`,
-    [
-      args.actorUserId || null,
-      args.action,
-      args.targetType,
-      args.targetId || null,
-      args.before === undefined ? null : JSON.stringify(args.before),
-      args.after === undefined ? null : JSON.stringify(args.after)
-    ]
+    [args.actorUserId || null, args.action, args.targetType, args.targetId || null, args.before === undefined ? null : JSON.stringify(args.before), args.after === undefined ? null : JSON.stringify(args.after)]
   );
 }
 
@@ -152,13 +144,7 @@ function buildSystemPrompt(data: AgentInput) {
 
 function buildAgentMetadata(data: AgentInput) {
   const googleAgentManaged = data.provider === "dialogflow_cx";
-  return {
-    persona: data.persona || "",
-    importedJson: data.importedJson ?? null,
-    managerVersion: 2,
-    appBinding: "explicit_app_key",
-    ...(googleAgentManaged ? { externalAgentManaged: true, googleAgentManaged: true } : {})
-  };
+  return { persona: data.persona || "", importedJson: data.importedJson ?? null, managerVersion: 2, appBinding: "explicit_app_key", ...(googleAgentManaged ? { externalAgentManaged: true, googleAgentManaged: true } : {}) };
 }
 
 function registerAppsWithAgentsOverride(app: Express) {
@@ -171,16 +157,8 @@ function registerAppsWithAgentsOverride(app: Express) {
               active_agent.status AS active_agent_status,
               COALESCE(agent_count.total, 0)::integer AS agent_count
        FROM apps app
-       LEFT JOIN LATERAL (
-         SELECT id, name, status
-         FROM ai_agents
-         WHERE app_key=app.key AND status='active'
-         ORDER BY version DESC, created_at DESC
-         LIMIT 1
-       ) active_agent ON true
-       LEFT JOIN LATERAL (
-         SELECT count(*) AS total FROM ai_agents WHERE app_key=app.key
-       ) agent_count ON true
+       LEFT JOIN LATERAL (SELECT id, name, status FROM ai_agents WHERE app_key=app.key AND status='active' ORDER BY version DESC, created_at DESC LIMIT 1) active_agent ON true
+       LEFT JOIN LATERAL (SELECT count(*) AS total FROM ai_agents WHERE app_key=app.key) agent_count ON true
        ORDER BY app.category, app.name`
     );
     res.json({ items: rows, seededBuiltInApps: builtInApps.map((item) => item.key) });
@@ -196,20 +174,13 @@ function registerAgentWriteOverrides(app: Express) {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      const versionRows = await client.query<{ next_version: number }>(
-        `SELECT COALESCE(max(version), 0) + 1 AS next_version FROM ai_agents WHERE app_key=$1 AND system_prompt_key=$2`,
-        [data.appKey, promptKey]
-      );
+      const versionRows = await client.query<{ next_version: number }>(`SELECT COALESCE(max(version), 0) + 1 AS next_version FROM ai_agents WHERE app_key=$1 AND system_prompt_key=$2`, [data.appKey, promptKey]);
       const version = versionRows.rows[0]?.next_version || 1;
-      if (data.status === "active") {
-        await client.query(`UPDATE ai_agents SET status='disabled', updated_at=now() WHERE app_key=$1 AND status='active'`, [data.appKey]);
-      }
+      if (data.status === "active") await client.query(`UPDATE ai_agents SET status='disabled', updated_at=now() WHERE app_key=$1 AND status='active'`, [data.appKey]);
       const inserted = await client.query<AgentRow>(
-        `INSERT INTO ai_agents(app_key, name, provider, model, system_prompt_key, system_prompt, version, status,
-                               temperature, max_tokens, allowed_tools, allowed_data, metadata)
+        `INSERT INTO ai_agents(app_key, name, provider, model, system_prompt_key, system_prompt, version, status, temperature, max_tokens, allowed_tools, allowed_data, metadata)
          VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, '[]'::jsonb, '[]'::jsonb, $11::jsonb)
-         RETURNING id, app_key, name, provider, model, system_prompt_key, system_prompt, version, status,
-                   temperature, max_tokens, allowed_tools, allowed_data, metadata, created_at, updated_at`,
+         RETURNING id, app_key, name, provider, model, system_prompt_key, system_prompt, version, status, temperature, max_tokens, allowed_tools, allowed_data, metadata, created_at, updated_at`,
         [data.appKey, data.name, data.provider, data.model, promptKey, systemPrompt, version, data.status, data.temperature, data.maxTokens, JSON.stringify(buildAgentMetadata(data))]
       );
       await writeAudit({ actorUserId: req.user!.id, action: "agent.create", targetType: "ai_agent", targetId: inserted.rows[0].id, after: inserted.rows[0], client });
@@ -233,27 +204,11 @@ function registerAgentWriteOverrides(app: Express) {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      if (data.status === "active") {
-        await client.query(`UPDATE ai_agents SET status='disabled', updated_at=now() WHERE app_key=$1 AND status='active' AND id<>$2`, [data.appKey, req.params.id]);
-      }
+      if (data.status === "active") await client.query(`UPDATE ai_agents SET status='disabled', updated_at=now() WHERE app_key=$1 AND status='active' AND id<>$2`, [data.appKey, req.params.id]);
       const updated = await client.query<AgentRow>(
-        `UPDATE ai_agents
-         SET app_key=$2,
-             name=$3,
-             provider=$4,
-             model=$5,
-             system_prompt_key=$6,
-             system_prompt=$7,
-             status=$8,
-             temperature=$9,
-             max_tokens=$10,
-             allowed_tools='[]'::jsonb,
-             allowed_data='[]'::jsonb,
-             metadata=$11::jsonb,
-             updated_at=now()
+        `UPDATE ai_agents SET app_key=$2, name=$3, provider=$4, model=$5, system_prompt_key=$6, system_prompt=$7, status=$8, temperature=$9, max_tokens=$10, allowed_tools='[]'::jsonb, allowed_data='[]'::jsonb, metadata=$11::jsonb, updated_at=now()
          WHERE id=$1
-         RETURNING id, app_key, name, provider, model, system_prompt_key, system_prompt, version, status,
-                   temperature, max_tokens, allowed_tools, allowed_data, metadata, created_at, updated_at`,
+         RETURNING id, app_key, name, provider, model, system_prompt_key, system_prompt, version, status, temperature, max_tokens, allowed_tools, allowed_data, metadata, created_at, updated_at`,
         [req.params.id, data.appKey, data.name, data.provider, data.model, promptKey, systemPrompt, data.status, data.temperature, data.maxTokens, JSON.stringify(buildAgentMetadata(data))]
       );
       await writeAudit({ actorUserId: req.user!.id, action: "agent.update", targetType: "ai_agent", targetId: req.params.id, before, after: updated.rows[0], client });
