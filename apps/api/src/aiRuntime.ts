@@ -25,13 +25,10 @@ function parseCxPath(model: string) { const match = /^projects\/([^/]+)\/locatio
 function cxBaseUrl(location: string) { const override = process.env.DIALOGFLOW_CX_API_BASE_URL?.trim(); if (override) return override.replace(/\/$/, ""); return location && location !== "global" ? `https://${location}-dialogflow.googleapis.com` : "https://dialogflow.googleapis.com"; }
 function isRecord(value: unknown): value is Record<string, unknown> { return !!value && typeof value === "object" && !Array.isArray(value); }
 function rec(value: unknown) { return isRecord(value) ? value : {}; }
-function str(value: unknown, fallback = "") { return typeof value === "string" && value.trim() ? value.trim() : fallback; }
-function num(value: unknown, fallback = 0) { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : fallback; }
-function arr(value: unknown): unknown[] { return Array.isArray(value) ? value : []; }
 
 export function buildAgentSystemPrompt(input: AiRuntimeInput) {
-  const appRun = input.appRun ? `\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nApp run ID: ${input.appRun.id}\nApp: ${input.appRun.app_key}\nCreated: ${input.appRun.created_at}\nInput JSON:\n${compactJson(input.appRun.input_json, 1800)}\nResult JSON:\n${compactJson(input.appRun.result_json, 2200)}` : "\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nChưa có app_run gắn với hội thoại này. Không tự tính thay engine, không bịa dữ liệu chưa có.";
-  const guardrail = "\n\n[QUY TẮC HỆ THỐNG CỔ HỌC]\n- Engine/app_run là nguồn sự thật.\n- Thiếu dữ liệu thì nói rõ thiếu dữ liệu và hỏi thêm.\n- Trả lời bằng tiếng Việt, rõ ràng, có cấu trúc ngắn gọn.";
+  const appRun = input.appRun ? `\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nApp: ${input.appRun.app_key}\nCreated: ${input.appRun.created_at}\nResult JSON:\n${compactJson(input.appRun.result_json, 2200)}` : "\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nChưa có app_run gắn với hội thoại này. Không tự tính thay engine, không bịa dữ liệu chưa có.";
+  const guardrail = "\n\n[QUY TẮC HỆ THỐNG CỔ HỌC]\n- Engine/app_run là nguồn sự thật.\n- Thiếu dữ liệu thì nói rõ thiếu dữ liệu và hỏi thêm.\n- Trả lời bằng tiếng Việt, rõ ràng, có cấu trúc ngắn gọn.\n- Không chào hỏi, không xác nhận đã nhận dữ liệu, không lặp App run/Conversation/model/path.\n- Phải viết phần luận trực tiếp theo các mục được yêu cầu.";
   const extra = input.extraInstruction ? `\n\n[CHỈ DẪN BỔ SUNG]\n${input.extraInstruction}` : "";
   return `${input.agent.system_prompt}${guardrail}${appRun}${extra}`;
 }
@@ -44,65 +41,46 @@ function stubResponse(input: AiRuntimeInput, systemPrompt: string, provider: str
   return { content, provider, model: input.agent.model, providerResponseId: null, tokenInput, tokenOutput, cost: 0, requestJson: { mode: "stub", provider, appKey: input.agent.app_key, agentId: input.agent.id, model: input.agent.model, note }, responseJson: { mode: "stub", provider, content } };
 }
 
+function dataForDialogflow(input: AiRuntimeInput) {
+  if (!input.appRun) return "null";
+  const resultJson = rec(input.appRun.result_json);
+  const contentLayer = resultJson.contentLayer;
+  return compactJson({
+    app_key: input.appRun.app_key,
+    created_at: input.appRun.created_at,
+    contentLayer: isRecord(contentLayer) ? contentLayer : resultJson,
+    guardrails: rec(resultJson.guardrails)
+  }, 3200);
+}
+
 function cxPrompt(input: AiRuntimeInput, systemPrompt: string) {
-  const history = input.messages.slice(-6).map((m) => `${m.role}: ${trimText(m.content, 380)}`).join("\n");
-  const user = latestUserMessage(input.messages) || "Tiếp tục hội thoại.";
-  const prompt = ["[SYSTEM]", trimText(systemPrompt, 2400), "", "[APP_RUN]", input.appRun ? compactJson(input.appRun, 2600) : "null", "", "[HISTORY]", trimText(history, 1200), "", "[USER]", trimText(user, 700)].join("\n");
+  const history = input.messages.slice(-3).map((m) => `${m.role}: ${trimText(m.content, 260)}`).join("\n");
+  const user = latestUserMessage(input.messages) || "Hãy luận tổng quan lá số Tứ Trụ theo dữ liệu engine đã lưu.";
+  const prompt = [
+    "[NHIEM_VU_BAT_BUOC]",
+    "Viết ngay phần LUẬN TỨ TRỤ bằng tiếng Việt. Không chào hỏi. Không nói 'tôi đã nhận'. Không nhắc App run, Conversation, model, project path hay JSON. Không lặp lại dữ liệu thô. Hãy diễn giải ý nghĩa từ dữ liệu engine.",
+    "",
+    "[FORMAT_BAT_BUOC]",
+    "## Tổng quan\n## Nhật chủ\n## Ngũ hành\n## Thập thần\n## Đại vận\n## Phần chưa đủ dữ liệu",
+    "",
+    "[SYSTEM_RULES]",
+    trimText(systemPrompt, 1600),
+    "",
+    "[DU_LIEU_ENGINE_TU_TRU]",
+    dataForDialogflow(input),
+    "",
+    "[LICH_SU_GAN_NHAT]",
+    trimText(history, 800),
+    "",
+    "[YEU_CAU_NGUOI_DUNG]",
+    trimText(user, 500),
+    "",
+    "[NHAC_LAI]",
+    "Bắt đầu bằng '## Tổng quan'. Trả về bài luận, không trả lời xác nhận."
+  ].join("\n");
   return trimText(prompt, 6900);
 }
 function cxOutput(json: any) { const msgs = json?.queryResult?.responseMessages || []; const parts = msgs.flatMap((m: any) => m?.text?.text || []).filter(Boolean); return parts.join("\n").trim() || String(json?.queryResult?.fulfillmentText || "").trim(); }
-
-function contentLayerFrom(input: AiRuntimeInput) {
-  const resultJson = rec(input.appRun?.result_json);
-  const layer = resultJson.contentLayer;
-  return isRecord(layer) ? layer : null;
-}
-
-function elementCountsText(counts: Record<string, unknown>) {
-  return ["Kim", "Mộc", "Thủy", "Hỏa", "Thổ"].map((key) => `${key}: ${num(counts[key])}`).join(" · ");
-}
-
-function fallbackTuTruInterpretation(input: AiRuntimeInput) {
-  if (input.agent.app_key !== "tu_tru") return null;
-  const layer = contentLayerFrom(input);
-  if (!layer) return null;
-  const summary = rec(layer.inputSummary);
-  const dayMaster = rec(layer.dayMasterSummary);
-  const elementBalance = rec(layer.elementBalance);
-  const majorLuck = rec(layer.majorLuck);
-  const pillars = arr(layer.pillars).map(rec);
-  const tenGods = arr(layer.tenGodOverview).map(rec).filter((item) => str(item.status) === "computed" && num(item.count) > 0);
-  const firstCycles = arr(majorLuck.cycles).slice(0, 3).map(rec);
-  const pillarLine = pillars.map((p) => `${str(p.label)}: ${str(p.pillar)} (${str(p.pillarHan)})`).filter((x) => !x.includes(":  ()")).join("; ");
-  const tenGodLine = tenGods.slice(0, 6).map((item) => `${str(item.name)} ${num(item.count)} vị trí`).join("; ") || "Chưa có Thập thần nổi bật trong lớp tính cơ bản.";
-  const luckLine = firstCycles.map((cycle) => `${str(cycle.index)}. ${str(cycle.pillar)} ${str(cycle.ageLabel)}`).join("; ") || "Chưa có dữ liệu đại vận.";
-
-  return [
-    "## Tổng quan",
-    `Lá số đã an cho ${str(summary.birthDate, "ngày sinh đã nhập")} lúc ${str(summary.birthTime, "giờ đã nhập")}${str(summary.birthPlace) ? ` tại ${str(summary.birthPlace)}` : ""}. Phần dưới chỉ đọc trên dữ liệu engine đã có, không tự thêm dụng thần, vượng suy hay lưu niên.`,
-    pillarLine ? `Bốn trụ hiện tại: ${pillarLine}.` : "Bốn trụ đã được engine an, nhưng thiếu dữ liệu để tóm tắt dạng chữ.",
-    "",
-    "## Nhật chủ",
-    `Nhật chủ là ${str(dayMaster.name, "chưa xác định")} (${str(dayMaster.han)}) thuộc hành ${str(dayMaster.element, "chưa rõ")}. Đây là điểm trung tâm để đối chiếu Thập thần, không nên dùng riêng Nhật chủ để kết luận tính cách hay vận trình.`,
-    str(dayMaster.note),
-    "",
-    "## Ngũ hành",
-    `Phân bố Can, Chi và Tàng can: ${elementCountsText(rec(elementBalance.counts))}.`,
-    str(elementBalance.note, "Bản này chưa có trọng số vượng suy, nên chỉ xem như bản đồ phân bố ban đầu."),
-    "",
-    "## Thập thần",
-    `Các điểm đã xuất hiện: ${tenGodLine}.`,
-    tenGods.slice(0, 4).map((item) => `- ${str(item.name)}: ${str(item.positions)}. ${str(item.note)}`).join("\n"),
-    "",
-    "## Đại vận",
-    `${str(majorLuck.directionLabel)} · ${str(majorLuck.startAgeLabel)}. ${str(majorLuck.directionRule)}`,
-    `Các bước đầu: ${luckLine}.`,
-    str(majorLuck.note),
-    "",
-    "## Phần chưa đủ dữ liệu",
-    "Chưa kết luận dụng thần, hỷ kỵ, vượng suy chi tiết, lưu niên hoặc sự kiện đời người vì engine hiện mới cung cấp lớp Can Chi, Ngũ hành, Tàng can, Thập thần và Đại vận cơ bản."
-  ].filter(Boolean).join("\n\n");
-}
 
 function isDialogflowEcho(content: string) {
   const normalized = content.toLowerCase();
@@ -110,7 +88,9 @@ function isDialogflowEcho(content: string) {
     normalized.includes("app run:") ||
     normalized.includes("conversation:") ||
     normalized.includes("projects/dialog") ||
-    (normalized.includes("tôi đã nhận") && normalized.includes("thông tin đầu vào")) ||
+    normalized.includes("tôi đã nhận") ||
+    normalized.includes("xác nhận thông tin") ||
+    normalized.includes("thông tin đầu vào") ||
     (normalized.includes("giới tính") && normalized.includes("ngày sinh") && normalized.includes("ngũ hành tổng quan"))
   );
 }
@@ -126,12 +106,12 @@ async function runDialogflowCx(input: AiRuntimeInput, systemPrompt: string): Pro
   const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(requestJson) });
   const responseJson = (await response.json().catch(() => ({}))) as any;
   if (!response.ok) throw new RuntimeProviderError(responseJson?.error?.message || response.statusText || "Dialogflow CX error", requestLog, responseJson);
-  const rawContent = cxOutput(responseJson);
-  if (!rawContent) throw new RuntimeProviderError("Dialogflow CX trả về nội dung rỗng.", requestLog, responseJson);
-  const fallback = fallbackTuTruInterpretation(input);
-  const useFallback = !!fallback && isDialogflowEcho(rawContent);
-  const content = useFallback ? fallback : rawContent;
-  return { content, provider: "dialogflow_cx", model: input.agent.model, providerResponseId: responseJson?.responseId || null, tokenInput: 0, tokenOutput: 0, cost: 0, requestJson: requestLog, responseJson: { ...responseJson, fallbackApplied: useFallback, rawContentPreview: useFallback ? rawContent.slice(0, 600) : undefined } };
+  const content = cxOutput(responseJson);
+  if (!content) throw new RuntimeProviderError("Dialogflow CX trả về nội dung rỗng.", requestLog, responseJson);
+  if (isDialogflowEcho(content)) {
+    throw new RuntimeProviderError("Dialogflow agent đang chỉ xác nhận/lặp dữ liệu, chưa sinh phần luận. Hãy cập nhật Playbook Instructions để bắt đầu bằng '## Tổng quan' và luận trực tiếp, không xác nhận dữ liệu.", requestLog, { ...responseJson, rawContentPreview: content.slice(0, 800) });
+  }
+  return { content, provider: "dialogflow_cx", model: input.agent.model, providerResponseId: responseJson?.responseId || null, tokenInput: 0, tokenOutput: 0, cost: 0, requestJson: requestLog, responseJson };
 }
 
 export async function runAgentRuntime(input: AiRuntimeInput): Promise<AiRuntimeResult> {
