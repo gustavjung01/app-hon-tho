@@ -11,7 +11,8 @@ type AiRuntimeResult = { content: string; provider: string; model: string; provi
 
 class RuntimeProviderError extends Error { constructor(message: string, public requestJson: unknown, public responseJson: unknown) { super(message); this.name = "RuntimeProviderError"; } }
 
-function compactJson(value: unknown, maxLength = 12000) { if (!value) return "null"; const text = JSON.stringify(value, null, 2); return text.length > maxLength ? `${text.slice(0, maxLength)}\n... [truncated]` : text; }
+function compactJson(value: unknown, maxLength = 2200) { if (!value) return "null"; const text = JSON.stringify(value, null, 2); return text.length > maxLength ? `${text.slice(0, maxLength)}\n... [truncated]` : text; }
+function trimText(value: string, maxLength = 1200) { return value.length > maxLength ? `${value.slice(0, maxLength)}\n... [truncated]` : value; }
 function asNumber(value: number | string | null | undefined, fallback: number) { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : fallback; }
 function estimateCost(tokenInput: number, tokenOutput: number, inputPer1K: number, outputPer1K: number) { return Number(((tokenInput / 1000) * inputPer1K + (tokenOutput / 1000) * outputPer1K).toFixed(6)); }
 function providerKey(value: string | null | undefined) { const normalized = String(value || "stub").trim().toLowerCase().replace(/[-\s]+/g, "_"); return normalized || "stub"; }
@@ -24,7 +25,7 @@ function parseCxPath(model: string) { const match = /^projects\/([^/]+)\/locatio
 function cxBaseUrl(location: string) { const override = process.env.DIALOGFLOW_CX_API_BASE_URL?.trim(); if (override) return override.replace(/\/$/, ""); return location && location !== "global" ? `https://${location}-dialogflow.googleapis.com` : "https://dialogflow.googleapis.com"; }
 
 export function buildAgentSystemPrompt(input: AiRuntimeInput) {
-  const appRun = input.appRun ? `\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nApp run ID: ${input.appRun.id}\nApp: ${input.appRun.app_key}\nCreated: ${input.appRun.created_at}\nInput JSON:\n${compactJson(input.appRun.input_json)}\nResult JSON:\n${compactJson(input.appRun.result_json)}` : "\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nChưa có app_run gắn với hội thoại này. Không tự tính thay engine, không bịa dữ liệu chưa có.";
+  const appRun = input.appRun ? `\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nApp run ID: ${input.appRun.id}\nApp: ${input.appRun.app_key}\nCreated: ${input.appRun.created_at}\nInput JSON:\n${compactJson(input.appRun.input_json, 1800)}\nResult JSON:\n${compactJson(input.appRun.result_json, 2200)}` : "\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nChưa có app_run gắn với hội thoại này. Không tự tính thay engine, không bịa dữ liệu chưa có.";
   const guardrail = "\n\n[QUY TẮC HỆ THỐNG CỔ HỌC]\n- Engine/app_run là nguồn sự thật.\n- Thiếu dữ liệu thì nói rõ thiếu dữ liệu và hỏi thêm.\n- Trả lời bằng tiếng Việt, rõ ràng, có cấu trúc ngắn gọn.";
   const extra = input.extraInstruction ? `\n\n[CHỈ DẪN BỔ SUNG]\n${input.extraInstruction}` : "";
   return `${input.agent.system_prompt}${guardrail}${appRun}${extra}`;
@@ -39,7 +40,10 @@ function stubResponse(input: AiRuntimeInput, systemPrompt: string, provider: str
 }
 
 function cxPrompt(input: AiRuntimeInput, systemPrompt: string) {
-  return ["[SYSTEM]", systemPrompt, "", "[APP_RUN]", input.appRun ? compactJson(input.appRun) : "null", "", "[HISTORY]", input.messages.slice(-12).map((m) => `${m.role}: ${m.content}`).join("\n"), "", "[USER]", latestUserMessage(input.messages) || "Tiếp tục hội thoại."].join("\n");
+  const history = input.messages.slice(-6).map((m) => `${m.role}: ${trimText(m.content, 380)}`).join("\n");
+  const user = latestUserMessage(input.messages) || "Tiếp tục hội thoại.";
+  const prompt = ["[SYSTEM]", trimText(systemPrompt, 2400), "", "[APP_RUN]", input.appRun ? compactJson(input.appRun, 2600) : "null", "", "[HISTORY]", trimText(history, 1200), "", "[USER]", trimText(user, 700)].join("\n");
+  return trimText(prompt, 6900);
 }
 function cxOutput(json: any) { const msgs = json?.queryResult?.responseMessages || []; const parts = msgs.flatMap((m: any) => m?.text?.text || []).filter(Boolean); return parts.join("\n").trim() || String(json?.queryResult?.fulfillmentText || "").trim(); }
 
@@ -50,7 +54,7 @@ async function runDialogflowCx(input: AiRuntimeInput, systemPrompt: string): Pro
   const session = `${parsed.path}/sessions/${cleanSessionId(input.conversationId || input.appRun?.id || input.agent.id)}`;
   const endpoint = `${cxBaseUrl(parsed.location)}/v3/${session}:detectIntent`;
   const requestJson = { queryInput: { text: { text: cxPrompt(input, systemPrompt) }, languageCode: process.env.DIALOGFLOW_CX_LANGUAGE_CODE || "vi" }, queryParams: { parameters: { appKey: input.agent.app_key, agentId: input.agent.id, appRunId: input.appRun?.id || null } } };
-  const requestLog = { endpoint, session, credentialSource: serviceAccount ? "admin_settings" : "env", ...requestJson };
+  const requestLog = { endpoint, session, credentialSource: serviceAccount ? "admin_settings" : "env", promptChars: requestJson.queryInput.text.text.length, ...requestJson };
   const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(requestJson) });
   const responseJson = (await response.json().catch(() => ({}))) as any;
   if (!response.ok) throw new RuntimeProviderError(responseJson?.error?.message || response.statusText || "Dialogflow CX error", requestLog, responseJson);
