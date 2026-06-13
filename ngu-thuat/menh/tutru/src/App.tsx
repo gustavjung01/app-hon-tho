@@ -8,6 +8,7 @@ declare global {
   interface Window {
     Clerk?: {
       load?: (options?: unknown) => Promise<void>;
+      openSignIn?: (options?: unknown) => void;
       session?: { getToken: () => Promise<string | null> } | null;
       user?: { primaryEmailAddress?: { emailAddress?: string }; emailAddresses?: Array<{ emailAddress?: string }> } | null;
     };
@@ -16,14 +17,7 @@ declare global {
 }
 
 const elementOrder = ["Mộc", "Hỏa", "Thổ", "Kim", "Thủy"] as const;
-const elementClass: Record<string, string> = {
-  Mộc: "wood",
-  Hỏa: "fire",
-  Thổ: "earth",
-  Kim: "metal",
-  Thủy: "water"
-};
-
+const elementClass: Record<string, string> = { Mộc: "wood", Hỏa: "fire", Thổ: "earth", Kim: "metal", Thủy: "water" };
 const ACCOUNT_RETURN_URL = "/account?next=/nguthuat/menh/tutru/";
 
 class AuthSessionError extends Error {
@@ -34,31 +28,13 @@ class AuthSessionError extends Error {
 }
 
 type InterpretStatus = "idle" | "saving" | "running" | "done" | "error";
+type InterpretationState = { status: InterpretStatus; message?: string; appRunId?: string; conversationId?: string; reply?: string; provider?: string; model?: string; authAction?: boolean };
+type ChatMessage = { role: "assistant" | "user"; content: string };
+type AiReplyResponse = { message: { content: string }; provider: string; model: string };
 
-type InterpretationState = {
-  status: InterpretStatus;
-  message?: string;
-  appRunId?: string;
-  conversationId?: string;
-  reply?: string;
-  provider?: string;
-  model?: string;
-  authAction?: boolean;
-};
-
-function cx(...items: Array<string | false | null | undefined>) {
-  return items.filter(Boolean).join(" ");
-}
-
-function toGenderLabel(gender: GenderType) {
-  if (gender === "male") return "Nam";
-  if (gender === "female") return "Nữ";
-  return "Khác";
-}
-
-function getApiBase() {
-  return (localStorage.getItem("hontho_api_base") || "/api").replace(/\/$/, "");
-}
+function cx(...items: Array<string | false | null | undefined>) { return items.filter(Boolean).join(" "); }
+function toGenderLabel(gender: GenderType) { if (gender === "male") return "Nam"; if (gender === "female") return "Nữ"; return "Khác"; }
+function getApiBase() { return (localStorage.getItem("hontho_api_base") || "/api").replace(/\/$/, ""); }
 
 function clerkDomainFromPublishableKey(key: string) {
   const encoded = String(key || "").replace(/^pk_(test|live)_/, "").trim();
@@ -107,23 +83,18 @@ async function getFreshAuthToken() {
   } catch {
     // Fall back to the cached token below. User-facing errors are handled by apiRequest.
   }
-
   const cached = localStorage.getItem("hontho_user_token")?.trim() || "";
   if (cached) return cached;
-  throw new AuthSessionError("Phiên đăng nhập chưa sẵn sàng. Vui lòng vào trang Tài khoản đăng nhập lại.");
+  throw new AuthSessionError("Phiên đăng nhập chưa sẵn sàng. Bấm Đăng nhập trong khung này để mở Clerk tại chỗ.");
 }
 
 async function apiRequest<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
   const token = await getFreshAuthToken();
   const response = await fetch(`${getApiBase()}${path}`, {
     method: options.method || "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: options.body ? JSON.stringify(options.body) : undefined
   });
-
   const data = await response.json().catch(() => ({ error: response.statusText }));
   if (response.status === 401) {
     localStorage.removeItem("hontho_user_token");
@@ -137,60 +108,21 @@ async function apiRequest<T>(path: string, options: { method?: string; body?: un
   return data as T;
 }
 
-function buildInputFromForm(
-  form: HTMLFormElement,
-  calendarType: CalendarType,
-  gender: GenderType,
-  isLeapMonth: boolean
-): DeriveFourPillarsInput {
+function buildInputFromForm(form: HTMLFormElement, calendarType: CalendarType, gender: GenderType, isLeapMonth: boolean): DeriveFourPillarsInput {
   const data = new FormData(form);
   const birthDate = String(data.get("birthDate") ?? "").trim();
   const birthHour = String(data.get("birthHour") ?? "00").padStart(2, "0");
   const birthMinute = String(data.get("birthMinute") ?? "00").padStart(2, "0");
   const timezone = String(data.get("timezone") ?? "Asia/Ho_Chi_Minh");
   const birthPlace = String(data.get("birthPlace") ?? "").trim();
-
-  return {
-    birthDate,
-    birthTime: `${birthHour}:${birthMinute}`,
-    calendarType,
-    timezone,
-    gender,
-    birthPlace: birthPlace || undefined,
-    isLeapMonth: calendarType === "lunar" ? isLeapMonth : false,
-    dayBoundaryMode: "zi-hour-rollover"
-  };
+  return { birthDate, birthTime: `${birthHour}:${birthMinute}`, calendarType, timezone, gender, birthPlace: birthPlace || undefined, isLeapMonth: calendarType === "lunar" ? isLeapMonth : false, dayBoundaryMode: "zi-hour-rollover" };
 }
 
 function SectionTitle({ eyebrow, title, note }: { eyebrow: string; title: string; note?: string }) {
-  return (
-    <header className="section-title">
-      <p>{eyebrow}</p>
-      <h2>{title}</h2>
-      {note ? <span>{note}</span> : null}
-    </header>
-  );
+  return <header className="section-title"><p>{eyebrow}</p><h2>{title}</h2>{note ? <span>{note}</span> : null}</header>;
 }
 
-function InputPanel({
-  calendarType,
-  gender,
-  isLeapMonth,
-  error,
-  onCalendarChange,
-  onGenderChange,
-  onLeapMonthChange,
-  onSubmit
-}: {
-  calendarType: CalendarType;
-  gender: GenderType;
-  isLeapMonth: boolean;
-  error: string | null;
-  onCalendarChange: (value: CalendarType) => void;
-  onGenderChange: (value: GenderType) => void;
-  onLeapMonthChange: (value: boolean) => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-}) {
+function InputPanel({ calendarType, gender, isLeapMonth, error, onCalendarChange, onGenderChange, onLeapMonthChange, onSubmit }: { calendarType: CalendarType; gender: GenderType; isLeapMonth: boolean; error: string | null; onCalendarChange: (value: CalendarType) => void; onGenderChange: (value: GenderType) => void; onLeapMonthChange: (value: boolean) => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
   return (
     <section className="panel input-panel" id="lap-phieu">
       <SectionTitle eyebrow="Nhập liệu" title="Lập mệnh bàn" note="Ngày giờ sinh được quy đổi theo lịch pháp trước khi an bốn trụ." />
@@ -199,67 +131,14 @@ function InputPanel({
           <button className={cx("choice", calendarType === "solar" && "active")} type="button" onClick={() => onCalendarChange("solar")}>Dương lịch</button>
           <button className={cx("choice", calendarType === "lunar" && "active")} type="button" onClick={() => onCalendarChange("lunar")}>Âm lịch</button>
         </div>
-
         <div className="form-grid">
-          <label>
-            <span>{calendarType === "lunar" ? "Ngày âm lịch" : "Ngày dương lịch"}</span>
-            <input name="birthDate" type="date" defaultValue="1990-10-12" required />
-            <small>{calendarType === "lunar" ? "Tự quy đổi sang ngày dương trước khi an trụ." : "Dùng trực tiếp làm ngày sinh dương lịch."}</small>
-          </label>
-
-          <label>
-            <span>Giờ sinh</span>
-            <div className="time-grid">
-              <select name="birthHour" defaultValue="14" aria-label="Giờ sinh">
-                {Array.from({ length: 24 }, (_, hour) => {
-                  const value = String(hour).padStart(2, "0");
-                  return <option key={value} value={value}>{value}</option>;
-                })}
-              </select>
-              <select name="birthMinute" defaultValue="30" aria-label="Phút sinh">
-                {Array.from({ length: 60 }, (_, minute) => {
-                  const value = String(minute).padStart(2, "0");
-                  return <option key={value} value={value}>{value}</option>;
-                })}
-              </select>
-            </div>
-            <small>Từ 23:00 tính theo quy tắc giờ Tý đổi ngày cho trụ ngày.</small>
-          </label>
-
-          <label>
-            <span>Giới tính</span>
-            <div className="choice-line compact" role="group" aria-label="Giới tính">
-              <button className={cx("choice", gender === "male" && "active")} type="button" onClick={() => onGenderChange("male")}>Nam</button>
-              <button className={cx("choice", gender === "female" && "active")} type="button" onClick={() => onGenderChange("female")}>Nữ</button>
-              <button className={cx("choice", gender === "other" && "active")} type="button" onClick={() => onGenderChange("other")}>Khác</button>
-            </div>
-            <small>Dùng để xác định chiều thuận, nghịch Đại vận.</small>
-          </label>
-
-          <label>
-            <span>Múi giờ</span>
-            <select name="timezone" defaultValue="Asia/Ho_Chi_Minh">
-              <option value="Asia/Ho_Chi_Minh">UTC+07:00 Việt Nam</option>
-              <option value="Asia/Shanghai">UTC+08:00</option>
-              <option value="Asia/Tokyo">UTC+09:00</option>
-            </select>
-            <small>Lập trụ theo giờ địa phương của múi giờ đã chọn.</small>
-          </label>
-
-          <label className="wide">
-            <span>Nơi sinh</span>
-            <input name="birthPlace" type="text" defaultValue="Tiền Giang, Việt Nam" placeholder="Tùy chọn" />
-            <small>Ghi lên phiếu để đối chiếu. Tọa độ địa lý sẽ đưa vào lớp sau.</small>
-          </label>
-
-          {calendarType === "lunar" ? (
-            <label className="wide checkbox-row">
-              <input type="checkbox" checked={isLeapMonth} onChange={(event) => onLeapMonthChange(event.target.checked)} />
-              <span>Tháng nhuận âm lịch</span>
-            </label>
-          ) : null}
+          <label><span>{calendarType === "lunar" ? "Ngày âm lịch" : "Ngày dương lịch"}</span><input name="birthDate" type="date" defaultValue="1990-10-12" required /><small>{calendarType === "lunar" ? "Tự quy đổi sang ngày dương trước khi an trụ." : "Dùng trực tiếp làm ngày sinh dương lịch."}</small></label>
+          <label><span>Giờ sinh</span><div className="time-grid"><select name="birthHour" defaultValue="14" aria-label="Giờ sinh">{Array.from({ length: 24 }, (_, hour) => { const value = String(hour).padStart(2, "0"); return <option key={value} value={value}>{value}</option>; })}</select><select name="birthMinute" defaultValue="30" aria-label="Phút sinh">{Array.from({ length: 60 }, (_, minute) => { const value = String(minute).padStart(2, "0"); return <option key={value} value={value}>{value}</option>; })}</select></div><small>Từ 23:00 tính theo quy tắc giờ Tý đổi ngày cho trụ ngày.</small></label>
+          <label><span>Giới tính</span><div className="choice-line compact" role="group" aria-label="Giới tính"><button className={cx("choice", gender === "male" && "active")} type="button" onClick={() => onGenderChange("male")}>Nam</button><button className={cx("choice", gender === "female" && "active")} type="button" onClick={() => onGenderChange("female")}>Nữ</button><button className={cx("choice", gender === "other" && "active")} type="button" onClick={() => onGenderChange("other")}>Khác</button></div><small>Dùng để xác định chiều thuận, nghịch Đại vận.</small></label>
+          <label><span>Múi giờ</span><select name="timezone" defaultValue="Asia/Ho_Chi_Minh"><option value="Asia/Ho_Chi_Minh">UTC+07:00 Việt Nam</option><option value="Asia/Shanghai">UTC+08:00</option><option value="Asia/Tokyo">UTC+09:00</option></select><small>Lập trụ theo giờ địa phương của múi giờ đã chọn.</small></label>
+          <label className="wide"><span>Nơi sinh</span><input name="birthPlace" type="text" defaultValue="Tiền Giang, Việt Nam" placeholder="Tùy chọn" /><small>Ghi lên phiếu để đối chiếu. Tọa độ địa lý sẽ đưa vào lớp sau.</small></label>
+          {calendarType === "lunar" ? <label className="wide checkbox-row"><input type="checkbox" checked={isLeapMonth} onChange={(event) => onLeapMonthChange(event.target.checked)} /><span>Tháng nhuận âm lịch</span></label> : null}
         </div>
-
         <button className="primary-action" type="submit">Dựng lá phiếu</button>
         {error ? <p className="error-box">{error}</p> : null}
       </form>
@@ -268,170 +147,72 @@ function InputPanel({
 }
 
 function InputSummary({ result, content }: { result: DeriveFourPillarsOutput; content: ResultContentLayer }) {
-  const metaRows = [
-    ["Ngày nhập", `${content.inputSummary.birthDate} · ${content.inputSummary.calendarType}`],
-    ["Ngày dương dùng để tính", result.meta.normalizedSolarDate ?? content.inputSummary.birthDate],
-    ["Giờ sinh", content.inputSummary.birthTime],
-    ["Múi giờ", content.inputSummary.timezone],
-    ["Giới tính", toGenderLabel(result.majorLuck.gender)],
-    ["Nơi sinh", content.inputSummary.birthPlace ?? "Không ghi"],
-    ["Tiết khí tháng", result.meta.monthSolarTerm ? `${result.meta.monthSolarTerm} · ${result.meta.monthSolarTermUtc}` : "Đã an theo tiết khí"],
-    ["Quy tắc ngày", result.meta.isLateZiHour ? "23:00 trở đi đã chuyển ngày theo giờ Tý" : "Không chạm mốc giờ Tý đổi ngày"]
-  ];
-
-  return (
-    <section className="panel summary-panel">
-      <SectionTitle eyebrow="Thông tin phiếu" title="Dữ liệu đã dùng để an trụ" />
-      <dl className="summary-grid">
-        {metaRows.map(([label, value]) => (
-          <div key={label}>
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
-    </section>
-  );
+  const metaRows = [["Ngày nhập", `${content.inputSummary.birthDate} · ${content.inputSummary.calendarType}`], ["Ngày dương dùng để tính", result.meta.normalizedSolarDate ?? content.inputSummary.birthDate], ["Giờ sinh", content.inputSummary.birthTime], ["Múi giờ", content.inputSummary.timezone], ["Giới tính", toGenderLabel(result.majorLuck.gender)], ["Nơi sinh", content.inputSummary.birthPlace ?? "Không ghi"], ["Tiết khí tháng", result.meta.monthSolarTerm ? `${result.meta.monthSolarTerm} · ${result.meta.monthSolarTermUtc}` : "Đã an theo tiết khí"], ["Quy tắc ngày", result.meta.isLateZiHour ? "23:00 trở đi đã chuyển ngày theo giờ Tý" : "Không chạm mốc giờ Tý đổi ngày"]];
+  return <section className="panel summary-panel"><SectionTitle eyebrow="Thông tin phiếu" title="Dữ liệu đã dùng để an trụ" /><dl className="summary-grid">{metaRows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></section>;
 }
 
 function PillarOverview({ content }: { content: ResultContentLayer }) {
   return (
     <section className="panel chart-panel" id="la-so">
       <SectionTitle eyebrow="Lá số" title="Bảng Tứ Trụ" note="Chỉ hiển thị các phần đã được an từ lịch, tiết khí và Can Chi." />
-      <section className={`day-master-card element-${elementClass[content.dayMasterSummary.element] || "wood"}`}>
-        <div>
-          <p>Nhật chủ</p>
-          <strong>{content.dayMasterSummary.name}</strong>
-          <span>{content.dayMasterSummary.han} · {content.dayMasterSummary.element}</span>
-        </div>
-        <p>{content.dayMasterSummary.note}</p>
-      </section>
-      <div className="pillar-card-grid" aria-label="Tổng quan bốn trụ">
-        {content.pillars.map((card) => (
-          <article className={cx("pillar-oracle-card", `pillar-${card.key}`, `element-${elementClass[card.stemElement] || "wood"}`)} key={card.key}>
-            <p>{card.label}</p>
-            <h3>{card.pillar}</h3>
-            <strong>{card.pillarHan}</strong>
-            <dl>
-              <div><dt>Thiên can</dt><dd>{card.stem} · {card.stemHan} · {card.stemElement}</dd></div>
-              <div><dt>Địa chi</dt><dd>{card.branch} · {card.branchHan}</dd></div>
-              <div><dt>Thập thần</dt><dd>{card.tenGod}</dd></div>
-            </dl>
-            <small>{card.note}</small>
-          </article>
-        ))}
-      </div>
+      <section className={`day-master-card element-${elementClass[content.dayMasterSummary.element] || "wood"}`}><div><p>Nhật chủ</p><strong>{content.dayMasterSummary.name}</strong><span>{content.dayMasterSummary.han} · {content.dayMasterSummary.element}</span></div><p>{content.dayMasterSummary.note}</p></section>
+      <div className="pillar-card-grid" aria-label="Tổng quan bốn trụ">{content.pillars.map((card) => <article className={cx("pillar-oracle-card", `pillar-${card.key}`, `element-${elementClass[card.stemElement] || "wood"}`)} key={card.key}><p>{card.label}</p><h3>{card.pillar}</h3><strong>{card.pillarHan}</strong><dl><div><dt>Thiên can</dt><dd>{card.stem} · {card.stemHan} · {card.stemElement}</dd></div><div><dt>Địa chi</dt><dd>{card.branch} · {card.branchHan}</dd></div><div><dt>Thập thần</dt><dd>{card.tenGod}</dd></div></dl><small>{card.note}</small></article>)}</div>
     </section>
   );
 }
 
 function ElementBalance({ content }: { content: ResultContentLayer }) {
   const maxCount = Math.max(...elementOrder.map((element) => content.elementBalance.counts[element] ?? 0), 1);
-  return (
-    <section className="panel element-panel">
-      <SectionTitle eyebrow="Ngũ hành" title="Phân bố Can, Chi và Tàng can" />
-      <div className="element-grid">
-        {elementOrder.map((element) => {
-          const count = content.elementBalance.counts[element] ?? 0;
-          return (
-            <article className={cx("element-card", `element-${elementClass[element]}`)} key={element}>
-              <header><span>{element}</span><strong>{count}</strong></header>
-              <div className="bar"><span style={{ width: `${Math.max(8, (count / maxCount) * 100)}%` }} /></div>
-            </article>
-          );
-        })}
-      </div>
-      <p className="note-line">{content.elementBalance.note}</p>
-    </section>
-  );
+  return <section className="panel element-panel"><SectionTitle eyebrow="Ngũ hành" title="Phân bố Can, Chi và Tàng can" /><div className="element-grid">{elementOrder.map((element) => { const count = content.elementBalance.counts[element] ?? 0; return <article className={cx("element-card", `element-${elementClass[element]}`)} key={element}><header><span>{element}</span><strong>{count}</strong></header><div className="bar"><span style={{ width: `${Math.max(8, (count / maxCount) * 100)}%` }} /></div></article>; })}</div><p className="note-line">{content.elementBalance.note}</p></section>;
 }
 
 function TenGodPanel({ content }: { content: ResultContentLayer }) {
   const computed = content.tenGodOverview.filter((item) => item.status === "computed" && item.count > 0);
-  return (
-    <section className="panel ten-god-panel">
-      <SectionTitle eyebrow="Thập thần" title="Các Thập thần đã xuất hiện" note="Ẩn các mục chưa xuất hiện để phiếu gọn và dễ đọc." />
-      <div className="ten-god-grid">
-        {computed.map((item) => (
-          <article className="ten-god-card" key={item.name}>
-            <header><strong>{item.name}</strong><span>{item.count}</span></header>
-            <p>{item.positions}</p>
-            <small>{item.note}</small>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
+  return <section className="panel ten-god-panel"><SectionTitle eyebrow="Thập thần" title="Các Thập thần đã xuất hiện" note="Ẩn các mục chưa xuất hiện để phiếu gọn và dễ đọc." /><div className="ten-god-grid">{computed.map((item) => <article className="ten-god-card" key={item.name}><header><strong>{item.name}</strong><span>{item.count}</span></header><p>{item.positions}</p><small>{item.note}</small></article>)}</div></section>;
 }
 
 function MajorLuckPanel({ content }: { content: ResultContentLayer }) {
-  return (
-    <section className="panel major-luck-panel" id="dai-van">
-      <SectionTitle eyebrow="Đại vận" title="Dòng vận mười bước" note={`${content.majorLuck.directionLabel} · ${content.majorLuck.startAgeLabel}`} />
-      <div className="major-luck-summary">
-        <p>{content.majorLuck.directionRule}</p>
-        <p>Khởi vận từ: <strong>{content.majorLuck.startTerm}</strong></p>
-        <p>{content.majorLuck.note}</p>
-      </div>
-      <div className="table-wrap">
-        <table className="luck-table">
-          <thead><tr><th>#</th><th>Đại vận</th><th>Tuổi</th><th>Năm dương lịch</th><th>Ngày bắt đầu</th><th>Ngũ hành</th></tr></thead>
-          <tbody>
-            {content.majorLuck.cycles.map((cycle) => (
-              <tr key={`${cycle.index}-${cycle.pillarHan}`}>
-                <td>{cycle.index}</td>
-                <td><strong>{cycle.pillar}</strong><small>{cycle.pillarHan}</small></td>
-                <td>{cycle.ageLabel}</td>
-                <td>{cycle.years}</td>
-                <td>{cycle.startDate}</td>
-                <td>{cycle.stemElement} / {cycle.branchElement}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
+  return <section className="panel major-luck-panel" id="dai-van"><SectionTitle eyebrow="Đại vận" title="Dòng vận mười bước" note={`${content.majorLuck.directionLabel} · ${content.majorLuck.startAgeLabel}`} /><div className="major-luck-summary"><p>{content.majorLuck.directionRule}</p><p>Khởi vận từ: <strong>{content.majorLuck.startTerm}</strong></p><p>{content.majorLuck.note}</p></div><div className="table-wrap"><table className="luck-table"><thead><tr><th>#</th><th>Đại vận</th><th>Tuổi</th><th>Năm dương lịch</th><th>Ngày bắt đầu</th><th>Ngũ hành</th></tr></thead><tbody>{content.majorLuck.cycles.map((cycle) => <tr key={`${cycle.index}-${cycle.pillarHan}`}><td>{cycle.index}</td><td><strong>{cycle.pillar}</strong><small>{cycle.pillarHan}</small></td><td>{cycle.ageLabel}</td><td>{cycle.years}</td><td>{cycle.startDate}</td><td>{cycle.stemElement} / {cycle.branchElement}</td></tr>)}</tbody></table></div></section>;
 }
 
-function InterpretationPanel({ state, onInterpret }: { state: InterpretationState; onInterpret: () => void }) {
+function InterpretationPanel({ state, onInterpret, onOpenChat, onLogin }: { state: InterpretationState; onInterpret: () => void; onOpenChat: () => void; onLogin: () => void }) {
   const isBusy = state.status === "saving" || state.status === "running";
   return (
     <section className="panel interpretation-panel" id="luan">
-      <SectionTitle eyebrow="Luận" title="Luận tổng quan theo dữ liệu đã an" note="Lưu dữ liệu trước, sau đó gọi đúng agent đang active cho app này." />
+      <SectionTitle eyebrow="Luận" title="Luận tổng quan theo dữ liệu đã an" note="Luận mở trong khung chat riêng, có thể hỏi tiếp dựa trên lá phiếu." />
       <div className="interpretation-actions">
-        <button className="primary-action" type="button" onClick={onInterpret} disabled={isBusy}>
-          {state.status === "saving" ? "Đang lưu..." : state.status === "running" ? "Đang luận..." : "Luận"}
-        </button>
-        <a className="history-link" href={ACCOUNT_RETURN_URL}>{state.authAction ? "Đăng nhập lại" : "Đăng nhập"}</a>
+        <button className="primary-action" type="button" onClick={onInterpret} disabled={isBusy}>{state.status === "saving" ? "Đang lưu..." : state.status === "running" ? "Đang luận..." : "Luận"}</button>
+        <button className="history-link inline-link" type="button" onClick={onLogin}>{state.authAction ? "Đăng nhập lại" : "Đăng nhập"}</button>
         <a className="history-link" href="/">Trang chủ</a>
       </div>
       {state.message ? <p className={cx("interpretation-status", state.status === "error" && "error-text")}>{state.message}</p> : null}
-      {state.authAction ? <p className="interpretation-status"><a href={ACCOUNT_RETURN_URL}>Vào trang Tài khoản để đăng nhập lại</a></p> : null}
-      {state.appRunId || state.conversationId ? (
-        <div className="interpretation-meta">
-          {state.appRunId ? <span>App run: {state.appRunId}</span> : null}
-          {state.conversationId ? <span>Conversation: {state.conversationId}</span> : null}
-          {state.provider ? <span>{state.provider} · {state.model}</span> : null}
-        </div>
-      ) : null}
-      {state.reply ? <div className="ai-reply-box">{state.reply}</div> : null}
+      {state.authAction ? <p className="interpretation-status"><button className="inline-text-button" type="button" onClick={onLogin}>Mở đăng nhập tại chỗ</button></p> : null}
+      {state.reply ? <div className="chat-open-row"><button className="primary-action" type="button" onClick={onOpenChat}>Mở khung chat luận tiếp</button><span>Gợi ý: hỏi “luận sâu phần nào?” ngay trong khung chat.</span></div> : null}
     </section>
   );
 }
 
-function ResultSheet({ result, content, interpretation, onInterpret }: { result: DeriveFourPillarsOutput; content: ResultContentLayer; interpretation: InterpretationState; onInterpret: () => void }) {
+function ChatModal({ open, messages, question, busy, status, onClose, onQuestionChange, onAsk, onSuggest }: { open: boolean; messages: ChatMessage[]; question: string; busy: boolean; status?: string; onClose: () => void; onQuestionChange: (value: string) => void; onAsk: () => void; onSuggest: (value: string) => void }) {
+  if (!open) return null;
+  const suggestions = ["Luận sâu Nhật chủ", "Nói kỹ phần Ngũ hành", "Phân tích Thập thần nổi bật", "Đại vận đầu cần chú ý gì?", "Phần nào còn thiếu dữ liệu?"];
   return (
-    <div className="result-stack">
-      <InputSummary result={result} content={content} />
-      <PillarOverview content={content} />
-      <ElementBalance content={content} />
-      <TenGodPanel content={content} />
-      <MajorLuckPanel content={content} />
-      <section className="panel"><SectionTitle eyebrow="Lưu ý" title="Giới hạn diễn giải" note={content.guardrail} /></section>
-      <InterpretationPanel state={interpretation} onInterpret={onInterpret} />
+    <div className="chat-modal" role="dialog" aria-modal="true" aria-label="Chat luận Tứ Trụ">
+      <div className="chat-card">
+        <header className="chat-head"><div><p>Luận Tứ Trụ</p><h3>Hỏi tiếp trên lá phiếu này</h3></div><button type="button" onClick={onClose}>Đóng</button></header>
+        <div className="chat-body">{messages.map((item, index) => <article className={cx("chat-bubble", item.role)} key={`${item.role}-${index}`}><span>{item.role === "user" ? "Bạn" : "Agent"}</span><div>{item.content}</div></article>)}</div>
+        <div className="chat-suggestions">{suggestions.map((item) => <button type="button" key={item} onClick={() => onSuggest(item)}>{item}</button>)}</div>
+        <form className="chat-form" onSubmit={(event) => { event.preventDefault(); onAsk(); }}>
+          <textarea value={question} onChange={(event) => onQuestionChange(event.target.value)} placeholder="Ví dụ: Luận sâu phần Nhật chủ và mối quan hệ với Ngũ hành..." />
+          <button className="primary-action" type="submit" disabled={busy || !question.trim()}>{busy ? "Đang hỏi..." : "Hỏi tiếp"}</button>
+        </form>
+        {status ? <p className="chat-status">{status}</p> : null}
+      </div>
     </div>
   );
+}
+
+function ResultSheet({ result, content, interpretation, onInterpret, onOpenChat, onLogin }: { result: DeriveFourPillarsOutput; content: ResultContentLayer; interpretation: InterpretationState; onInterpret: () => void; onOpenChat: () => void; onLogin: () => void }) {
+  return <div className="result-stack"><InputSummary result={result} content={content} /><PillarOverview content={content} /><ElementBalance content={content} /><TenGodPanel content={content} /><MajorLuckPanel content={content} /><section className="panel"><SectionTitle eyebrow="Lưu ý" title="Giới hạn diễn giải" note={content.guardrail} /></section><InterpretationPanel state={interpretation} onInterpret={onInterpret} onOpenChat={onOpenChat} onLogin={onLogin} /></div>;
 }
 
 export default function App() {
@@ -442,15 +223,23 @@ export default function App() {
   const [chartResult, setChartResult] = useState<DeriveFourPillarsOutput | null>(null);
   const [chartError, setChartError] = useState<string | null>(null);
   const [interpretation, setInterpretation] = useState<InterpretationState>({ status: "idle" });
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatQuestion, setChatQuestion] = useState("");
+  const [chatBusy, setChatBusy] = useState(false);
+  const [chatStatus, setChatStatus] = useState("");
 
-  const resultContent = useMemo(() => {
-    if (!chartResult) return null;
+  const resultContent = useMemo(() => { if (!chartResult) return null; try { return buildResultContentLayer(chartResult); } catch { return null; } }, [chartResult]);
+
+  const handleLogin = async () => {
     try {
-      return buildResultContentLayer(chartResult);
+      const clerk = await ensureClerkLoaded();
+      if (clerk?.openSignIn) clerk.openSignIn({ afterSignInUrl: location.href, afterSignUpUrl: location.href });
+      else location.href = ACCOUNT_RETURN_URL;
     } catch {
-      return null;
+      location.href = ACCOUNT_RETURN_URL;
     }
-  }, [chartResult]);
+  };
 
   const handleBuildChart = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -461,6 +250,8 @@ export default function App() {
       setChartResult(result);
       setChartError(null);
       setInterpretation({ status: "idle" });
+      setChatMessages([]);
+      setChatOpen(false);
       window.setTimeout(() => document.getElementById("la-so")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Không dựng được lá phiếu với dữ liệu hiện tại.";
@@ -472,77 +263,53 @@ export default function App() {
   };
 
   const handleInterpretChart = async () => {
-    if (!chartInput || !chartResult || !resultContent) {
-      setInterpretation({ status: "error", message: "Chưa có lá số để luận." });
-      return;
-    }
-
+    if (!chartInput || !chartResult || !resultContent) { setInterpretation({ status: "error", message: "Chưa có lá số để luận." }); return; }
     try {
       const title = `Luận Tứ Trụ ${chartInput.birthDate} ${chartInput.birthTime}`;
       setInterpretation({ status: "saving", message: "Đang kiểm tra phiên đăng nhập và lưu dữ liệu..." });
-
-      const saved = await apiRequest<{ appRun: { id: string } }>("/nguthuat/tutru/app-runs", {
-        method: "POST",
-        body: { input: chartInput, result: chartResult, contentLayer: resultContent, title }
-      });
-
-      setInterpretation({ status: "running", appRunId: saved.appRun.id, message: "Đã lưu dữ liệu. Đang tạo hội thoại và gọi agent đang active cho app tu_tru..." });
-
-      const conversation = await apiRequest<{ conversation: { id: string } }>("/conversations", {
-        method: "POST",
-        body: {
-          appKey: "tu_tru",
-          title,
-          sourceAppRunId: saved.appRun.id,
-          initialMessage: "Hãy luận tổng quan lá số Tứ Trụ này theo dữ liệu engine đã lưu. Chỉ dùng app_run, bốn trụ, Ngũ hành, Tàng can, Thập thần và Đại vận đã có. Không tự tính lại lá số, không bịa dụng thần, vượng suy hoặc lưu niên nếu dữ liệu chưa cung cấp."
-        }
-      });
-
-      const ai = await apiRequest<{ message: { content: string }; provider: string; model: string }>(`/conversations/${conversation.conversation.id}/ai-reply`, {
-        method: "POST",
-        body: { extraInstruction: "Trả lời thành các mục ngắn: Tổng quan, Nhật chủ, Ngũ hành, Thập thần, Đại vận, Phần chưa đủ dữ liệu. Không phán tuyệt đối." }
-      });
-
-      setInterpretation({
-        status: "done",
-        appRunId: saved.appRun.id,
-        conversationId: conversation.conversation.id,
-        provider: ai.provider,
-        model: ai.model,
-        message: "Đã lưu dữ liệu, tạo hội thoại và nhận phần luận.",
-        reply: ai.message.content
-      });
-      window.setTimeout(() => document.getElementById("luan")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+      const saved = await apiRequest<{ appRun: { id: string } }>("/nguthuat/tutru/app-runs", { method: "POST", body: { input: chartInput, result: chartResult, contentLayer: resultContent, title } });
+      setInterpretation({ status: "running", appRunId: saved.appRun.id, message: "Đã lưu dữ liệu. Đang gọi agent để luận..." });
+      const conversation = await apiRequest<{ conversation: { id: string } }>("/conversations", { method: "POST", body: { appKey: "tu_tru", title, sourceAppRunId: saved.appRun.id, initialMessage: "Hãy luận tổng quan lá số Tứ Trụ đã an theo dữ liệu engine. Không xác nhận lại dữ liệu. Không nhắc App run, Conversation, JSON, model hay project path. Bắt đầu bằng ## Tổng quan." } });
+      const ai = await apiRequest<AiReplyResponse>(`/conversations/${conversation.conversation.id}/ai-reply`, { method: "POST", body: { extraInstruction: "Viết bài luận sâu hơn mức tóm tắt. Có nhận xét liên kết giữa Nhật chủ, Ngũ hành, Thập thần và Đại vận. Cấu trúc rõ, mỗi mục 2 đến 4 ý. Sau phần luận, kết bằng câu hỏi: Bạn muốn luận sâu phần nào: Nhật chủ, Ngũ hành, Thập thần hay Đại vận?" } });
+      setInterpretation({ status: "done", appRunId: saved.appRun.id, conversationId: conversation.conversation.id, provider: ai.provider, model: ai.model, message: "Đã nhận phần luận. Mở khung chat để đọc và hỏi tiếp.", reply: ai.message.content });
+      setChatMessages([{ role: "assistant", content: ai.message.content }, { role: "assistant", content: "Bạn muốn luận sâu phần nào: Nhật chủ, Ngũ hành, Thập thần hay Đại vận?" }]);
+      setChatOpen(true);
     } catch (error) {
-      if (error instanceof AuthSessionError) {
-        setInterpretation({ status: "error", message: error.message, authAction: true });
-        return;
-      }
+      if (error instanceof AuthSessionError) { setInterpretation({ status: "error", message: error.message, authAction: true }); return; }
       const message = error instanceof Error ? error.message : "Không gọi được phần luận.";
       setInterpretation({ status: "error", message });
+    }
+  };
+
+  const handleAskFollowup = async () => {
+    const question = chatQuestion.trim();
+    if (!question || !interpretation.conversationId) return;
+    setChatQuestion("");
+    setChatBusy(true);
+    setChatStatus("Đang gửi câu hỏi tiếp theo...");
+    setChatMessages((items) => [...items, { role: "user", content: question }]);
+    try {
+      const ai = await apiRequest<AiReplyResponse>(`/conversations/${interpretation.conversationId}/ai-reply`, { method: "POST", body: { message: question, extraInstruction: "Trả lời nối tiếp dựa trên lá phiếu Tứ Trụ và lịch sử chat hiện tại. Không hỏi lại thông tin đã có. Trả lời có cấu trúc, dễ đọc, không phán tuyệt đối." } });
+      setChatMessages((items) => [...items, { role: "assistant", content: ai.message.content }]);
+      setInterpretation((prev) => ({ ...prev, status: "done", reply: ai.message.content, provider: ai.provider, model: ai.model }));
+      setChatStatus("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Không hỏi tiếp được.";
+      setChatStatus(message);
+    } finally {
+      setChatBusy(false);
     }
   };
 
   return (
     <main className="page-shell">
       <header className="hero-panel compact-hero">
-        <nav className="top-nav" aria-label="Điều hướng Tứ Trụ">
-          <a href="/">Trang chủ</a>
-          <a href="#lap-phieu">Nhập liệu</a>
-          <a href="#la-so">Lá số</a>
-          <a href="#dai-van">Đại vận</a>
-          <a href="#luan">Luận</a>
-        </nav>
+        <nav className="top-nav" aria-label="Điều hướng Tứ Trụ"><a href="/">Trang chủ</a><a href="#lap-phieu">Nhập liệu</a><a href="#la-so">Lá số</a><a href="#dai-van">Đại vận</a><a href="#luan">Luận</a><button type="button" onClick={handleLogin}>Đăng nhập</button></nav>
         <img className="home-hero-card" src={homeTuTruImage} alt="Mệnh Bàn" style={{ width: "100%", display: "block", marginTop: "18px", borderRadius: "18px", border: "1px solid rgba(255, 220, 137, 0.36)", boxShadow: "0 22px 60px rgba(0, 0, 0, 0.46)" }} />
       </header>
-
       <InputPanel calendarType={calendarType} gender={gender} isLeapMonth={isLeapMonth} error={chartError} onCalendarChange={setCalendarType} onGenderChange={setGender} onLeapMonthChange={setIsLeapMonth} onSubmit={handleBuildChart} />
-
-      {chartResult && resultContent ? (
-        <ResultSheet result={chartResult} content={resultContent} interpretation={interpretation} onInterpret={handleInterpretChart} />
-      ) : (
-        <section className="panel empty-panel"><h2>Chưa có lá phiếu</h2><p>Nhập ngày giờ sinh rồi bấm Dựng lá phiếu. Chưa có dữ liệu thì trang không dựng kết quả mẫu.</p></section>
-      )}
+      {chartResult && resultContent ? <ResultSheet result={chartResult} content={resultContent} interpretation={interpretation} onInterpret={handleInterpretChart} onOpenChat={() => setChatOpen(true)} onLogin={handleLogin} /> : <section className="panel empty-panel"><h2>Chưa có lá phiếu</h2><p>Nhập ngày giờ sinh rồi bấm Dựng lá phiếu. Chưa có dữ liệu thì trang không dựng kết quả mẫu.</p></section>}
+      <ChatModal open={chatOpen} messages={chatMessages} question={chatQuestion} busy={chatBusy} status={chatStatus} onClose={() => setChatOpen(false)} onQuestionChange={setChatQuestion} onAsk={handleAskFollowup} onSuggest={setChatQuestion} />
     </main>
   );
 }
