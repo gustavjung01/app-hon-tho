@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState, type ReactNode } from "react";
 import homeTuTruImage from "../../../../home-tu-tru.png";
 import { deriveFourPillars } from "./engine/deriveFourPillars";
 import { buildResultContentLayer, type ResultContentLayer } from "./engine/resultContentLayer";
@@ -195,6 +195,34 @@ function MajorLuckPanel({ content }: { content: ResultContentLayer }) {
   return <section className="panel major-luck-panel" id="dai-van"><SectionTitle eyebrow="Đại vận" title="Dòng vận mười bước" note={`${content.majorLuck.directionLabel} · ${content.majorLuck.startAgeLabel}`} /><div className="major-luck-summary"><p>{content.majorLuck.directionRule}</p><p>Khởi vận từ: <strong>{content.majorLuck.startTerm}</strong></p><p>{content.majorLuck.note}</p></div><div className="table-wrap"><table className="luck-table"><thead><tr><th>#</th><th>Đại vận</th><th>Tuổi</th><th>Năm dương lịch</th><th>Ngày bắt đầu</th><th>Ngũ hành</th></tr></thead><tbody>{content.majorLuck.cycles.map((cycle) => <tr key={`${cycle.index}-${cycle.pillarHan}`}><td>{cycle.index}</td><td><strong>{cycle.pillar}</strong><small>{cycle.pillarHan}</small></td><td>{cycle.ageLabel}</td><td>{cycle.years}</td><td>{cycle.startDate}</td><td>{cycle.stemElement} / {cycle.branchElement}</td></tr>)}</tbody></table></div></section>;
 }
 
+function renderInlineMarkdown(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) return <strong key={index}>{part.slice(2, -2)}</strong>;
+    return part;
+  });
+}
+
+function renderChatContent(content: string): ReactNode {
+  const lines = content.split(/\r?\n/);
+  return lines.map((raw, index) => {
+    const line = raw.trim();
+    if (!line) return <div className="chat-md-gap" key={index} />;
+    const heading = /^(#{1,4})\s+(.+)$/.exec(line);
+    if (heading) return <h4 className="chat-md-heading" key={index}>{renderInlineMarkdown(heading[2])}</h4>;
+    const bullet = /^[-*]\s+(.+)$/.exec(line);
+    if (bullet) return <p className="chat-md-bullet" key={index}>{renderInlineMarkdown(bullet[1])}</p>;
+    return <p className="chat-md-p" key={index}>{renderInlineMarkdown(line)}</p>;
+  });
+}
+
+function followupExtraInstruction(question: string) {
+  const normalized = question.toLowerCase();
+  if (normalized.includes("thiếu dữ liệu") || normalized.includes("chưa đủ dữ liệu")) {
+    return "Đây là câu hỏi audit dữ liệu. Trả lời theo cấu trúc: Đã có gì; Thiếu gì; Vì sao thiếu đó quan trọng; Ưu tiên bổ sung module nào tiếp theo; Người dùng nên hỏi câu gì tiếp. Bám sát lá phiếu hiện tại, không trả lời chung chung.";
+  }
+  return "Đây là lượt hỏi tiếp. Trả lời đúng câu hỏi mới nhất, không lặp lại toàn bộ bài tổng luận. Nếu câu hỏi rộng, hãy gợi ý các hướng đào sâu dựa trên chính lá phiếu. Kết bằng một câu hỏi mở tự nhiên.";
+}
+
 function InterpretationPanel({ state, onInterpret, onOpenChat, onLogin }: { state: InterpretationState; onInterpret: () => void; onOpenChat: () => void; onLogin: () => void }) {
   const isBusy = state.status === "saving" || state.status === "running";
   return (
@@ -219,7 +247,7 @@ function ChatModal({ open, messages, question, busy, status, onClose, onQuestion
     <div className="chat-modal" role="dialog" aria-modal="true" aria-label="Chat luận Tứ Trụ">
       <div className="chat-card">
         <header className="chat-head"><div><p>Cố vấn Tứ Trụ</p><h3>Hỏi tiếp trên lá phiếu này</h3></div><button type="button" onClick={onClose}>Đóng</button></header>
-        <div className="chat-body">{messages.map((item, index) => <article className={cx("chat-bubble", item.role)} key={`${item.role}-${index}`}><span>{item.role === "user" ? "Bạn" : "Cố vấn"}</span><div>{item.content}</div></article>)}</div>
+        <div className="chat-body">{messages.map((item, index) => <article className={cx("chat-bubble", item.role)} key={`${item.role}-${index}`}><span>{item.role === "user" ? "Bạn" : "Cố vấn"}</span><div className="chat-content">{renderChatContent(item.content)}</div></article>)}</div>
         <div className="chat-suggestions">{suggestions.map((item) => <button type="button" key={item} onClick={() => onSuggest(item)}>{item}</button>)}</div>
         <form className="chat-form" onSubmit={(event) => { event.preventDefault(); onAsk(); }}>
           <textarea value={question} onChange={(event) => onQuestionChange(event.target.value)} placeholder="Ví dụ: Luận sâu phần Nhật chủ và liên hệ với Ngũ hành..." />
@@ -318,7 +346,7 @@ export default function App() {
     setChatStatus("Cố vấn đang đọc câu hỏi tiếp theo...");
     setChatMessages((items) => [...items, { role: "user", content: question }]);
     try {
-      const ai = await apiRequest<AiReplyResponse>(`/conversations/${interpretation.conversationId}/ai-reply`, { method: "POST", body: { message: question, extraInstruction: "Đây là lượt hỏi tiếp. Trả lời đúng câu hỏi mới nhất, không lặp lại toàn bộ bài tổng luận. Nếu câu hỏi rộng, hãy gợi ý các hướng đào sâu dựa trên chính lá phiếu. Kết bằng một câu hỏi mở tự nhiên." } });
+      const ai = await apiRequest<AiReplyResponse>(`/conversations/${interpretation.conversationId}/ai-reply`, { method: "POST", body: { message: question, extraInstruction: followupExtraInstruction(question) } });
       setChatMessages((items) => [...items, { role: "assistant", content: ai.message.content }]);
       setInterpretation((prev) => ({ ...prev, status: "done", reply: ai.message.content, provider: ai.provider, model: ai.model }));
       setChatStatus("");
