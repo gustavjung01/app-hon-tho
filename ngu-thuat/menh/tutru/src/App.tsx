@@ -9,7 +9,7 @@ declare global {
     Clerk?: {
       load?: (options?: unknown) => Promise<void>;
       openSignIn?: (options?: unknown) => void;
-      session?: { getToken: () => Promise<string | null> } | null;
+      session?: { getToken: (options?: unknown) => Promise<string | null> } | null;
       user?: { primaryEmailAddress?: { emailAddress?: string }; emailAddresses?: Array<{ emailAddress?: string }> } | null;
     };
     __internal_ClerkUICtor?: unknown;
@@ -36,6 +36,8 @@ function cx(...items: Array<string | false | null | undefined>) { return items.f
 function toGenderLabel(gender: GenderType) { if (gender === "male") return "Nam"; if (gender === "female") return "Nữ"; return "Khác"; }
 function getApiBase() { return (localStorage.getItem("hontho_api_base") || "/api").replace(/\/$/, ""); }
 function storedToken() { return localStorage.getItem("hontho_user_token")?.trim() || ""; }
+function saveToken(token: string) { localStorage.setItem("hontho_user_token", token); localStorage.setItem("hontho_api_base", "/api"); }
+function clearToken() { localStorage.removeItem("hontho_user_token"); }
 
 function clerkDomainFromPublishableKey(key: string) {
   const encoded = String(key || "").replace(/^pk_(test|live)_/, "").trim();
@@ -72,41 +74,57 @@ async function ensureClerkLoaded() {
   return window.Clerk || null;
 }
 
-async function getFreshAuthToken() {
-  const cached = storedToken();
-  if (cached) return cached;
+async function getClerkToken() {
   try {
     const clerk = await ensureClerkLoaded();
-    const token = await clerk?.session?.getToken?.();
+    const token = await clerk?.session?.getToken?.({ skipCache: true });
     if (token) {
-      localStorage.setItem("hontho_user_token", token);
-      localStorage.setItem("hontho_api_base", "/api");
+      saveToken(token);
       return token;
     }
   } catch {
-    // User-facing errors are handled below.
+    // Fallback below handles cached token or user-facing login error.
   }
-  throw new AuthSessionError("Bạn cần đăng nhập để lưu lá phiếu và hỏi Cố vấn Tứ Trụ. Bấm Đăng nhập ngay trong trang này.");
+  return "";
+}
+
+async function getFreshAuthToken(forceClerk = false) {
+  if (forceClerk) clearToken();
+  const liveToken = await getClerkToken();
+  if (liveToken) return liveToken;
+  const cached = storedToken();
+  if (!forceClerk && cached) return cached;
+  throw new AuthSessionError("Phiên đăng nhập đã hết hạn hoặc chưa sẵn sàng. Bấm Đăng nhập để mở lại phiên trong trang này.", true);
+}
+
+function parseApiError(response: Response, data: any) {
+  const message = typeof data?.error === "string" ? data.error : "API chưa xử lý được yêu cầu.";
+  const detail = typeof data?.detail === "string" ? data.detail : "";
+  if (response.status >= 500 && message.includes("AI provider")) return new Error(detail || "Cố vấn Tứ Trụ chưa trả lời được. Vui lòng thử lại sau khi kiểm tra cấu hình luận.");
+  return new Error(`${message}${detail ? ` ${detail}` : ""}`.trim());
 }
 
 async function apiRequest<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
-  const token = await getFreshAuthToken();
-  const response = await fetch(`${getApiBase()}${path}`, {
+  const run = async (token: string) => fetch(`${getApiBase()}${path}`, {
     method: options.method || "GET",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: options.body ? JSON.stringify(options.body) : undefined
   });
+
+  let token = await getFreshAuthToken(false);
+  let response = await run(token);
+  if (response.status === 401) {
+    clearToken();
+    token = await getFreshAuthToken(true);
+    response = await run(token);
+  }
+
   const data = await response.json().catch(() => ({ error: response.statusText }));
   if (response.status === 401) {
-    localStorage.removeItem("hontho_user_token");
-    throw new AuthSessionError("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.", true);
+    clearToken();
+    throw new AuthSessionError("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại trong trang này.", true);
   }
-  if (!response.ok) {
-    const message = typeof data?.error === "string" ? data.error : "API chưa xử lý được yêu cầu.";
-    const detail = typeof data?.detail === "string" ? data.detail : "";
-    if (response.status >= 500 && message.includes("AI provider")) throw new Error(detail || "Cố vấn Tứ Trụ chưa trả lời được. Vui lòng thử lại sau khi kiểm tra cấu hình luận.");
-    throw new Error(`${message}${detail ? ` ${detail}` : ""}`.trim());
-  }
+  if (!response.ok) throw parseApiError(response, data);
   return data as T;
 }
 
@@ -234,19 +252,17 @@ export default function App() {
   const resultContent = useMemo(() => { if (!chartResult) return null; try { return buildResultContentLayer(chartResult); } catch { return null; } }, [chartResult]);
 
   const handleLogin = async () => {
-    if (storedToken()) {
-      setInterpretation((prev) => ({ ...prev, message: "Phiên đăng nhập đã sẵn sàng trong app." }));
-      return;
+    try {
+      const token = await getFreshAuthToken(true);
+      if (token) {
+        setInterpretation((prev) => ({ ...prev, message: "Đã làm mới phiên đăng nhập trong app." }));
+        return;
+      }
+    } catch {
+      // Open Clerk below.
     }
     try {
       const clerk = await ensureClerkLoaded();
-      const token = await clerk?.session?.getToken?.();
-      if (token) {
-        localStorage.setItem("hontho_user_token", token);
-        localStorage.setItem("hontho_api_base", "/api");
-        setInterpretation((prev) => ({ ...prev, message: "Đã đăng nhập trong app." }));
-        return;
-      }
       if (clerk?.openSignIn) clerk.openSignIn({ afterSignInUrl: location.href, afterSignUpUrl: location.href });
       else location.href = ACCOUNT_RETURN_URL;
     } catch {
@@ -307,7 +323,7 @@ export default function App() {
       setInterpretation((prev) => ({ ...prev, status: "done", reply: ai.message.content, provider: ai.provider, model: ai.model }));
       setChatStatus("");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Không hỏi tiếp được.";
+      const message = error instanceof AuthSessionError ? `${error.message} Bấm Đăng nhập rồi gửi lại câu hỏi.` : error instanceof Error ? error.message : "Không hỏi tiếp được.";
       setChatStatus(message);
     } finally {
       setChatBusy(false);
