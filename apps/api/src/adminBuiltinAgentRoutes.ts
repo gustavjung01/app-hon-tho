@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { z } from "zod";
 import { pool, query } from "./db.js";
 import { requireAdmin, requireAuth, type AuthedRequest } from "./auth.js";
+import { readCredentialInput, saveDialogflowCredentials, stripDialogflowSecretsFromImportedJson } from "./dialogflowCxCredentials.js";
 
 type QueryClient = Pick<typeof pool, "query">;
 
@@ -23,6 +24,8 @@ type AgentRow = {
   created_at: string;
   updated_at: string;
 };
+
+type DialogflowCredentialSave = Awaited<ReturnType<typeof saveDialogflowCredentials>> | null;
 
 const agentStatusSchema = z.enum(["draft", "active", "disabled", "archived"]);
 const appStatusSchema = z.enum(["draft", "active", "disabled", "archived"]);
@@ -57,6 +60,7 @@ const agentInputSchema = z.object({
   systemPrompt: z.string().max(80000).optional(),
   persona: z.string().max(20000).optional(),
   importedJson: z.unknown().optional(),
+  dialogflowCredentials: z.unknown().optional(),
   status: agentStatusSchema.default("draft"),
   temperature: z.number().min(0).max(2).default(0.3),
   maxTokens: z.number().int().min(100).max(12000).default(1600)
@@ -77,6 +81,14 @@ function keyFromName(value: string) {
 function builtInAppFor(appKey: string) {
   const normalizedKey = appKey.trim();
   return builtInApps.find((item) => item.key === normalizedKey) || null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function text(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : "";
 }
 
 async function upsertBuiltInApp(appDef: BuiltInApp, client: QueryClient = pool) {
@@ -143,9 +155,38 @@ function buildSystemPrompt(data: AgentInput) {
   return data.systemPrompt?.trim() || data.persona?.trim() || `Agent ${data.name} phục vụ app ${data.appKey}.`;
 }
 
-function buildAgentMetadata(data: AgentInput) {
+function previousCredentialRef(previous?: Record<string, unknown> | null) {
+  if (!previous) return "";
+  const imported = isRecord(previous.importedJson) ? previous.importedJson : {};
+  return text(previous.dialogflowCredentialRef) || text(imported.dialogflowCredentialRef);
+}
+
+function previousCredentialMeta(previous?: Record<string, unknown> | null) {
+  if (!previous) return null;
+  return isRecord(previous.dialogflowCredential) ? previous.dialogflowCredential : null;
+}
+
+function buildAgentMetadata(data: AgentInput, credentialSave: DialogflowCredentialSave, previous?: Record<string, unknown> | null) {
   const googleAgentManaged = data.provider === "dialogflow_cx";
-  return { persona: data.persona || "", importedJson: data.importedJson ?? null, managerVersion: 2, appBinding: "explicit_app_key", ...(googleAgentManaged ? { externalAgentManaged: true, googleAgentManaged: true } : {}) };
+  const credentialRef = credentialSave?.credentialRef || previousCredentialRef(previous);
+  const credentialMeta = credentialSave?.publicCredential || previousCredentialMeta(previous);
+  const importedJson = stripDialogflowSecretsFromImportedJson(data.importedJson);
+  return {
+    persona: data.persona || "",
+    importedJson,
+    managerVersion: 3,
+    appBinding: "explicit_app_key",
+    ...(googleAgentManaged ? { externalAgentManaged: true, googleAgentManaged: true } : {}),
+    ...(credentialRef ? { dialogflowCredentialRef: credentialRef, hasDialogflowCredentials: true } : {}),
+    ...(credentialMeta ? { dialogflowCredential: credentialMeta } : {})
+  };
+}
+
+async function maybeSaveCredentials(data: AgentInput, client: QueryClient, actorUserId: string) {
+  if (data.provider !== "dialogflow_cx") return null;
+  const credentials = readCredentialInput(data.importedJson, data.dialogflowCredentials);
+  if (!credentials) return null;
+  return saveDialogflowCredentials({ client, appKey: data.appKey, agentPath: data.model, credentials, updatedBy: actorUserId });
 }
 
 function registerAppsWithAgentsOverride(app: Express) {
@@ -175,6 +216,7 @@ function registerAgentWriteOverrides(app: Express) {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+      const credentialSave = await maybeSaveCredentials(data, client, req.user!.id);
       const versionRows = await client.query<{ next_version: number }>(`SELECT COALESCE(max(version), 0) + 1 AS next_version FROM ai_agents WHERE app_key=$1 AND system_prompt_key=$2`, [data.appKey, promptKey]);
       const version = versionRows.rows[0]?.next_version || 1;
       if (data.status === "active") await client.query(`UPDATE ai_agents SET status='disabled', updated_at=now() WHERE app_key=$1 AND status='active'`, [data.appKey]);
@@ -182,11 +224,11 @@ function registerAgentWriteOverrides(app: Express) {
         `INSERT INTO ai_agents(app_key, name, provider, model, system_prompt_key, system_prompt, version, status, temperature, max_tokens, allowed_tools, allowed_data, metadata)
          VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, '[]'::jsonb, '[]'::jsonb, $11::jsonb)
          RETURNING id, app_key, name, provider, model, system_prompt_key, system_prompt, version, status, temperature, max_tokens, allowed_tools, allowed_data, metadata, created_at, updated_at`,
-        [data.appKey, data.name, data.provider, data.model, promptKey, systemPrompt, version, data.status, data.temperature, data.maxTokens, JSON.stringify(buildAgentMetadata(data))]
+        [data.appKey, data.name, data.provider, data.model, promptKey, systemPrompt, version, data.status, data.temperature, data.maxTokens, JSON.stringify(buildAgentMetadata(data, credentialSave))]
       );
       await writeAudit({ actorUserId: req.user!.id, action: "agent.create", targetType: "ai_agent", targetId: inserted.rows[0].id, after: inserted.rows[0], client });
       await client.query("COMMIT");
-      res.status(201).json({ agent: inserted.rows[0], appKeySource: "payload.appKey" });
+      res.status(201).json({ agent: inserted.rows[0], appKeySource: "payload.appKey", dialogflowCredentialsSaved: !!credentialSave });
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
@@ -205,16 +247,17 @@ function registerAgentWriteOverrides(app: Express) {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+      const credentialSave = await maybeSaveCredentials(data, client, req.user!.id);
       if (data.status === "active") await client.query(`UPDATE ai_agents SET status='disabled', updated_at=now() WHERE app_key=$1 AND status='active' AND id<>$2`, [data.appKey, req.params.id]);
       const updated = await client.query<AgentRow>(
         `UPDATE ai_agents SET app_key=$2, name=$3, provider=$4, model=$5, system_prompt_key=$6, system_prompt=$7, status=$8, temperature=$9, max_tokens=$10, allowed_tools='[]'::jsonb, allowed_data='[]'::jsonb, metadata=$11::jsonb, updated_at=now()
          WHERE id=$1
          RETURNING id, app_key, name, provider, model, system_prompt_key, system_prompt, version, status, temperature, max_tokens, allowed_tools, allowed_data, metadata, created_at, updated_at`,
-        [req.params.id, data.appKey, data.name, data.provider, data.model, promptKey, systemPrompt, data.status, data.temperature, data.maxTokens, JSON.stringify(buildAgentMetadata(data))]
+        [req.params.id, data.appKey, data.name, data.provider, data.model, promptKey, systemPrompt, data.status, data.temperature, data.maxTokens, JSON.stringify(buildAgentMetadata(data, credentialSave, before.metadata))]
       );
       await writeAudit({ actorUserId: req.user!.id, action: "agent.update", targetType: "ai_agent", targetId: req.params.id, before, after: updated.rows[0], client });
       await client.query("COMMIT");
-      res.json({ agent: updated.rows[0], appKeySource: "payload.appKey" });
+      res.json({ agent: updated.rows[0], appKeySource: "payload.appKey", dialogflowCredentialsSaved: !!credentialSave });
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
