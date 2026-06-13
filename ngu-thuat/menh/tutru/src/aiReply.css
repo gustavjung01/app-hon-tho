@@ -17,6 +17,8 @@
 .history-link,
 .inline-link,
 .inline-text-button {
+  position: relative;
+  z-index: 2;
   border: 1px solid var(--line-strong);
   border-radius: 999px;
   background: rgba(9, 7, 5, 0.72);
@@ -24,6 +26,13 @@
   padding: 10px 16px;
   cursor: pointer;
   font: inherit;
+}
+
+.top-nav button.signed-in,
+.inline-link.signed-in {
+  border-color: rgba(118, 205, 143, 0.72);
+  background: rgba(44, 122, 69, 0.24);
+  color: #d9ffd9;
 }
 
 .inline-text-button {
