@@ -69,13 +69,14 @@ function tuTruBrief(input: AiRuntimeInput) {
     tenGods ? `Thập thần nổi bật: ${tenGods}.` : "Thập thần nổi bật: chưa có mục nào đủ nổi bật trong lớp hiện tại.",
     `Đại vận: ${str(majorLuck.directionLabel)}, khởi ${str(majorLuck.startAgeLabel)}. Các vận đầu: ${cycles}.`,
     `Giới hạn: ${str(layer.guardrail || resultJson.guardrail) || "chỉ tham khảo cổ học, thiếu lớp vượng suy/dụng thần/lưu niên thì phải nói rõ."}`
-  ].join("\n"), 1700);
+  ].join("\n"), 1500);
 }
 
 function firstInterpretationPrompt(input: AiRuntimeInput, user: string) {
   return [
     "[CHE_DO] LUAN_TU_NHIEN",
     "Bạn là Cố vấn Tứ Trụ trong app. Hãy trả lời như một người đang luận trực tiếp cho người dùng, tự nhiên và mạch lạc.",
+    "Lá số đã được app an sẵn trong LA_SO_NEN. Không yêu cầu người dùng nhập lại năm tháng ngày giờ.",
     "Không chào hỏi. Không đọc lại dữ liệu. Không giải thích các trường như trụ năm, trụ tháng là gì. Không biến câu trả lời thành báo cáo kỹ thuật hay checklist khô.",
     "Hãy bám vào lá số nền bên dưới để luận: nhìn tổng thể, nêu điểm nổi bật, liên hệ các lớp đã có, nói rõ phần chưa đủ dữ liệu, rồi gợi ý 2-3 câu hỏi tiếp rất ngắn.",
     "Nếu thiếu lớp vượng suy, dụng thần, hỷ kỵ hay lưu niên thì nói đó là giới hạn, đừng tự bịa kết luận chắc chắn.",
@@ -87,7 +88,9 @@ function firstInterpretationPrompt(input: AiRuntimeInput, user: string) {
 function followupPrompt(input: AiRuntimeInput, user: string) {
   return [
     "[CHE_DO] HOI_TIEP_TU_NHIEN",
-    "Dựa trên lá số và ngữ cảnh đã có trong phiên này, trả lời câu hỏi mới nhất như đang chat. Không viết lại tổng luận. Không nhắc kỹ thuật. Không giải thích field. Nếu thiếu dữ liệu thì nói gọn thiếu gì và hướng hỏi tiếp.",
+    "Lá số vẫn nằm trong LA_SO_NEN dưới đây. Không yêu cầu người dùng cung cấp lại ngày giờ sinh. Trả lời câu hỏi mới nhất như đang chat, không viết lại tổng luận, không nhắc kỹ thuật.",
+    "Nếu thiếu lớp chuyên sâu như vượng suy, dụng thần, hỷ kỵ, lưu niên thì nói thiếu lớp đó, không nói thiếu ngày giờ sinh.",
+    "[LA_SO_NEN]", tuTruBrief(input),
     "[CAU_HOI]", trimText(user, 420)
   ].join("\n");
 }
@@ -95,14 +98,14 @@ function followupPrompt(input: AiRuntimeInput, user: string) {
 function cxPrompt(input: AiRuntimeInput, systemPrompt: string) {
   const user = latestUserMessage(input.messages) || "Luận lá phiếu này giúp tôi.";
   const prompt = isFollowupTurn(input) ? followupPrompt(input, user) : firstInterpretationPrompt(input, user);
-  return trimText(prompt, isFollowupTurn(input) ? 850 : 2900);
+  return trimText(prompt, isFollowupTurn(input) ? 2500 : 2900);
 }
 
 function cxOutput(json: any) { const msgs = json?.queryResult?.responseMessages || []; const parts = msgs.flatMap((m: any) => m?.text?.text || []).filter(Boolean); return parts.join("\n").trim() || String(json?.queryResult?.fulfillmentText || "").trim(); }
 
 function isDialogflowEcho(content: string) {
   const normalized = content.toLowerCase();
-  return normalized.includes("app run:") || normalized.includes("conversation:") || normalized.includes("projects/dialog") || normalized.includes("tôi đã nhận") || normalized.includes("xác nhận thông tin") || normalized.includes("thông tin đầu vào") || normalized.includes("bảng tứ trụ của bạn được lập như sau") || normalized.includes("dưới đây là phần phân tích tổng quan về cấu trúc lá số") || (normalized.includes("giới tính") && normalized.includes("ngày sinh") && normalized.includes("ngũ hành tổng quan"));
+  return normalized.includes("app run:") || normalized.includes("conversation:") || normalized.includes("projects/dialog") || normalized.includes("tôi đã nhận") || normalized.includes("xác nhận thông tin") || normalized.includes("thông tin đầu vào") || normalized.includes("bảng tứ trụ của bạn được lập như sau") || normalized.includes("dưới đây là phần phân tích tổng quan về cấu trúc lá số") || normalized.includes("vui lòng cung cấp thông tin sinh") || normalized.includes("cung cấp thông tin năm, tháng, ngày") || normalized.includes("cần có dữ liệu lá số") || normalized.includes("chưa nhận được thông tin về năm") || (normalized.includes("cần có dữ liệu") && normalized.includes("giờ sinh")) || (normalized.includes("giới tính") && normalized.includes("ngày sinh") && normalized.includes("ngũ hành tổng quan"));
 }
 
 async function runDialogflowCx(input: AiRuntimeInput, systemPrompt: string): Promise<AiRuntimeResult> {
@@ -119,7 +122,7 @@ async function runDialogflowCx(input: AiRuntimeInput, systemPrompt: string): Pro
   if (!response.ok) throw new RuntimeProviderError(responseJson?.error?.message || response.statusText || "Cố vấn Tứ Trụ chưa trả lời được.", requestLog, responseJson);
   const content = cxOutput(responseJson);
   if (!content) throw new RuntimeProviderError("Cố vấn Tứ Trụ trả về nội dung rỗng.", requestLog, responseJson);
-  if (isDialogflowEcho(content)) throw new RuntimeProviderError("Cố vấn Tứ Trụ đang giải thích dữ liệu thay vì luận tự nhiên. Hãy cập nhật Playbook: không đọc lại bảng, không giải thích field, hãy luận như cố vấn dựa trên lá số nền.", requestLog, { ...responseJson, rawContentPreview: content.slice(0, 800), promptMode });
+  if (input.appRun && isDialogflowEcho(content)) throw new RuntimeProviderError("Cố vấn Tứ Trụ chưa bám lá số đã an. Backend đã có lá số, nhưng Playbook vẫn yêu cầu nhập lại dữ liệu. Hãy thử lại sau khi deploy bản mới hoặc tạo hội thoại mới.", requestLog, { ...responseJson, rawContentPreview: content.slice(0, 800), promptMode });
   return { content, provider: "dialogflow_cx", model: input.agent.model, providerResponseId: responseJson?.responseId || null, tokenInput: 0, tokenOutput: 0, cost: 0, requestJson: requestLog, responseJson: { ...responseJson, promptMode } };
 }
 
