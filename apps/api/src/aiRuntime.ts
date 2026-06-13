@@ -11,8 +11,8 @@ type AiRuntimeResult = { content: string; provider: string; model: string; provi
 
 class RuntimeProviderError extends Error { constructor(message: string, public requestJson: unknown, public responseJson: unknown) { super(message); this.name = "RuntimeProviderError"; } }
 
-function compactJson(value: unknown, maxLength = 2200) { if (!value) return "null"; const text = JSON.stringify(value, null, 2); return text.length > maxLength ? `${text.slice(0, maxLength)}\n... [truncated]` : text; }
-function trimText(value: string, maxLength = 1200) { return value.length > maxLength ? `${value.slice(0, maxLength)}\n... [truncated]` : value; }
+function compactJson(value: unknown, maxLength = 1600) { if (!value) return "null"; const text = JSON.stringify(value, null, 2); return text.length > maxLength ? `${text.slice(0, maxLength)}\n... [truncated]` : text; }
+function trimText(value: string, maxLength = 900) { return value.length > maxLength ? `${value.slice(0, maxLength)}\n... [truncated]` : value; }
 function asNumber(value: number | string | null | undefined, fallback: number) { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : fallback; }
 function estimateCost(tokenInput: number, tokenOutput: number, inputPer1K: number, outputPer1K: number) { return Number(((tokenInput / 1000) * inputPer1K + (tokenOutput / 1000) * outputPer1K).toFixed(6)); }
 function providerKey(value: string | null | undefined) { const normalized = String(value || "stub").trim().toLowerCase().replace(/[-\s]+/g, "_"); return normalized || "stub"; }
@@ -25,6 +25,8 @@ function parseCxPath(model: string) { const match = /^projects\/([^/]+)\/locatio
 function cxBaseUrl(location: string) { const override = process.env.DIALOGFLOW_CX_API_BASE_URL?.trim(); if (override) return override.replace(/\/$/, ""); return location && location !== "global" ? `https://${location}-dialogflow.googleapis.com` : "https://dialogflow.googleapis.com"; }
 function isRecord(value: unknown): value is Record<string, unknown> { return !!value && typeof value === "object" && !Array.isArray(value); }
 function rec(value: unknown) { return isRecord(value) ? value : {}; }
+function arr(value: unknown): unknown[] { return Array.isArray(value) ? value : []; }
+function str(value: unknown) { return typeof value === "string" ? value : ""; }
 
 function isFollowupTurn(input: AiRuntimeInput) {
   const userCount = input.messages.filter((m) => m.role === "user").length;
@@ -34,8 +36,8 @@ function isFollowupTurn(input: AiRuntimeInput) {
 }
 
 export function buildAgentSystemPrompt(input: AiRuntimeInput) {
-  const appRun = input.appRun ? `\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nApp: ${input.appRun.app_key}\nCreated: ${input.appRun.created_at}\nResult JSON:\n${compactJson(input.appRun.result_json, 2200)}` : "\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nChưa có app_run gắn với hội thoại này. Không tự tính thay engine, không bịa dữ liệu chưa có.";
-  const guardrail = "\n\n[QUY TẮC HỆ THỐNG CỔ HỌC]\n- Engine/app_run là nguồn sự thật.\n- Thiếu dữ liệu thì nói rõ thiếu dữ liệu và hỏi thêm.\n- Trả lời bằng tiếng Việt, rõ ràng, có cấu trúc ngắn gọn.\n- Không chào hỏi, không xác nhận đã nhận dữ liệu, không lặp App run/Conversation/model/path.\n- Lượt đầu phải luận sâu và liên kết các lớp dữ liệu; lượt hỏi tiếp phải trả lời đúng câu hỏi, không lặp lại toàn bộ dàn ý tổng luận.\n- Không phán định tuyệt đối về đời người, bệnh tật, tai họa, hôn nhân, tài lộc hay quyết định thực tế.";
+  const appRun = input.appRun ? `\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nApp: ${input.appRun.app_key}\nCreated: ${input.appRun.created_at}\nResult JSON:\n${compactJson(input.appRun.result_json, 1200)}` : "\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nChưa có app_run gắn với hội thoại này. Không tự tính thay engine, không bịa dữ liệu chưa có.";
+  const guardrail = "\n\n[QUY TẮC]\n- Engine/app_run là nguồn sự thật.\n- Thiếu dữ liệu thì nói rõ thiếu.\n- Không nhắc App run/Conversation/model/path/JSON.\n- Lượt đầu luận sâu; hỏi tiếp trả lời đúng câu hỏi, không lặp tổng luận.\n- Không phán định tuyệt đối.";
   const extra = input.extraInstruction ? `\n\n[CHỈ DẪN BỔ SUNG]\n${input.extraInstruction}` : "";
   return `${input.agent.system_prompt}${guardrail}${appRun}${extra}`;
 }
@@ -48,72 +50,59 @@ function stubResponse(input: AiRuntimeInput, systemPrompt: string, provider: str
   return { content, provider, model: input.agent.model, providerResponseId: null, tokenInput, tokenOutput, cost: 0, requestJson: { mode: "stub", provider, appKey: input.agent.app_key, agentId: input.agent.id, model: input.agent.model, note }, responseJson: { mode: "stub", provider, content } };
 }
 
-function dataForDialogflow(input: AiRuntimeInput) {
+function tuTruSummary(input: AiRuntimeInput) {
   if (!input.appRun) return "null";
   const resultJson = rec(input.appRun.result_json);
-  const contentLayer = resultJson.contentLayer;
-  return compactJson({ app_key: input.appRun.app_key, created_at: input.appRun.created_at, contentLayer: isRecord(contentLayer) ? contentLayer : resultJson, guardrails: rec(resultJson.guardrails) }, 3600);
+  const layer = rec(resultJson.contentLayer || resultJson);
+  const inputSummary = rec(layer.inputSummary);
+  const dayMaster = rec(layer.dayMasterSummary);
+  const elementBalance = rec(layer.elementBalance);
+  const majorLuck = rec(layer.majorLuck);
+  const pillars = arr(layer.pillars).map(rec).map((p) => `${str(p.label)}:${str(p.pillar)} ${str(p.pillarHan)} ${str(p.tenGod)}`).filter(Boolean).join("; ");
+  const tenGods = arr(layer.tenGodOverview).map(rec).filter((x) => Number(x.count || 0) > 0).slice(0, 8).map((x) => `${str(x.name)}:${x.count} ${str(x.positions)}`).join("; ");
+  const cycles = arr(majorLuck.cycles).map(rec).slice(0, 4).map((x) => `${x.index}.${str(x.pillar)} ${str(x.ageLabel)} ${str(x.years)}`).join("; ");
+  return compactJson({
+    birth: { date: inputSummary.birthDate, time: inputSummary.birthTime, place: inputSummary.birthPlace, gender: inputSummary.gender },
+    dayMaster: { name: dayMaster.name, han: dayMaster.han, element: dayMaster.element, note: dayMaster.note },
+    pillars,
+    elements: elementBalance.counts,
+    tenGods,
+    luck: { direction: majorLuck.directionLabel, startAge: majorLuck.startAgeLabel, cycles },
+    guardrail: layer.guardrail || resultJson.guardrail
+  }, 1800);
 }
 
-function cxHistory(input: AiRuntimeInput, max = 6) {
-  return input.messages.slice(-max).map((m) => `${m.role}: ${trimText(m.content, m.role === "assistant" ? 520 : 360)}`).join("\n");
+function cxHistory(input: AiRuntimeInput, max = 4) {
+  return input.messages.slice(-max).map((m) => `${m.role}: ${trimText(m.content, m.role === "assistant" ? 320 : 240)}`).join("\n");
 }
 
 function firstInterpretationPrompt(input: AiRuntimeInput, systemPrompt: string, user: string) {
   return [
     "[CHE_DO] LUOT_DAU_TONG_LUAN",
-    "[VAI_TRO] Bạn là Cố vấn Tứ Trụ trong App Cổ Học. Hãy viết một bài luận thật sự, không chỉ tóm tắt dữ liệu.",
-    "[NHIEM_VU] Luận Tứ Trụ bằng tiếng Việt dựa trên dữ liệu engine đã an. Không chào hỏi. Không nói 'tôi đã nhận'. Không nhắc App run, Conversation, model, project path hay JSON. Không lặp lại dữ liệu thô. Hãy diễn giải ý nghĩa và liên hệ giữa Nhật chủ, Ngũ hành, Thập thần, Đại vận.",
-    "",
-    "[DO_SAU_BAT_BUOC]",
-    "- Mỗi mục chính có 2 đến 4 đoạn ngắn hoặc 3 đến 5 ý cụ thể.",
-    "- Không chỉ định nghĩa thuật ngữ. Phải nói điểm nào nổi bật, vì sao nổi bật, và giới hạn đọc ở đâu.",
-    "- Liên hệ chéo tối thiểu: Nhật chủ với Ngũ hành; Ngũ hành với Thập thần; Đại vận với nền lá phiếu.",
-    "- Nếu thiếu lớp vượng suy/dụng thần/lưu niên thì nói rõ chưa đủ dữ liệu, không tự bịa.",
-    "- Cuối bài phải chủ động gợi ý 3 câu hỏi tiếp theo dựa trên lá phiếu vừa luận, không dùng gợi ý chung chung.",
-    "",
-    "[FORMAT_GOI_Y]",
-    "## Tổng quan\n## Nhật chủ\n## Ngũ hành\n## Thập thần\n## Đại vận\n## Phần chưa đủ dữ liệu\n## Có thể hỏi tiếp",
-    "",
-    "[SYSTEM_RULES]", trimText(systemPrompt, 1600),
-    "",
-    "[DU_LIEU_ENGINE_TU_TRU]", dataForDialogflow(input),
-    "",
-    "[YEU_CAU_NGUOI_DUNG]", trimText(user, 500),
-    "",
-    "[NHAC_LAI] Bắt đầu bằng '## Tổng quan'. Kết bằng mục '## Có thể hỏi tiếp' với 3 câu hỏi cụ thể dựa trên lá phiếu."
+    "Bạn là Cố vấn Tứ Trụ. Luận sâu nhưng gọn dựa trên PHIEU_NEN bên dưới. Không nhắc dữ liệu kỹ thuật, không lặp JSON.",
+    "Yêu cầu: nêu quan sát, diễn giải, giới hạn; liên hệ Nhật chủ-Ngũ hành-Thập thần-Đại vận; cuối bài gợi ý 3 câu hỏi tiếp theo theo lá phiếu.",
+    "Format: ## Tổng quan | ## Nhật chủ | ## Ngũ hành | ## Thập thần | ## Đại vận | ## Phần chưa đủ dữ liệu | ## Có thể hỏi tiếp",
+    "[RULES]", trimText(systemPrompt, 650),
+    "[PHIEU_NEN]", tuTruSummary(input),
+    "[YEU_CAU]", trimText(user, 320)
   ].join("\n");
 }
 
 function followupPrompt(input: AiRuntimeInput, systemPrompt: string, user: string) {
   return [
     "[CHE_DO] HOI_TIEP_LINH_HOAT",
-    "[VAI_TRO] Bạn là Cố vấn Tứ Trụ đang tiếp tục một cuộc luận đã có lá phiếu.",
-    "[NHIEM_VU] Trả lời đúng câu hỏi mới nhất của người dùng dựa trên lá phiếu Tứ Trụ đã lưu và lịch sử chat. Không viết lại toàn bộ bài tổng luận. Không lặp cấu trúc 6 mục nếu người dùng chỉ hỏi một phần. Không xác nhận lại dữ liệu.",
-    "",
-    "[QUY_TAC_FOLLOWUP]",
-    "- Nếu người dùng hỏi 'luận sâu phần nào' hoặc câu hỏi rộng: gợi ý 3 đến 5 hướng đào sâu dựa trên chính lá phiếu, không dùng câu mẫu chung chung.",
-    "- Nếu người dùng hỏi một mục cụ thể như Nhật chủ, Ngũ hành, Thập thần, Đại vận: chỉ đào sâu mục đó, có thể liên hệ 1 đến 2 yếu tố liên quan.",
-    "- Dùng heading vừa đủ, ví dụ '### Nhật chủ' hoặc '### Gợi ý đào sâu'. Không bắt buộc dùng ## Tổng quan.",
-    "- Trả lời có độ sâu: nêu quan sát, diễn giải, giới hạn, rồi hỏi tiếp tự nhiên.",
-    "- Không phán tuyệt đối, không tự thêm lớp dữ liệu engine chưa có.",
-    "",
-    "[SYSTEM_RULES_RUT_GON]", trimText(systemPrompt, 900),
-    "",
-    "[DU_LIEU_ENGINE_TU_TRU_RUT_GON]", dataForDialogflow(input),
-    "",
-    "[LICH_SU_CHAT]", trimText(cxHistory(input, 8), 1800),
-    "",
-    "[CAU_HOI_MOI_NHAT]", trimText(user, 700),
-    "",
-    "[NHAC_LAI] Trả lời linh hoạt theo câu hỏi mới nhất, không tái lập dàn bài tổng luận."
+    "Trả lời đúng câu hỏi mới nhất dựa trên PHIEU_NEN và lịch sử. Không viết lại tổng luận. Không lặp cấu trúc 6 mục. Nếu câu hỏi rộng, gợi ý hướng đào sâu theo chính lá phiếu.",
+    "[RULES]", trimText(systemPrompt, 420),
+    "[PHIEU_NEN]", tuTruSummary(input),
+    "[LICH_SU]", trimText(cxHistory(input, 4), 900),
+    "[CAU_HOI]", trimText(user, 420)
   ].join("\n");
 }
 
 function cxPrompt(input: AiRuntimeInput, systemPrompt: string) {
   const user = latestUserMessage(input.messages) || "Hãy luận tổng quan lá số Tứ Trụ theo dữ liệu engine đã lưu.";
   const prompt = isFollowupTurn(input) ? followupPrompt(input, systemPrompt, user) : firstInterpretationPrompt(input, systemPrompt, user);
-  return trimText(prompt, 7200);
+  return trimText(prompt, 5200);
 }
 
 function cxOutput(json: any) { const msgs = json?.queryResult?.responseMessages || []; const parts = msgs.flatMap((m: any) => m?.text?.text || []).filter(Boolean); return parts.join("\n").trim() || String(json?.queryResult?.fulfillmentText || "").trim(); }
