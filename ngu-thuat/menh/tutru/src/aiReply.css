@@ -1,0 +1,35 @@
+.interpretation-meta {
+  display: none;
+}
+
+.ai-reply-box {
+  margin-top: 18px;
+  border: 1px solid rgba(255, 220, 137, 0.22);
+  border-radius: 18px;
+  background: rgba(5, 3, 2, 0.42);
+  color: var(--ink);
+  padding: 18px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.68;
+  font-size: 1rem;
+}
+
+.ai-reply-box::before {
+  content: "Phần luận";
+  display: block;
+  margin-bottom: 10px;
+  color: var(--gold-light);
+  font-family: var(--serif);
+  font-size: 1.45rem;
+  font-weight: 800;
+}
+
+.interpretation-status {
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+
+.interpretation-status.error-text {
+  color: var(--danger);
+}
