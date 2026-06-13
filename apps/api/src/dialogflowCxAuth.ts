@@ -16,7 +16,8 @@ type TokenResponse = {
 };
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
-let cachedServiceAccount: ServiceAccount | null | undefined;
+let cachedServiceAccount: ServiceAccount | null = null;
+let serviceAccountLoaded = false;
 
 function base64url(input: Buffer | string) {
   return Buffer.from(input)
@@ -27,7 +28,7 @@ function base64url(input: Buffer | string) {
 }
 
 async function loadServiceAccount(): Promise<ServiceAccount | null> {
-  if (cachedServiceAccount !== undefined) return cachedServiceAccount;
+  if (serviceAccountLoaded) return cachedServiceAccount;
 
   const rawJson = process.env.DIALOGFLOW_CX_SERVICE_ACCOUNT_JSON?.trim();
   if (rawJson) {
