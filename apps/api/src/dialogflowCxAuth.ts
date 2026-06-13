@@ -1,12 +1,8 @@
 import fs from "node:fs/promises";
 import crypto from "node:crypto";
+import type { DialogflowServiceAccount } from "./dialogflowCxCredentials.js";
 
-type ServiceAccount = {
-  client_email: string;
-  private_key: string;
-  token_uri?: string;
-  project_id?: string;
-};
+type ServiceAccount = DialogflowServiceAccount;
 
 type TokenResponse = {
   access_token?: string;
@@ -15,9 +11,9 @@ type TokenResponse = {
   error_description?: string;
 };
 
-let cachedToken: { token: string; expiresAt: number } | null = null;
-let cachedServiceAccount: ServiceAccount | null = null;
-let serviceAccountLoaded = false;
+const tokenCache = new Map<string, { token: string; expiresAt: number }>();
+let cachedEnvServiceAccount: ServiceAccount | null = null;
+let envServiceAccountLoaded = false;
 
 function base64url(input: Buffer | string) {
   return Buffer.from(input)
@@ -27,45 +23,53 @@ function base64url(input: Buffer | string) {
     .replace(/\//g, "_");
 }
 
-async function loadServiceAccount(): Promise<ServiceAccount | null> {
-  if (serviceAccountLoaded) return cachedServiceAccount;
+function assertServiceAccount(value: ServiceAccount | null): asserts value is ServiceAccount {
+  if (!value?.client_email || !value?.private_key) {
+    throw new Error("Thiếu Dialogflow credentials. Hãy nạp credentials JSON trong Admin hoặc cấu hình DIALOGFLOW_CX_SERVICE_ACCOUNT_JSON/DIALOGFLOW_CX_SERVICE_ACCOUNT_BASE64/GOOGLE_APPLICATION_CREDENTIALS.");
+  }
+}
+
+function cacheKeyFor(serviceAccount: ServiceAccount, explicitCacheKey?: string) {
+  if (explicitCacheKey) return explicitCacheKey;
+  return `${serviceAccount.project_id || "unknown"}:${serviceAccount.client_email}`;
+}
+
+async function loadEnvServiceAccount(): Promise<ServiceAccount | null> {
+  if (envServiceAccountLoaded) return cachedEnvServiceAccount;
+  envServiceAccountLoaded = true;
 
   const rawJson = process.env.DIALOGFLOW_CX_SERVICE_ACCOUNT_JSON?.trim();
   if (rawJson) {
-    cachedServiceAccount = JSON.parse(rawJson);
-    return cachedServiceAccount;
+    cachedEnvServiceAccount = JSON.parse(rawJson);
+    return cachedEnvServiceAccount;
   }
 
   const rawBase64 = process.env.DIALOGFLOW_CX_SERVICE_ACCOUNT_BASE64?.trim();
   if (rawBase64) {
-    cachedServiceAccount = JSON.parse(Buffer.from(rawBase64, "base64").toString("utf8"));
-    return cachedServiceAccount;
+    cachedEnvServiceAccount = JSON.parse(Buffer.from(rawBase64, "base64").toString("utf8"));
+    return cachedEnvServiceAccount;
   }
 
   const filePath = process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim();
   if (filePath) {
-    cachedServiceAccount = JSON.parse(await fs.readFile(filePath, "utf8"));
-    return cachedServiceAccount;
+    cachedEnvServiceAccount = JSON.parse(await fs.readFile(filePath, "utf8"));
+    return cachedEnvServiceAccount;
   }
 
-  cachedServiceAccount = null;
+  cachedEnvServiceAccount = null;
   return null;
 }
 
-function assertServiceAccount(value: ServiceAccount | null): asserts value is ServiceAccount {
-  if (!value?.client_email || !value?.private_key) {
-    throw new Error("Thiếu Dialogflow credentials. Cấu hình GOOGLE_APPLICATION_CREDENTIALS, DIALOGFLOW_CX_SERVICE_ACCOUNT_JSON hoặc DIALOGFLOW_CX_SERVICE_ACCOUNT_BASE64.");
-  }
-}
-
-export async function getDialogflowAccessToken() {
+export async function getDialogflowAccessToken(options: { serviceAccount?: ServiceAccount | null; cacheKey?: string } = {}) {
   const manualToken = process.env.DIALOGFLOW_CX_ACCESS_TOKEN?.trim();
   if (manualToken) return manualToken;
 
-  if (cachedToken && Date.now() < cachedToken.expiresAt - 60_000) return cachedToken.token;
-
-  const serviceAccount = await loadServiceAccount();
+  const serviceAccount = options.serviceAccount || (await loadEnvServiceAccount());
   assertServiceAccount(serviceAccount);
+
+  const key = cacheKeyFor(serviceAccount, options.cacheKey);
+  const cached = tokenCache.get(key);
+  if (cached && Date.now() < cached.expiresAt - 60_000) return cached.token;
 
   const now = Math.floor(Date.now() / 1000);
   const tokenUri = serviceAccount.token_uri || "https://oauth2.googleapis.com/token";
@@ -92,9 +96,9 @@ export async function getDialogflowAccessToken() {
     throw new Error(json.error_description || json.error || "Không lấy được Google access token.");
   }
 
-  cachedToken = {
+  tokenCache.set(key, {
     token: json.access_token,
     expiresAt: Date.now() + Number(json.expires_in || 3600) * 1000
-  };
-  return cachedToken.token;
+  });
+  return json.access_token;
 }
