@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import crypto from "node:crypto";
 import { z } from "zod";
+import { createDialogflowCredentialUpload } from "./dialogflowCxCredentials.js";
 
 type GoogleCreds = Record<string, string>;
 
@@ -66,6 +67,7 @@ export function registerAdminDialogflowRoutes(app: Express) {
       const creds = readCreds(data.credentials);
       const projectId = data.projectId || creds.project_id;
       const location = data.location || "global";
+      const credentialUploadToken = createDialogflowCredentialUpload(creds);
       const token = await googleToken(creds);
       const url = `${apiBase(location)}/projects/${encodeURIComponent(projectId)}/locations/${encodeURIComponent(location)}/agents?pageSize=100`;
       const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -81,10 +83,11 @@ export function registerAdminDialogflowRoutes(app: Express) {
           location,
           languageCode: String(agent.defaultLanguageCode || "vi"),
           timeZone: String(agent.timeZone || ""),
-          description: String(agent.description || "")
+          description: String(agent.description || ""),
+          credentialUploadToken
         };
       });
-      res.json({ ok: true, projectId, location, items });
+      res.json({ ok: true, projectId, location, credentialUploadToken, items });
     } catch (error) {
       res.status(400).json({ error: error instanceof Error ? error.message : "Không đọc được credentials/agent list." });
     }
