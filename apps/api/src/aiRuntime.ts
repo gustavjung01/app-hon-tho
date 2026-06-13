@@ -1,8 +1,9 @@
 import { loadAiProviderSettings } from "./aiSettings.js";
 import { getDialogflowAccessToken } from "./dialogflowCxAuth.js";
+import { dialogflowCredentialRef, loadDialogflowCredentialsForAgent } from "./dialogflowCxCredentials.js";
 
 type ChatRole = "system" | "user" | "assistant" | "tool";
-type AgentRuntimeConfig = { id: string; app_key: string; name: string; provider?: string | null; model: string; system_prompt: string; temperature: number | string; max_tokens: number; allowed_tools?: unknown; allowed_data?: unknown };
+type AgentRuntimeConfig = { id: string; app_key: string; name: string; provider?: string | null; model: string; system_prompt: string; temperature: number | string; max_tokens: number; allowed_tools?: unknown; allowed_data?: unknown; metadata?: Record<string, unknown> | null };
 type RuntimeMessage = { role: ChatRole; content: string };
 type AppRunContext = { id: string; app_key: string; input_json: unknown; result_json: unknown; created_at: string } | null;
 type AiRuntimeInput = { agent: AgentRuntimeConfig; messages: RuntimeMessage[]; appRun: AppRunContext; extraInstruction?: string; conversationId?: string };
@@ -43,12 +44,13 @@ function cxPrompt(input: AiRuntimeInput, systemPrompt: string) {
 function cxOutput(json: any) { const msgs = json?.queryResult?.responseMessages || []; const parts = msgs.flatMap((m: any) => m?.text?.text || []).filter(Boolean); return parts.join("\n").trim() || String(json?.queryResult?.fulfillmentText || "").trim(); }
 
 async function runDialogflowCx(input: AiRuntimeInput, systemPrompt: string): Promise<AiRuntimeResult> {
-  const token = await getDialogflowAccessToken();
   const parsed = parseCxPath(input.agent.model || "");
+  const serviceAccount = await loadDialogflowCredentialsForAgent({ appKey: input.agent.app_key, agentPath: parsed.path, metadata: input.agent.metadata || null });
+  const token = await getDialogflowAccessToken({ serviceAccount, cacheKey: serviceAccount ? dialogflowCredentialRef(serviceAccount) : undefined });
   const session = `${parsed.path}/sessions/${cleanSessionId(input.conversationId || input.appRun?.id || input.agent.id)}`;
   const endpoint = `${cxBaseUrl(parsed.location)}/v3/${session}:detectIntent`;
   const requestJson = { queryInput: { text: { text: cxPrompt(input, systemPrompt) }, languageCode: process.env.DIALOGFLOW_CX_LANGUAGE_CODE || "vi" }, queryParams: { parameters: { appKey: input.agent.app_key, agentId: input.agent.id, appRunId: input.appRun?.id || null } } };
-  const requestLog = { endpoint, session, ...requestJson };
+  const requestLog = { endpoint, session, credentialSource: serviceAccount ? "admin_settings" : "env", ...requestJson };
   const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(requestJson) });
   const responseJson = (await response.json().catch(() => ({}))) as any;
   if (!response.ok) throw new RuntimeProviderError(responseJson?.error?.message || response.statusText || "Dialogflow CX error", requestLog, responseJson);
