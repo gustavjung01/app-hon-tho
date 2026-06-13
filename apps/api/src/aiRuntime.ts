@@ -36,8 +36,8 @@ function isFollowupTurn(input: AiRuntimeInput) {
 }
 
 export function buildAgentSystemPrompt(input: AiRuntimeInput) {
-  const appRun = input.appRun ? `\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nApp: ${input.appRun.app_key}\nCreated: ${input.appRun.created_at}\nResult JSON:\n${compactJson(input.appRun.result_json, 1200)}` : "\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nChưa có app_run gắn với hội thoại này. Không tự tính thay engine, không bịa dữ liệu chưa có.";
-  const guardrail = "\n\n[QUY TẮC]\n- Engine/app_run là nguồn sự thật.\n- Thiếu dữ liệu thì nói rõ thiếu.\n- Không nhắc App run/Conversation/model/path/JSON.\n- Lượt đầu luận sâu; hỏi tiếp trả lời đúng câu hỏi, không lặp tổng luận.\n- Không phán định tuyệt đối.";
+  const appRun = input.appRun ? `\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nApp: ${input.appRun.app_key}\nCreated: ${input.appRun.created_at}\nResult JSON:\n${compactJson(input.appRun.result_json, 900)}` : "\n\n[DỮ LIỆU ENGINE ĐÃ LƯU]\nChưa có app_run gắn với hội thoại này. Không tự tính thay engine, không bịa dữ liệu chưa có.";
+  const guardrail = "\n\n[QUY TẮC]\n- Lá số engine là nguồn sự thật.\n- Thiếu dữ liệu thì nói rõ thiếu.\n- Không nhắc App run/Conversation/model/path/JSON.\n- Hỏi tiếp trả lời đúng câu hỏi, không lặp tổng luận.\n- Không phán định tuyệt đối.";
   const extra = input.extraInstruction ? `\n\n[CHỈ DẪN BỔ SUNG]\n${input.extraInstruction}` : "";
   return `${input.agent.system_prompt}${guardrail}${appRun}${extra}`;
 }
@@ -69,40 +69,33 @@ function tuTruSummary(input: AiRuntimeInput) {
     tenGods,
     luck: { direction: majorLuck.directionLabel, startAge: majorLuck.startAgeLabel, cycles },
     guardrail: layer.guardrail || resultJson.guardrail
-  }, 1800);
-}
-
-function cxHistory(input: AiRuntimeInput, max = 4) {
-  return input.messages.slice(-max).map((m) => `${m.role}: ${trimText(m.content, m.role === "assistant" ? 320 : 240)}`).join("\n");
+  }, 1700);
 }
 
 function firstInterpretationPrompt(input: AiRuntimeInput, systemPrompt: string, user: string) {
   return [
     "[CHE_DO] LUOT_DAU_TONG_LUAN",
-    "Bạn là Cố vấn Tứ Trụ. Luận sâu nhưng gọn dựa trên PHIEU_NEN bên dưới. Không nhắc dữ liệu kỹ thuật, không lặp JSON.",
-    "Yêu cầu: nêu quan sát, diễn giải, giới hạn; liên hệ Nhật chủ-Ngũ hành-Thập thần-Đại vận; cuối bài gợi ý 3 câu hỏi tiếp theo theo lá phiếu.",
-    "Format: ## Tổng quan | ## Nhật chủ | ## Ngũ hành | ## Thập thần | ## Đại vận | ## Phần chưa đủ dữ liệu | ## Có thể hỏi tiếp",
-    "[RULES]", trimText(systemPrompt, 650),
+    "Nhân cách: Cố vấn Tứ Trụ điềm tĩnh, rõ ràng, bám lá số, không nói kỹ thuật.",
+    "Nhiệm vụ: luận lá số theo PHIEU_NEN. Logic phải nhất quán, không tự thêm lớp engine chưa có. Cuối bài gợi ý vài câu hỏi tiếp theo theo chính lá số.",
+    "Format gợi ý, không máy móc: Tổng quan; Nhật chủ; Ngũ hành; Thập thần; Đại vận; phần còn thiếu; có thể hỏi tiếp.",
+    "[LUAT]", trimText(systemPrompt, 420),
     "[PHIEU_NEN]", tuTruSummary(input),
-    "[YEU_CAU]", trimText(user, 320)
+    "[CAU_HOI]", trimText(user, 300)
   ].join("\n");
 }
 
-function followupPrompt(input: AiRuntimeInput, systemPrompt: string, user: string) {
+function followupPrompt(input: AiRuntimeInput, user: string) {
   return [
-    "[CHE_DO] HOI_TIEP_LINH_HOAT",
-    "Trả lời đúng câu hỏi mới nhất dựa trên PHIEU_NEN và lịch sử. Không viết lại tổng luận. Không lặp cấu trúc 6 mục. Nếu câu hỏi rộng, gợi ý hướng đào sâu theo chính lá phiếu.",
-    "[RULES]", trimText(systemPrompt, 420),
-    "[PHIEU_NEN]", tuTruSummary(input),
-    "[LICH_SU]", trimText(cxHistory(input, 4), 900),
+    "[CHE_DO] HOI_TIEP",
+    "Dựa trên lá số và ngữ cảnh đã có trong phiên này, trả lời câu hỏi mới nhất. Không viết lại tổng luận. Không nhắc kỹ thuật. Nếu thiếu dữ liệu thì nói rõ thiếu gì.",
     "[CAU_HOI]", trimText(user, 420)
   ].join("\n");
 }
 
 function cxPrompt(input: AiRuntimeInput, systemPrompt: string) {
   const user = latestUserMessage(input.messages) || "Hãy luận tổng quan lá số Tứ Trụ theo dữ liệu engine đã lưu.";
-  const prompt = isFollowupTurn(input) ? followupPrompt(input, systemPrompt, user) : firstInterpretationPrompt(input, systemPrompt, user);
-  return trimText(prompt, 5200);
+  const prompt = isFollowupTurn(input) ? followupPrompt(input, user) : firstInterpretationPrompt(input, systemPrompt, user);
+  return trimText(prompt, isFollowupTurn(input) ? 900 : 3200);
 }
 
 function cxOutput(json: any) { const msgs = json?.queryResult?.responseMessages || []; const parts = msgs.flatMap((m: any) => m?.text?.text || []).filter(Boolean); return parts.join("\n").trim() || String(json?.queryResult?.fulfillmentText || "").trim(); }
