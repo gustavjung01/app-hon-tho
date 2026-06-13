@@ -122,7 +122,10 @@
     }
 
     async function syncBackend(token) {
-      const res = await fetch('/api/auth/sync', { headers: { Authorization: 'Bearer ' + token } });
+      const res = await fetch('/api/auth/sync', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token }
+      });
       if (!res.ok) throw new Error('Backend chưa nhận phiên Clerk.');
       return res.json().catch(() => ({}));
     }
