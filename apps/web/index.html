@@ -8,11 +8,74 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
-  <style>html,body,#root{margin:0;min-height:100%;background:#0f0c08;color:#f5f0e8}</style>
+    <style>html,body,#root{margin:0;min-height:100%;background:#0f0c08;color:#f5f0e8}</style>
+    <script>
+      (() => {
+        const path = location.pathname.replace(/\/$/, "") || "/";
+        const adminRoles = new Set(["super_admin", "admin", "operator", "reviewer"]);
+        const token = localStorage.getItem("hontho_user_token")?.trim() || "";
+
+        if (path === "/admin" || path.startsWith("/admin/")) {
+          if (!token) {
+            location.replace("/account?admin=login");
+            return;
+          }
+          fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
+            .then((response) => response.ok ? response.json() : Promise.reject())
+            .then((data) => {
+              const role = String(data?.user?.role || "");
+              if (!adminRoles.has(role)) location.replace("/account?admin=denied");
+            })
+            .catch(() => {
+              localStorage.removeItem("hontho_user_token");
+              location.replace("/account?admin=login");
+            });
+        }
+
+        if (path !== "/account") return;
+        const replacements = [
+          ["Đăng nhập Clerk và lưu phiên làm việc cho các ứng dụng Cổ học.", "Đăng nhập để lưu lá số, lịch sử hỏi đáp và dùng các ứng dụng Cổ học."],
+          ["Đăng nhập để dùng ứng dụng Cổ học và lưu phiên làm việc.", "Đăng nhập để lưu lá số, lịch sử hỏi đáp và dùng các ứng dụng Cổ học."],
+          ["Đăng nhập để lưu phiên làm việc cho các ứng dụng Cổ học.", "Đăng nhập để lưu lá số và lịch sử sử dụng."],
+          ["Đã đăng nhập. Phiên làm việc đã sẵn sàng cho Tứ Trụ và các ứng dụng Cổ học.", "Đã đăng nhập. Bạn có thể dùng Tứ Trụ và các ứng dụng Cổ học."],
+          ["Chưa lấy được phiên đăng nhập. Hãy đăng nhập lại.", "Chưa xác nhận được đăng nhập. Hãy thử đăng nhập lại."],
+          ["Clerk đã tải nhưng chưa có SignIn UI để hiển thị.", "Chưa mở được khung đăng nhập. Vui lòng tải lại trang."],
+          ["Không nạp được Clerk.", "Không mở được đăng nhập."]
+        ];
+        const clean = () => {
+          const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+          const nodes = [];
+          while (walker.nextNode()) nodes.push(walker.currentNode);
+          nodes.forEach((node) => {
+            let text = node.nodeValue || "";
+            replacements.forEach(([from, to]) => { text = text.split(from).join(to); });
+            node.nodeValue = text;
+          });
+          const reason = new URLSearchParams(location.search).get("admin");
+          if ((reason === "denied" || reason === "login") && !document.querySelector(".account-admin-notice")) {
+            const body = document.querySelector(".placeholder-body");
+            if (!body) return;
+            const box = document.createElement("div");
+            box.className = "placeholder-notice account-admin-notice";
+            const title = document.createElement("strong");
+            title.textContent = "Khu quản trị không mở cho tài khoản thường";
+            const note = document.createElement("p");
+            note.textContent = reason === "denied" ? "Tài khoản này không có quyền quản trị." : "Vui lòng đăng nhập bằng tài khoản có quyền quản trị.";
+            box.append(title, note);
+            body.prepend(box);
+          }
+        };
+        window.addEventListener("load", () => {
+          const observer = new MutationObserver(clean);
+          clean();
+          observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+          window.setTimeout(() => observer.disconnect(), 20000);
+        });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/accountHardening.ts"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
