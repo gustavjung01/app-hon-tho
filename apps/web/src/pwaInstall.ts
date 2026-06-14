@@ -6,6 +6,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const PWA_DISMISS_KEY = "cohoc_pwa_install_dismissed_at";
+const PWA_SW_RELOAD_KEY = "cohoc_pwa_sw_reload_pending";
 const DISMISS_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
 let banner: HTMLDivElement | null = null;
@@ -34,6 +35,24 @@ function dismissForNow() {
 function closeBanner() {
   if (banner) banner.remove();
   banner = null;
+}
+
+function markPendingSwReload() {
+  try {
+    sessionStorage.setItem(PWA_SW_RELOAD_KEY, "1");
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+function requestOnceReloadAfterSwUpdate() {
+  try {
+    if (sessionStorage.getItem(PWA_SW_RELOAD_KEY) !== "1") return;
+    sessionStorage.removeItem(PWA_SW_RELOAD_KEY);
+  } catch {
+    // Fall through and reload once even if sessionStorage is unavailable.
+  }
+  window.location.reload();
 }
 
 function createInstallBanner() {
@@ -103,7 +122,39 @@ async function registerRootServiceWorker() {
   if (location.protocol !== "https:" && location.hostname !== "localhost") return;
 
   try {
-    await navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
+    const registration = await navigator.serviceWorker.register("/service-worker.js", {
+      scope: "/",
+      updateViaCache: "none"
+    });
+
+    const sendSkipWaiting = (worker: ServiceWorker | null | undefined) => {
+      if (!worker) return;
+      worker.postMessage({ type: "SKIP_WAITING" });
+    };
+
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!navigator.serviceWorker.controller) return;
+      requestOnceReloadAfterSwUpdate();
+    });
+
+    registration.addEventListener("updatefound", () => {
+      const installingWorker = registration.installing;
+      if (!installingWorker) return;
+
+      installingWorker.addEventListener("statechange", () => {
+        if (installingWorker.state === "installed" && navigator.serviceWorker.controller) {
+          markPendingSwReload();
+          sendSkipWaiting(installingWorker);
+        }
+      });
+    });
+
+    if (registration.waiting) {
+      markPendingSwReload();
+      sendSkipWaiting(registration.waiting);
+    }
+
+    void registration.update();
   } catch (error) {
     console.warn("Không đăng ký được service worker App Cổ Học", error);
   }

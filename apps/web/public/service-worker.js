@@ -1,4 +1,4 @@
-﻿const CACHE_VERSION = "app-co-hoc-v8";
+const CACHE_VERSION = "app-co-hoc-v10";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -38,6 +38,7 @@ self.addEventListener("fetch", (event) => {
 
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
+  if (url.pathname === "/service-worker.js" || url.pathname === "/manifest.webmanifest") return;
 
   if (request.mode === "navigate") {
     event.respondWith(networkFirstNavigation(request));
@@ -64,10 +65,12 @@ async function networkFirstNavigation(request) {
 async function cacheFirst(request) {
   const cache = await caches.open(CACHE_VERSION);
   const cached = await cache.match(request);
-  const network = fetch(request).then((response) => {
-    if (response.ok) cache.put(request, response.clone());
-    return response;
-  }).catch(() => cached);
+  const network = fetch(request)
+    .then((response) => {
+      if (response.ok) cache.put(request, response.clone());
+      return response;
+    })
+    .catch(() => cached);
 
   return cached || network;
 }
