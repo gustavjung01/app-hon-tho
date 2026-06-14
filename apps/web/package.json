@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "vite build && node scripts/copyPwaIcons.mjs",
+    "build": "vite build && cp public/icons/app-icon-192.png dist/apple-touch-icon.png && cp public/icons/app-icon-192.png dist/icon-192.png && cp public/icons/app-icon-512.png dist/icon-512.png && cp public/icons/app-icon-512.png dist/maskable-512.png",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
