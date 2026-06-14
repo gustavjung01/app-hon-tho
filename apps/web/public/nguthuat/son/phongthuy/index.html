@@ -30,9 +30,10 @@
       <div class="hero-main">
         <div class="eyebrow">Sơn · Phong thủy an cư</div>
         <h1>Bát Trạch cơ bản</h1>
-        <p class="lead">Nhập năm sinh, giới tính và hướng nhà để tra cứu cung phi, Đông/Tây tứ mệnh, bốn hướng tốt và bốn hướng cần tránh. Bản MVP này ưu tiên tra cứu nhanh, rõ ràng, không phán đoán cực đoan.</p>
+        <p class="lead">Nhập năm sinh, giới tính và hướng nhà để tra cứu cung phi, Đông/Tây tứ mệnh và đủ 8 hướng Du Niên. Bản MVP này phân 4 hướng cát và 4 hướng cần cân nhắc, không gọi tuyệt đối là tốt hay xấu.</p>
       </div>
       <aside class="notice">
+        <p><b>Vì sao có 4 và 4?</b> Bát Trạch chia 8 hướng thành 4 cát tinh và 4 hung tinh theo cung phi. Nhóm hung không có nghĩa cứ ở là xấu, mà là hướng kém hợp hơn, cần xét thêm bếp, phòng, tọa nhà, hình thế và Phi tinh.</p>
         <p><b>Lưu ý Lập Xuân:</b> nếu sinh trước khoảng 4/2 dương lịch, cung phi thường tính theo năm trước. Hãy bật tuỳ chọn bên dưới nếu chưa chắc ngày tiết khí.</p>
         <p><b>Không thay thế khảo sát nhà thật:</b> kết quả chỉ là lớp Bát Trạch nền, chưa xét loan đầu, hình thế, phi tinh và môi trường xung quanh.</p>
       </aside>
@@ -84,7 +85,7 @@
         <div id="empty" class="result-empty">
           <div>
             <h2>Chưa có kết quả</h2>
-            <p>Điền thông tin bên trái rồi bấm <b>Luận hướng</b>. Kết quả sẽ hiện thành bảng dễ đọc để dùng ngay trên điện thoại.</p>
+            <p>Điền thông tin bên trái rồi bấm <b>Luận hướng</b>. Kết quả sẽ hiện đủ 8 hướng theo Bát Trạch để dùng ngay trên điện thoại.</p>
           </div>
         </div>
 
@@ -103,11 +104,11 @@
 
           <div class="lists">
             <div class="dir-list">
-              <h3>4 hướng tốt</h3>
+              <h3>4 hướng cát</h3>
               <ol id="goodList"></ol>
             </div>
             <div class="dir-list">
-              <h3>4 hướng cần tránh</h3>
+              <h3>4 hướng cần cân nhắc</h3>
               <ol id="badList"></ol>
             </div>
           </div>
@@ -122,7 +123,7 @@
       </article>
     </section>
 
-    <p class="footer-note">Bản này chỉ tính lớp Bát Trạch cơ bản theo cung phi cá nhân. Khi làm bản nâng cao sẽ thêm hướng tọa, bếp, phòng ngủ, cửa, năm xây/sửa nhà và Phi tinh.</p>
+    <p class="footer-note">Bản này chỉ tính lớp Bát Trạch cơ bản theo cung phi cá nhân. Bốn hướng hung tinh là nhóm cần cân nhắc, không phải kết luận xấu tuyệt đối. Khi làm bản nâng cao sẽ thêm hướng tọa, bếp, phòng ngủ, cửa, năm xây/sửa nhà và Phi tinh.</p>
   </main>
 
   <script>
@@ -146,7 +147,7 @@
     function entries(obj){return Object.entries(obj).map(([dir, star])=>({dir, name:DIRECTIONS[dir], star}))}
     function renderList(id, items){const box=$(id);box.innerHTML="";items.forEach(item=>{const li=document.createElement("li");li.innerHTML=`<b>${item.name}</b> · ${item.star}`;box.appendChild(li)})}
     function readForm(){const rawYear=Number($("birthYear").value);if(!Number.isInteger(rawYear)||rawYear<1900||rawYear>2099)throw new Error("Năm sinh nên nằm trong khoảng 1900-2099.");const solarYear=$("beforeLapXuan").checked?rawYear-1:rawYear;const gender=$("gender").value;const facing=$("facing").value;const kua=calcKua(solarYear,gender);const table=TABLE[kua];const good=entries(table.good);const bad=entries(table.bad);const matchedGood=table.good[facing];const matchedBad=table.bad[facing];return{rawYear,solarYear,gender,facing,kua,kuaName:KUA_NAME[kua],group:EAST.has(kua)?"Đông tứ mệnh":"Tây tứ mệnh",good,bad,matchedGood,matchedBad}}
-    function renderResult(result){currentResult=result;$("empty").style.display="none";$("result").classList.add("show");$("solarYearOut").textContent=String(result.solarYear);$("kuaOut").textContent=`${result.kua} · ${result.kuaName}`;$("groupOut").textContent=result.group;$("facingOut").textContent=DIRECTIONS[result.facing];renderList("goodList",result.good);renderList("badList",result.bad);const rating=$("rating");rating.className="rating "+(result.matchedGood?"good":"bad");if(result.matchedGood){$("ratingTitle").textContent=`Hướng ${DIRECTIONS[result.facing]} là ${result.matchedGood}`;$("ratingText").textContent="Đây là hướng thuộc nhóm cát theo Bát Trạch cá nhân. Có thể ưu tiên cho cửa chính, hướng bàn làm việc hoặc vùng sinh hoạt chính nếu điều kiện thực tế phù hợp."}else{$("ratingTitle").textContent=`Hướng ${DIRECTIONS[result.facing]} là ${result.matchedBad || "chưa rõ"}`;$("ratingText").textContent="Đây là hướng thuộc nhóm cần cân nhắc. Không vội kết luận xấu tuyệt đối, nên kiểm thêm tọa nhà, bếp, phòng ngủ, hình thế và bối cảnh thực tế."}}
+    function renderResult(result){currentResult=result;$("empty").style.display="none";$("result").classList.add("show");$("solarYearOut").textContent=String(result.solarYear);$("kuaOut").textContent=`${result.kua} · ${result.kuaName}`;$("groupOut").textContent=result.group;$("facingOut").textContent=DIRECTIONS[result.facing];renderList("goodList",result.good);renderList("badList",result.bad);const rating=$("rating");rating.className="rating "+(result.matchedGood?"good":"bad");if(result.matchedGood){$("ratingTitle").textContent=`Hướng ${DIRECTIONS[result.facing]} là ${result.matchedGood}`;$("ratingText").textContent="Đây là hướng thuộc nhóm cát theo Bát Trạch cá nhân. Có thể ưu tiên cho cửa chính, hướng bàn làm việc hoặc vùng sinh hoạt chính nếu điều kiện thực tế phù hợp."}else{$("ratingTitle").textContent=`Hướng ${DIRECTIONS[result.facing]} là ${result.matchedBad || "chưa rõ"}`;$("ratingText").textContent="Đây là hướng thuộc nhóm cần cân nhắc theo Bát Trạch cá nhân, không phải kết luận xấu tuyệt đối. Nên kiểm thêm tọa nhà, bếp, phòng ngủ, hình thế, môi trường xung quanh và Phi tinh."}}
     $("fengForm").addEventListener("submit",(event)=>{event.preventDefault();try{renderResult(readForm());$("savedMsg").style.display="none"}catch(error){alert(error.message||"Chưa tính được kết quả.")}});
     $("printBtn").addEventListener("click",()=>window.print());
     $("saveBtn").addEventListener("click",()=>{try{if(!currentResult)currentResult=readForm();const list=JSON.parse(localStorage.getItem("hontho_saved_items")||"[]");list.unshift({id:`phongthuy-${Date.now()}`,type:"phong-thuy",title:`Phong thủy ${currentResult.rawYear} · ${DIRECTIONS[currentResult.facing]}`,summary:`${currentResult.kuaName} · ${currentResult.group}`,createdAt:new Date().toISOString(),href:"/nguthuat/son/phongthuy/"});localStorage.setItem("hontho_saved_items",JSON.stringify(list.slice(0,30)));$("savedMsg").style.display="inline"}catch(error){alert("Chưa lưu được trên thiết bị này.")}});
