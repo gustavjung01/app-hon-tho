@@ -1,5 +1,4 @@
-import { FormEvent, useMemo, useState, type ReactNode } from "react";
-import homeTuTruImage from "../../../../home-tu-tru.png";
+import { FormEvent, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { deriveFourPillars } from "./engine/deriveFourPillars";
 import { buildResultContentLayer, type ResultContentLayer } from "./engine/resultContentLayer";
 import type { CalendarType, DeriveFourPillarsInput, DeriveFourPillarsOutput, GenderType } from "./engine/types";
@@ -241,44 +240,60 @@ function InterpretationPanel({ state, onInterpret, onOpenChat, onLogin }: { stat
   return (
     <section className="panel interpretation-panel" id="luan">
       <SectionTitle eyebrow="Luận" title="Cố vấn Tứ Trụ" note="Luận mở trong khung chat riêng, có thể hỏi tiếp dựa trên lá phiếu." />
-      <div className="interpretation-actions">
+      <div className="interpretation-actions compact-actions">
         <button className="primary-action" type="button" onClick={onInterpret} disabled={isBusy}>{state.status === "saving" ? "Đang chuẩn bị..." : state.status === "running" ? "Đang luận..." : "Luận với Cố vấn"}</button>
         <button className={cx("history-link", "inline-link", storedToken() && "signed-in")} type="button" onClick={onLogin}>{storedToken() ? "Đã đăng nhập" : state.authAction ? "Đăng nhập lại" : "Đăng nhập"}</button>
-        <a className="history-link" href="/">Trang chủ</a>
       </div>
       {state.message ? <p className={cx("interpretation-status", state.status === "error" && "error-text")}>{state.message}</p> : null}
       {state.authAction ? <p className="interpretation-status"><button className="inline-text-button" type="button" onClick={onLogin}>Mở đăng nhập tại chỗ</button></p> : null}
-      {state.reply ? <div className="chat-open-row"><button className="primary-action" type="button" onClick={onOpenChat}>Mở khung chat</button><span>Cố vấn sẽ hỏi tiếp theo lá phiếu, không chỉ trả lời một chiều.</span></div> : null}
+      {state.reply ? <div className="chat-open-row compact-actions"><button className="primary-action" type="button" onClick={onOpenChat}>Mở chat</button><span>Cố vấn sẽ hỏi tiếp theo lá phiếu.</span></div> : null}
     </section>
   );
 }
 
 function ChatModal({ open, messages, question, busy, status, onClose, onQuestionChange, onAsk, onSuggest }: { open: boolean; messages: ChatMessage[]; question: string; busy: boolean; status?: string; onClose: () => void; onQuestionChange: (value: string) => void; onAsk: () => void; onSuggest: (value: string) => void }) {
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    requestAnimationFrame(() => {
+      if (!bodyRef.current) return;
+      bodyRef.current.scrollTo({ top: bodyRef.current.scrollHeight, behavior: "smooth" });
+    });
+  }, [open, messages.length, busy]);
+
   if (!open) return null;
-  const suggestions = ["Luận sâu Nhật chủ", "Nói kỹ phần Ngũ hành", "Phân tích Thập thần nổi bật", "Đại vận đầu cần chú ý gì?", "Phần nào còn thiếu dữ liệu?"];
+  const suggestions = ["Luận sâu Nhật chủ", "Nói kỹ Ngũ hành", "Phân tích Thập thần", "Đại vận đầu cần chú ý gì?", "Phần nào còn thiếu dữ liệu?"];
   return (
     <div className="chat-modal" role="dialog" aria-modal="true" aria-label="Chat luận Tứ Trụ">
       <div className="chat-card">
-        <header className="chat-head"><div><p>Cố vấn Tứ Trụ</p><h3>Hỏi tiếp trên lá phiếu này</h3></div><button type="button" onClick={onClose}>Đóng</button></header>
-        <div className="chat-body">{messages.map((item, index) => <article className={cx("chat-bubble", item.role)} key={`${item.role}-${index}`}><span>{item.role === "user" ? "Bạn" : "Cố vấn"}</span><div className="chat-content">{renderChatContent(item.content)}</div></article>)}</div>
-        <div className="chat-suggestion-shell">
-          <button className="chat-suggest-toggle" type="button" aria-expanded={suggestionsOpen} onClick={() => setSuggestionsOpen((value) => !value)}>
-            Hỏi thêm <span>{suggestionsOpen ? "⌃" : "⌄"}</span>
-          </button>
-          {suggestionsOpen ? (
-            <div className="chat-suggestions">
-              {suggestions.map((item) => <button type="button" key={item} onClick={() => { onSuggest(item); setSuggestionsOpen(false); }}>{item}</button>)}
-            </div>
-          ) : null}
+        <header className="chat-head"><div><p>Cố vấn Tứ Trụ</p><h3>Hỏi tiếp</h3></div><button type="button" onClick={onClose}>Đóng</button></header>
+        <div className="chat-body" ref={bodyRef}>
+          {messages.map((item, index) => <article className={cx("chat-bubble", item.role)} key={`${item.role}-${index}`}><span>{item.role === "user" ? "Bạn" : "Cố vấn"}</span><div className="chat-content">{renderChatContent(item.content)}</div></article>)}
+          {busy ? <article className="chat-bubble assistant chat-typing"><span>Cố vấn</span><div className="typing-dots" aria-label="Đang trả lời"><i /><i /><i /></div></article> : null}
         </div>
-        <form className="chat-form" onSubmit={(event) => { event.preventDefault(); onAsk(); }}>
-          <textarea value={question} onChange={(event) => onQuestionChange(event.target.value)} placeholder="Ví dụ: Luận sâu phần Nhật chủ và liên hệ với Ngũ hành..." />
-          <button className="primary-action" type="submit" disabled={busy || !question.trim()}>{busy ? "Đang hỏi..." : "Hỏi tiếp"}</button>
+        <form className="chat-form compact-chat-form" onSubmit={(event) => { event.preventDefault(); onAsk(); }}>
+          <textarea value={question} rows={2} onChange={(event) => onQuestionChange(event.target.value)} placeholder="Hỏi tiếp về Nhật chủ, Ngũ hành, Thập thần..." />
+          <div className="chat-action-row">
+            <button className="chat-suggest-toggle" type="button" aria-expanded={suggestionsOpen} onClick={() => setSuggestionsOpen((value) => !value)}>Hỏi thêm <span>{suggestionsOpen ? "⌃" : "⌄"}</span></button>
+            <button className="chat-send" type="submit" disabled={busy || !question.trim()}>{busy ? "Đang gửi" : "Gửi"}</button>
+          </div>
+          {suggestionsOpen ? <div className="chat-suggestions">{suggestions.map((item) => <button type="button" key={item} onClick={() => { onSuggest(item); setSuggestionsOpen(false); }}>{item}</button>)}</div> : null}
         </form>
         {status ? <p className="chat-status">{status}</p> : null}
       </div>
     </div>
+  );
+}
+
+function BottomDock({ signedIn, onLogin }: { signedIn: boolean; onLogin: () => void }) {
+  return (
+    <nav className="bottom-dock" aria-label="Menu Tứ Trụ">
+      <a className="dock-home" href="/">Trang chủ</a>
+      <a className="dock-logo" href="#lap-phieu" aria-label="Tứ Trụ">TT</a>
+      <button className={cx("dock-auth", signedIn && "signed-in")} type="button" onClick={onLogin}>{signedIn ? "Đã đăng nhập" : "Đăng nhập"}</button>
+    </nav>
   );
 }
 
@@ -386,14 +401,23 @@ export default function App() {
   };
 
   return (
-    <main className="page-shell">
-      <header className="hero-panel compact-hero">
-        <nav className="top-nav" aria-label="Điều hướng Tứ Trụ"><a href="/">Trang chủ</a><a href="#lap-phieu">Nhập liệu</a><a href="#la-so">Lá số</a><a href="#dai-van">Đại vận</a><a href="#luan">Luận</a><button className={cx(storedToken() && "signed-in")} type="button" onClick={handleLogin}>{storedToken() ? "Đã đăng nhập" : "Đăng nhập"}</button></nav>
-        <img className="home-hero-card" src={homeTuTruImage} alt="Mệnh Bàn" style={{ width: "100%", display: "block", marginTop: "18px", borderRadius: "18px", border: "1px solid rgba(255, 220, 137, 0.36)", boxShadow: "0 22px 60px rgba(0, 0, 0, 0.46)" }} />
-      </header>
-      <InputPanel calendarType={calendarType} gender={gender} isLeapMonth={isLeapMonth} error={chartError} onCalendarChange={setCalendarType} onGenderChange={setGender} onLeapMonthChange={setIsLeapMonth} onSubmit={handleBuildChart} />
-      {chartResult && resultContent ? <ResultSheet result={chartResult} content={resultContent} interpretation={interpretation} onInterpret={handleInterpretChart} onOpenChat={() => setChatOpen(true)} onLogin={handleLogin} /> : <section className="panel empty-panel"><h2>Chưa có lá phiếu</h2><p>Nhập ngày giờ sinh rồi bấm Dựng lá phiếu. Chưa có dữ liệu thì trang không dựng kết quả mẫu.</p></section>}
+    <>
+      <main className="page-shell">
+        <header className="hero-panel compact-hero">
+          <div className="tu-tru-home-card">
+            <div className="tu-tru-monogram" aria-hidden="true">TT</div>
+            <div className="hero-copy">
+              <p className="eyebrow">Mệnh · Tứ Trụ</p>
+              <h1>Tứ Trụ</h1>
+              <p>Lập mệnh bàn, xem bốn trụ, Ngũ hành, Thập thần, Đại vận và hỏi tiếp bằng Cố vấn Tứ Trụ.</p>
+            </div>
+          </div>
+        </header>
+        <InputPanel calendarType={calendarType} gender={gender} isLeapMonth={isLeapMonth} error={chartError} onCalendarChange={setCalendarType} onGenderChange={setGender} onLeapMonthChange={setIsLeapMonth} onSubmit={handleBuildChart} />
+        {chartResult && resultContent ? <ResultSheet result={chartResult} content={resultContent} interpretation={interpretation} onInterpret={handleInterpretChart} onOpenChat={() => setChatOpen(true)} onLogin={handleLogin} /> : <section className="panel empty-panel"><h2>Chưa có lá phiếu</h2><p>Nhập ngày giờ sinh rồi bấm Dựng lá phiếu. Chưa có dữ liệu thì trang không dựng kết quả mẫu.</p></section>}
+      </main>
+      <BottomDock signedIn={Boolean(storedToken())} onLogin={handleLogin} />
       <ChatModal open={chatOpen} messages={chatMessages} question={chatQuestion} busy={chatBusy} status={chatStatus} onClose={() => setChatOpen(false)} onQuestionChange={setChatQuestion} onAsk={handleAskFollowup} onSuggest={setChatQuestion} />
-    </main>
+    </>
   );
 }
