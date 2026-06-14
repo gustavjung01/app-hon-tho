@@ -1,7 +1,8 @@
-const CACHE_VERSION = "app-co-hoc-v2";
+const CACHE_VERSION = "app-co-hoc-v3";
 const APP_SHELL = [
   "/",
   "/index.html",
+  "/account-stabilizer.js",
   "/manifest.webmanifest",
   "/mobile-polish.css",
   "/icons/app-icon.svg",
