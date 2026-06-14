@@ -87,6 +87,10 @@
   line-height: 1;
 }
 
+body.pwa-guide-open {
+  overflow: hidden;
+}
+
 .pwa-guide-backdrop {
   position: fixed;
   inset: 0;
