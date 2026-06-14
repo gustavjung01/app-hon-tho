@@ -12,6 +12,10 @@ declare global {
       session?: { getToken: (options?: unknown) => Promise<string | null> } | null;
       user?: { primaryEmailAddress?: { emailAddress?: string }; emailAddresses?: Array<{ emailAddress?: string }> } | null;
     };
+    HonThoAuth?: {
+      getToken?: (options?: { force?: boolean; allowCached?: boolean }) => Promise<string>;
+      signIn?: (options?: { nextPath?: string }) => void | Promise<void>;
+    };
     __internal_ClerkUICtor?: unknown;
   }
 }
@@ -75,6 +79,15 @@ async function ensureClerkLoaded() {
 }
 
 async function getClerkToken() {
+  try {
+    const bridgeToken = await window.HonThoAuth?.getToken?.({ force: true, allowCached: false });
+    if (bridgeToken) {
+      saveToken(bridgeToken);
+      return bridgeToken;
+    }
+  } catch {
+    // Fallback to local Clerk loading below.
+  }
   try {
     const clerk = await ensureClerkLoaded();
     const token = await clerk?.session?.getToken?.({ skipCache: true });
@@ -241,6 +254,7 @@ function InterpretationPanel({ state, onInterpret, onOpenChat, onLogin }: { stat
 }
 
 function ChatModal({ open, messages, question, busy, status, onClose, onQuestionChange, onAsk, onSuggest }: { open: boolean; messages: ChatMessage[]; question: string; busy: boolean; status?: string; onClose: () => void; onQuestionChange: (value: string) => void; onAsk: () => void; onSuggest: (value: string) => void }) {
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   if (!open) return null;
   const suggestions = ["Luận sâu Nhật chủ", "Nói kỹ phần Ngũ hành", "Phân tích Thập thần nổi bật", "Đại vận đầu cần chú ý gì?", "Phần nào còn thiếu dữ liệu?"];
   return (
@@ -248,7 +262,16 @@ function ChatModal({ open, messages, question, busy, status, onClose, onQuestion
       <div className="chat-card">
         <header className="chat-head"><div><p>Cố vấn Tứ Trụ</p><h3>Hỏi tiếp trên lá phiếu này</h3></div><button type="button" onClick={onClose}>Đóng</button></header>
         <div className="chat-body">{messages.map((item, index) => <article className={cx("chat-bubble", item.role)} key={`${item.role}-${index}`}><span>{item.role === "user" ? "Bạn" : "Cố vấn"}</span><div className="chat-content">{renderChatContent(item.content)}</div></article>)}</div>
-        <div className="chat-suggestions">{suggestions.map((item) => <button type="button" key={item} onClick={() => onSuggest(item)}>{item}</button>)}</div>
+        <div className="chat-suggestion-shell">
+          <button className="chat-suggest-toggle" type="button" aria-expanded={suggestionsOpen} onClick={() => setSuggestionsOpen((value) => !value)}>
+            Hỏi thêm <span>{suggestionsOpen ? "⌃" : "⌄"}</span>
+          </button>
+          {suggestionsOpen ? (
+            <div className="chat-suggestions">
+              {suggestions.map((item) => <button type="button" key={item} onClick={() => { onSuggest(item); setSuggestionsOpen(false); }}>{item}</button>)}
+            </div>
+          ) : null}
+        </div>
         <form className="chat-form" onSubmit={(event) => { event.preventDefault(); onAsk(); }}>
           <textarea value={question} onChange={(event) => onQuestionChange(event.target.value)} placeholder="Ví dụ: Luận sâu phần Nhật chủ và liên hệ với Ngũ hành..." />
           <button className="primary-action" type="submit" disabled={busy || !question.trim()}>{busy ? "Đang hỏi..." : "Hỏi tiếp"}</button>
@@ -290,6 +313,10 @@ export default function App() {
       // Open Clerk below.
     }
     try {
+      if (window.HonThoAuth?.signIn) {
+        await window.HonThoAuth.signIn({ nextPath: "/nguthuat/menh/tutru/" });
+        return;
+      }
       const clerk = await ensureClerkLoaded();
       if (clerk?.openSignIn) clerk.openSignIn({ afterSignInUrl: location.href, afterSignUpUrl: location.href });
       else location.href = ACCOUNT_RETURN_URL;
