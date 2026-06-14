@@ -1,4 +1,4 @@
-const CACHE_VERSION = "app-co-hoc-v19";
+const CACHE_VERSION = "app-co-hoc-v20";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -14,6 +14,7 @@ const APP_SHELL = [
   "/icons/app-icon.svg"
 ];
 const STATIC_ASSET_RE = /\.(?:js|css|png|jpg|jpeg|svg|webp|gif|ico|woff2?)$/i;
+const PHONG_THUY_ENTRY = "/nguthuat/son/phongthuy/index.html";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -42,6 +43,13 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
   if (url.pathname === "/service-worker.js" || url.pathname === "/manifest.webmanifest" || url.pathname === "/app-version.json") return;
+
+  if (url.pathname === "/nguthuat/son/phongthu" || url.pathname === "/nguthuat/son/phongthu/" || url.pathname === "/nguthuat/son/phongthu/index.html" || url.pathname === "/nguthuat/son/phongthuy" || url.pathname === "/nguthuat/son/phongthuy/") {
+    event.respondWith(Response.redirect(PHONG_THUY_ENTRY, 302));
+    return;
+  }
+
+  if (url.pathname === PHONG_THUY_ENTRY || url.pathname.startsWith("/nguthuat/son/phongthuy/")) return;
 
   if (request.mode === "navigate") {
     event.respondWith(networkFirstNavigation(request));
