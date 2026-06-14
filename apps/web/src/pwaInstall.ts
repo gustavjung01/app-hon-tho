@@ -10,6 +10,7 @@ const PWA_SW_RELOAD_KEY = "cohoc_pwa_sw_reload_pending";
 const DISMISS_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
 let banner: HTMLDivElement | null = null;
+let installGuideModal: HTMLDivElement | null = null;
 
 function isStandalone() {
   const nav = window.navigator as Navigator & { standalone?: boolean };
@@ -35,6 +36,113 @@ function dismissForNow() {
 function closeBanner() {
   if (banner) banner.remove();
   banner = null;
+}
+
+function closeInstallGuide() {
+  if (installGuideModal) installGuideModal.remove();
+  installGuideModal = null;
+  document.body.classList.remove("pwa-guide-open");
+}
+
+function openIosInstallGuide() {
+  if (installGuideModal) return;
+
+  const modal = document.createElement("div");
+  modal.className = "pwa-guide-backdrop";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-label", "Hướng dẫn cài App Cổ Học trên iPhone");
+  modal.innerHTML = `
+    <div class="pwa-guide-sheet">
+      <div class="pwa-guide-head">
+        <div>
+          <span class="pwa-guide-eyebrow">iPhone install guide</span>
+          <h2>Cài App Cổ Học lên màn hình chính</h2>
+          <p>Dành cho iPhone tiếng Việt và tiếng Anh. Mở trang bằng Safari hoặc Chrome rồi làm theo các bước bên dưới.</p>
+        </div>
+        <button class="pwa-guide-x" type="button" aria-label="Đóng hướng dẫn">×</button>
+      </div>
+
+      <div class="pwa-guide-scroll">
+        <div class="pwa-guide-note">
+          <strong>Lưu ý nhanh:</strong> Safari thường dùng nút Chia sẻ. Chrome iPhone thường có nút <b>⋯</b> ở góc phải dưới, sau đó chọn <b>Share</b>.
+        </div>
+
+        <div class="pwa-guide-steps">
+          <section class="pwa-guide-step">
+            <div class="pwa-guide-visual phone-menu">
+              <div class="phone-bar"></div>
+              <div class="phone-page"></div>
+              <div class="phone-bottom"><span></span><b>⋯</b></div>
+            </div>
+            <div class="pwa-guide-copy">
+              <span class="pwa-step-no">Bước 1</span>
+              <h3>Mở menu góc phải dưới</h3>
+              <p><b>Tiếng Việt:</b> Nhấn nút <b>⋯</b> ở góc phải dưới.</p>
+              <p><b>English:</b> Tap the <b>⋯</b> button at the bottom right.</p>
+            </div>
+          </section>
+
+          <section class="pwa-guide-step">
+            <div class="pwa-guide-visual share-menu">
+              <div class="share-row"><span>↑</span><b>Chia sẻ</b></div>
+              <div class="share-row"><span>↑</span><b>Share</b></div>
+              <div class="share-row ghost"><span>☆</span><b>Bookmark</b></div>
+            </div>
+            <div class="pwa-guide-copy">
+              <span class="pwa-step-no">Bước 2</span>
+              <h3>Chọn Chia sẻ / Share</h3>
+              <p><b>Tiếng Việt:</b> Chọn <b>Chia sẻ</b>.</p>
+              <p><b>English:</b> Choose <b>Share</b>.</p>
+            </div>
+          </section>
+
+          <section class="pwa-guide-step">
+            <div class="pwa-guide-visual add-menu">
+              <div class="share-row"><span>＋</span><b>Thêm vào Màn hình chính</b></div>
+              <div class="share-row"><span>＋</span><b>Add to Home Screen</b></div>
+              <div class="share-row ghost"><span>⧉</span><b>Copy Link</b></div>
+            </div>
+            <div class="pwa-guide-copy">
+              <span class="pwa-step-no">Bước 3</span>
+              <h3>Thêm vào màn hình chính</h3>
+              <p><b>Tiếng Việt:</b> Chọn <b>Thêm vào Màn hình chính</b>.</p>
+              <p><b>English:</b> Choose <b>Add to Home Screen</b>.</p>
+            </div>
+          </section>
+
+          <section class="pwa-guide-step">
+            <div class="pwa-guide-visual final-add">
+              <div class="phone-top"><span>Huỷ</span><b>Thêm</b></div>
+              <div class="app-icon">古</div>
+              <strong>Cổ Học</strong>
+            </div>
+            <div class="pwa-guide-copy">
+              <span class="pwa-step-no">Bước cuối</span>
+              <h3>Bấm Thêm / Add</h3>
+              <p><b>Tiếng Việt:</b> Bấm <b>Thêm</b> ở góc phải trên.</p>
+              <p><b>English:</b> Tap <b>Add</b> in the top right corner.</p>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="pwa-guide-footer">
+        <button class="pwa-guide-done" type="button">Đã hiểu</button>
+      </div>
+    </div>
+  `;
+
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) closeInstallGuide();
+  });
+
+  modal.querySelector<HTMLButtonElement>(".pwa-guide-x")?.addEventListener("click", closeInstallGuide);
+  modal.querySelector<HTMLButtonElement>(".pwa-guide-done")?.addEventListener("click", closeInstallGuide);
+
+  document.body.appendChild(modal);
+  document.body.classList.add("pwa-guide-open");
+  installGuideModal = modal;
 }
 
 function markPendingSwReload() {
@@ -70,14 +178,14 @@ function createInstallBanner() {
   title.textContent = "Cài App Cổ Học";
   const desc = document.createElement("span");
   desc.textContent = appleInstall
-    ? "Trên iPhone, bấm Chia sẻ rồi chọn Thêm vào Màn hình chính."
+    ? "Bấm Cách cài để xem hướng dẫn lớn từng bước cho iPhone."
     : "Mở nhanh Ngũ thuật, Tam thức và tài khoản như một ứng dụng.";
   copy.append(title, desc);
 
   const steps = document.createElement("div");
   steps.className = "pwa-install-ios-steps";
   steps.hidden = !appleInstall;
-  steps.innerHTML = "<b>iPhone:</b> bấm <span>Chia sẻ</span> trong Safari, rồi chọn <span>Thêm vào Màn hình chính</span>.";
+  steps.innerHTML = "<b>iPhone:</b> có hướng dẫn tiếng Việt và English trong popup lớn.";
   copy.append(steps);
 
   const actions = document.createElement("div");
@@ -95,8 +203,7 @@ function createInstallBanner() {
 
   installButton.addEventListener("click", async () => {
     if (appleInstall) {
-      steps.hidden = false;
-      installButton.textContent = "Đã rõ";
+      openIosInstallGuide();
       return;
     }
     const promptEvent = deferredPrompt;
@@ -169,6 +276,10 @@ window.addEventListener("beforeinstallprompt", (event) => {
 window.addEventListener("appinstalled", () => {
   deferredPrompt = null;
   closeBanner();
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeInstallGuide();
 });
 
 if (document.readyState === "loading") {
