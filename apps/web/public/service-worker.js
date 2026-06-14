@@ -1,4 +1,4 @@
-const CACHE_VERSION = "app-co-hoc-v6";
+const CACHE_VERSION = "app-co-hoc-v7";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -6,6 +6,10 @@ const APP_SHELL = [
   "/account-stabilizer.js",
   "/manifest.webmanifest",
   "/mobile-polish.css",
+  "/apple-touch-icon.png",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/maskable-512.png",
   "/icons/app-icon.svg",
   "/icons/app-icon-192.png",
   "/icons/app-icon-512.png"
