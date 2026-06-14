@@ -1,4 +1,4 @@
-const CACHE_VERSION = "app-co-hoc-v5";
+const CACHE_VERSION = "app-co-hoc-v6";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -20,16 +20,18 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== CACHE_VERSION).map((key) => caches.delete(key)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_VERSION).map((key) => caches.delete(key))))
+      .then(() => self.clients.claim())
+      .then(() => self.clients.matchAll({ type: "window" }))
+      .then((clients) => clients.forEach((client) => {
+        if (client.url && new URL(client.url).origin === self.location.origin) client.navigate(client.url);
+      }))
   );
 });
 
 self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
+  if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", (event) => {
