@@ -1,9 +1,11 @@
-const CACHE_VERSION = "tu-tru-pwa-v1";
+const CACHE_VERSION = "tu-tru-pwa-v2";
 const SHELL_CACHE = CACHE_VERSION + "-shell";
 
 const SHELL_ASSETS = [
   "/nguthuat/menh/tutru/",
   "/nguthuat/menh/tutru/manifest.webmanifest",
+  "/icons/app-icon-192.png",
+  "/icons/app-icon-512.png",
   "/nguthuat/menh/tutru/icons/favicon.svg",
   "/nguthuat/menh/tutru/icons/app-co-hoc-icon.svg",
   "/nguthuat/menh/tutru/icons/maskable-icon.svg"
@@ -59,7 +61,16 @@ self.addEventListener("activate", (event) => {
     caches.keys()
       .then((keys) => Promise.all(keys.filter((key) => key.startsWith("tu-tru-pwa-") && key !== SHELL_CACHE).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
+      .then(() => self.clients.matchAll({ type: "window" }))
+      .then((clients) => clients.forEach((client) => {
+        const url = new URL(client.url || self.location.href);
+        if (url.origin === self.location.origin && url.pathname.startsWith("/nguthuat/menh/tutru/")) client.navigate(client.url);
+      }))
   );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", (event) => {
@@ -87,7 +98,7 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate" && url.pathname.startsWith("/nguthuat/menh/tutru/")) {
     event.respondWith(
-      fetch(request).catch(() => caches.match("/nguthuat/menh/tutru/"))
+      fetch(request, { cache: "no-store" }).catch(() => caches.match("/nguthuat/menh/tutru/"))
     );
   }
 });
