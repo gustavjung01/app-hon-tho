@@ -1,0 +1,47 @@
+{
+  "name": "App Cổ Học",
+  "short_name": "Cổ Học",
+  "description": "Khu ứng dụng Cổ Học: Ngũ thuật, Tam thức, tài khoản, tín dụng và lịch sử tra cứu.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "orientation": "portrait-primary",
+  "background_color": "#0f0c08",
+  "theme_color": "#120d08",
+  "lang": "vi",
+  "dir": "ltr",
+  "categories": ["education", "lifestyle", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ngũ thuật",
+      "short_name": "Ngũ thuật",
+      "description": "Mở cổng Ngũ thuật",
+      "url": "/nguthuat",
+      "icons": [{ "src": "/icons/app-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Tam thức",
+      "short_name": "Tam thức",
+      "description": "Mở cổng Tam thức",
+      "url": "/tam-thuc",
+      "icons": [{ "src": "/icons/app-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Tài khoản",
+      "short_name": "Tài khoản",
+      "description": "Mở trang tài khoản",
+      "url": "/account",
+      "icons": [{ "src": "/icons/app-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}
