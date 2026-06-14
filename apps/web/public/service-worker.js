@@ -1,4 +1,4 @@
-const CACHE_VERSION = "app-co-hoc-v11";
+const CACHE_VERSION = "app-co-hoc-v12";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -9,6 +9,7 @@ const APP_SHELL = [
   "/maskable-512.png",
   "/hontho-auth-bridge.js",
   "/account-stabilizer.js",
+  "/app-version-watch.js",
   "/mobile-polish.css",
   "/icons/app-icon.svg"
 ];
@@ -40,7 +41,7 @@ self.addEventListener("fetch", (event) => {
 
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
-  if (url.pathname === "/service-worker.js" || url.pathname === "/manifest.webmanifest") return;
+  if (url.pathname === "/service-worker.js" || url.pathname === "/manifest.webmanifest" || url.pathname === "/app-version.json") return;
 
   if (request.mode === "navigate") {
     event.respondWith(networkFirstNavigation(request));
