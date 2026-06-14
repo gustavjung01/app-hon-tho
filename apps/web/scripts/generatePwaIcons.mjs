@@ -111,9 +111,9 @@ function writePng(fileName, size, maskable = false) {
   const outPath = path.join(publicDir, fileName);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   try {
-    if (fs.existsSync(outPath) && fs.lstatSync(outPath).isSymbolicLink()) fs.unlinkSync(outPath);
+    if (fs.lstatSync(outPath).isSymbolicLink()) fs.unlinkSync(outPath);
   } catch {
-    fs.rmSync(outPath, { force: true });
+    // Missing path is fine. Any other stale path will be replaced by writeFileSync below.
   }
   fs.writeFileSync(outPath, png);
 }
