@@ -1,6 +1,39 @@
 (function(){
   var KEY = "cohoc_app_version";
   var busy = false;
+  var OLD_PHONG_THUY = "/nguthuat/son/phongthu";
+  var NEW_PHONG_THUY = "/nguthuat/son/phongthuy/";
+
+  function normalizePhongThuyHref(href){
+    return href === OLD_PHONG_THUY || href === OLD_PHONG_THUY + "/";
+  }
+
+  function normalizePhongThuyLinks(){
+    document.querySelectorAll("a[href]").forEach(function(link){
+      if (normalizePhongThuyHref(link.getAttribute("href"))) {
+        link.setAttribute("href", NEW_PHONG_THUY);
+      }
+    });
+  }
+
+  function installPhongThuyRouteGuard(){
+    if (normalizePhongThuyHref(window.location.pathname)) {
+      window.location.replace(NEW_PHONG_THUY + window.location.search + window.location.hash);
+      return;
+    }
+
+    document.addEventListener("click", function(event){
+      var target = event.target && event.target.closest ? event.target.closest("a[href]") : null;
+      if (!target || !normalizePhongThuyHref(target.getAttribute("href"))) return;
+      event.preventDefault();
+      window.location.assign(NEW_PHONG_THUY);
+    }, true);
+
+    normalizePhongThuyLinks();
+    try {
+      new MutationObserver(normalizePhongThuyLinks).observe(document.documentElement, { childList: true, subtree: true });
+    } catch {}
+  }
 
   function swUpdate(){
     if (!("serviceWorker" in navigator)) return Promise.resolve();
@@ -35,14 +68,16 @@
     if (document.visibilityState === "visible") check();
   }
 
+  installPhongThuyRouteGuard();
   window.addEventListener("pageshow", check);
   window.addEventListener("focus", check);
   document.addEventListener("visibilitychange", checkVisible);
   setInterval(checkVisible, 60000);
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", check, { once: true });
+    document.addEventListener("DOMContentLoaded", function(){ normalizePhongThuyLinks(); check(); }, { once: true });
   } else {
+    normalizePhongThuyLinks();
     check();
   }
 })();
