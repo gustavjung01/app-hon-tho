@@ -12,6 +12,9 @@ screenshots
 .vite
 .cache
 
+# Generated app bundles copied into the root web public folder during deploy
+apps/web/public/nguthuat/menh/tutru/
+
 # Windows recycle bin
 $RECYCLE.BIN/
 **/$RECYCLE.BIN/
