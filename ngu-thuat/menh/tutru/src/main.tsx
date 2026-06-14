@@ -6,16 +6,12 @@ import "./aiReply.css";
 import "./followupMenu.css";
 import "./pwaInstall.css";
 
-function registerTuTruPwa() {
+function registerRootPwaFromTuTru() {
   if (!("serviceWorker" in navigator)) return;
   if (!import.meta.env.PROD) return;
 
   window.addEventListener("load", () => {
-    const baseUrl = import.meta.env.BASE_URL || "/";
-    const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-    const serviceWorkerUrl = `${normalizedBase}service-worker.js`;
-
-    navigator.serviceWorker.register(serviceWorkerUrl, { scope: normalizedBase })
+    navigator.serviceWorker.register("/service-worker.js", { scope: "/" })
       .then((registration) => registration.update().catch(() => null))
       .catch((error) => {
         console.warn("Không đăng ký được PWA service worker:", error);
@@ -37,7 +33,7 @@ async function verifyStoredAuthSession() {
 async function bootstrap() {
   await verifyStoredAuthSession();
   ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
-  registerTuTruPwa();
+  registerRootPwaFromTuTru();
   setupPwaInstallBanner();
 }
 
