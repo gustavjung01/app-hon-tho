@@ -1,0 +1,117 @@
+/* Mobile polish layer for root App Cổ Học */
+@media (max-width: 380px) {
+  .top-nav {
+    padding-inline: 10px;
+  }
+
+  .brand {
+    font-size: 16px;
+    letter-spacing: .03em;
+  }
+
+  .brand-seal {
+    width: 26px;
+    height: 26px;
+  }
+
+  .home-hero {
+    min-height: 238px;
+  }
+
+  .home-hero-content {
+    padding: 34px 12px 28px;
+  }
+
+  .home-hero-content h1 {
+    font-size: clamp(28px, 12vw, 42px);
+    margin-bottom: 12px;
+  }
+
+  .home-hero-content .lead br,
+  .page-hero-content .lead br {
+    display: none;
+  }
+
+  .lead {
+    max-width: 94%;
+    font-size: 14px;
+    line-height: 1.62;
+  }
+
+  .portal-card {
+    min-height: 218px;
+    border-radius: 15px;
+  }
+
+  .portal-content {
+    padding: 18px 14px;
+  }
+
+  .portal-content h2 {
+    font-size: 28px;
+  }
+
+  .portal-sub {
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+
+  .portal-btn,
+  .branch-btn,
+  .ph-btn-primary,
+  .ph-btn-secondary {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .info-card-body {
+    padding: 14px 16px;
+  }
+
+  .branch-card-inner {
+    padding: 20px 14px 18px;
+  }
+
+  .placeholder-hero,
+  .account-hero,
+  .history-hero {
+    padding: 42px 14px 30px;
+  }
+
+  .placeholder-body,
+  .account-body,
+  .history-body {
+    width: min(100% - 20px, 960px);
+    padding-top: 22px;
+  }
+
+  .placeholder-notice,
+  .account-card,
+  .account-panel,
+  .history-card {
+    padding: 16px;
+  }
+
+  .account-name {
+    font-size: 20px;
+  }
+}
+
+@media (min-width: 381px) and (max-width: 640px) {
+  .home-hero-content .lead br,
+  .page-hero-content .lead br {
+    display: none;
+  }
+
+  .portal-card {
+    min-height: 228px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .portal-card:hover,
+  .branch-card:hover {
+    transform: none;
+  }
+}
