@@ -1,4 +1,4 @@
-const CACHE_VERSION = "app-co-hoc-v17";
+const CACHE_VERSION = "app-co-hoc-v18";
 const APP_SHELL = [
   "/",
   "/index.html",
