@@ -200,6 +200,36 @@
   opacity: .78;
 }
 
+.branch-card-soon {
+  cursor: not-allowed;
+  opacity: .72;
+  pointer-events: none;
+}
+
+.branch-card-soon .branch-gateway-state {
+  font-size: 0;
+}
+
+.branch-card-soon .branch-gateway-state::before {
+  content: "Sắp ra mắt";
+  display: inline-flex;
+  font-size: 13px;
+  color: var(--gold);
+}
+
+.branch-card-soon .branch-btn-soon {
+  font-size: 0;
+}
+
+.branch-card-soon .branch-btn-soon::before {
+  content: "Sắp ra mắt";
+  font-size: 14px;
+}
+
+.branch-card-soon .branch-btn-soon span {
+  display: none;
+}
+
 @media (max-width: 780px) {
   .account-grid {
     grid-template-columns: 1fr;
