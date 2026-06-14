@@ -31,11 +31,9 @@ function wasDismissed() {
 }
 
 function dismissBanner(root: HTMLElement) {
-  localStorage.setItem(DISM_KEY, "1");
+  localStorage.setItem(DISMISS_KEY, "1");
   root.remove();
 }
-
-const DISM_KEY = DISMISS_KEY;
 
 function guideText(mode: InstallBannerMode) {
   if (mode === "ios") return "Safari → nút Chia sẻ → Thêm vào Màn hình chính → Thêm.";
