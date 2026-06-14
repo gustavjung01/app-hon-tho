@@ -1,18 +1,16 @@
-const CACHE_VERSION = "app-co-hoc-v7";
+﻿const CACHE_VERSION = "app-co-hoc-v8";
 const APP_SHELL = [
   "/",
   "/index.html",
-  "/hontho-auth-bridge.js",
-  "/account-stabilizer.js",
   "/manifest.webmanifest",
-  "/mobile-polish.css",
   "/apple-touch-icon.png",
   "/icon-192.png",
   "/icon-512.png",
   "/maskable-512.png",
-  "/icons/app-icon.svg",
-  "/icons/app-icon-192.png",
-  "/icons/app-icon-512.png"
+  "/hontho-auth-bridge.js",
+  "/account-stabilizer.js",
+  "/mobile-polish.css",
+  "/icons/app-icon.svg"
 ];
 const STATIC_ASSET_RE = /\.(?:js|css|png|jpg|jpeg|svg|webp|gif|ico|woff2?)$/i;
 
@@ -27,10 +25,6 @@ self.addEventListener("activate", (event) => {
     caches.keys()
       .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_VERSION).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
-      .then(() => self.clients.matchAll({ type: "window" }))
-      .then((clients) => clients.forEach((client) => {
-        if (client.url && new URL(client.url).origin === self.location.origin) client.navigate(client.url);
-      }))
   );
 });
 

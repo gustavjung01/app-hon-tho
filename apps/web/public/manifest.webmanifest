@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "App Cổ Học",
   "short_name": "Cổ Học",
   "description": "Khu ứng dụng Cổ Học: Ngũ thuật, Tam thức, tài khoản, tín dụng và lịch sử tra cứu.",
@@ -15,7 +15,8 @@
   "categories": ["education", "lifestyle", "productivity"],
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
     { "name": "Ngũ thuật", "short_name": "Ngũ thuật", "description": "Mở cổng Ngũ thuật", "url": "/nguthuat", "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
