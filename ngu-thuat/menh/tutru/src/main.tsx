@@ -14,9 +14,11 @@ function registerTuTruPwa() {
     const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
     const serviceWorkerUrl = `${normalizedBase}service-worker.js`;
 
-    navigator.serviceWorker.register(serviceWorkerUrl, { scope: normalizedBase }).catch((error) => {
-      console.warn("Không đăng ký được PWA service worker:", error);
-    });
+    navigator.serviceWorker.register(serviceWorkerUrl, { scope: normalizedBase })
+      .then((registration) => registration.update().catch(() => null))
+      .catch((error) => {
+        console.warn("Không đăng ký được PWA service worker:", error);
+      });
   });
 }
 
