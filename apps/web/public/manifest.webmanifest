@@ -14,13 +14,12 @@
   "dir": "ltr",
   "categories": ["education", "lifestyle", "productivity"],
   "icons": [
-    { "src": "/icons/app-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icons/app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "shortcuts": [
-    { "name": "Ngũ thuật", "short_name": "Ngũ thuật", "description": "Mở cổng Ngũ thuật", "url": "/nguthuat", "icons": [{ "src": "/icons/app-icon-192.png", "sizes": "192x192", "type": "image/png" }] },
-    { "name": "Tam thức", "short_name": "Tam thức", "description": "Mở cổng Tam thức", "url": "/tam-thuc", "icons": [{ "src": "/icons/app-icon-192.png", "sizes": "192x192", "type": "image/png" }] },
-    { "name": "Tài khoản", "short_name": "Tài khoản", "description": "Mở trang tài khoản", "url": "/account", "icons": [{ "src": "/icons/app-icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+    { "name": "Ngũ thuật", "short_name": "Ngũ thuật", "description": "Mở cổng Ngũ thuật", "url": "/nguthuat", "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Tam thức", "short_name": "Tam thức", "description": "Mở cổng Tam thức", "url": "/tam-thuc", "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Tài khoản", "short_name": "Tài khoản", "description": "Mở trang tài khoản", "url": "/account", "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
   ]
 }
