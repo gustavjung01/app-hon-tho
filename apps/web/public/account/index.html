@@ -2,108 +2,173 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tài khoản - Cổ học</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#120d08" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Cổ Học" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+  <title>Tài khoản - Cổ Học</title>
   <style>
-    :root{color-scheme:dark;--bg:#070402;--panel:#160e08;--line:rgba(245,217,130,.28);--gold:#f5d982;--gold2:#fff0b8;--text:#fff4d0;--muted:#d5b978;--danger:#ff9f85;--ok:#9ff0b2}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 20% -10%,rgba(212,151,42,.22),transparent 34%),linear-gradient(145deg,#080402,#160d07 62%,#050302);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}.top{min-height:62px;border-bottom:1px solid rgba(245,217,130,.2);display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 22px;background:rgba(7,4,2,.88);position:sticky;top:0;backdrop-filter:blur(12px)}.brand{color:var(--gold);font-family:Georgia,serif;font-weight:900;text-decoration:none;font-size:20px}.nav{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.nav a{color:var(--muted);text-decoration:none;font-weight:850;font-size:14px}.wrap{max-width:980px;margin:0 auto;padding:72px 22px}.hero{text-align:center;margin-bottom:26px}.eyebrow{color:var(--muted);font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:900}.hero h1{font-family:Georgia,serif;color:var(--gold2);font-size:clamp(42px,7vw,76px);line-height:.94;margin:8px 0 14px}.lead{color:var(--muted);line-height:1.7;margin:0 auto;max-width:680px}.card{border:1px solid var(--line);border-radius:28px;background:linear-gradient(180deg,rgba(28,18,10,.94),rgba(12,7,4,.96));padding:28px;box-shadow:0 28px 80px rgba(0,0,0,.38)}.profile{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}.avatar{width:74px;height:74px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(180deg,#f8dd8e,#b77b27);color:#170c04;font-family:Georgia,serif;font-size:34px;font-weight:900;overflow:hidden}.avatar img{width:100%;height:100%;object-fit:cover}.status-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.dot{width:11px;height:11px;border-radius:99px;background:#78643a}.dot.ok{background:var(--ok);box-shadow:0 0 18px rgba(159,240,178,.5)}.dot.err{background:var(--danger)}.status-title{font-weight:950;color:var(--gold);font-size:20px}.email{color:var(--gold2);font-weight:850;margin-top:6px;word-break:break-word}.msg{color:var(--muted);line-height:1.65;margin:14px 0 0}.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}button,.btn{border:1px solid rgba(245,217,130,.48);border-radius:999px;padding:13px 18px;background:rgba(255,235,160,.05);color:var(--gold);font-weight:950;text-decoration:none;cursor:pointer;min-width:132px;text-align:center}button.primary,.btn.primary{background:linear-gradient(180deg,#f8df91,#bd832c);color:#170c04;border-color:transparent}.btn.soft{background:rgba(159,240,178,.08);border-color:rgba(159,240,178,.32);color:#bff8c9}button:disabled{opacity:.55;cursor:not-allowed}.info-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:24px}.info{border:1px solid rgba(245,217,130,.18);border-radius:18px;padding:14px;background:rgba(255,235,160,.035)}.info b{display:block;color:var(--gold2);margin-bottom:5px}.info span{color:var(--muted);font-size:13px}.small{margin-top:16px;color:#a98f5e;font-size:12px}.hidden{display:none!important}@media(max-width:720px){.top{align-items:flex-start;flex-direction:column}.wrap{padding-top:42px}.profile{grid-template-columns:1fr;text-align:center}.avatar{margin:0 auto}.status-row{justify-content:center}.actions{justify-content:center}.info-grid{grid-template-columns:1fr}}
+    :root{color-scheme:dark;--bg:#070402;--panel:#15100a;--panel2:#21160b;--line:rgba(245,217,130,.24);--line2:rgba(245,217,130,.42);--gold:#f4d47d;--gold2:#fff0bb;--text:#fff5d4;--muted:#d7bd82;--soft:#a98d58;--ok:#9ff0b2;--danger:#ffb199;--shadow:0 26px 80px rgba(0,0,0,.42)}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 18% -8%,rgba(214,160,58,.2),transparent 34%),radial-gradient(circle at 90% 0%,rgba(111,61,20,.18),transparent 30%),linear-gradient(145deg,#080402,#140b05 56%,#050302);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:inherit}.top{position:sticky;top:0;z-index:10;min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px max(18px,env(safe-area-inset-left));border-bottom:1px solid rgba(245,217,130,.18);background:rgba(8,4,2,.82);backdrop-filter:blur(14px)}.brand{display:flex;align-items:center;gap:10px;color:var(--gold2);font-family:Georgia,serif;font-weight:900;text-decoration:none;font-size:20px}.brand-mark{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(180deg,#fae3a0,#b57522);color:#190c04}.nav{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.nav a{color:var(--muted);text-decoration:none;font-weight:850;font-size:14px;padding:9px 11px;border-radius:999px}.nav a.active,.nav a:hover{background:rgba(245,217,130,.08);color:var(--gold2)}.wrap{width:min(1120px,calc(100% - 32px));margin:0 auto;padding:42px 0 62px}.hero{display:grid;grid-template-columns:minmax(0,1.2fr) auto;gap:22px;align-items:end;margin-bottom:20px}.eyebrow{color:var(--soft);font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:950}.hero h1{font-family:Georgia,serif;color:var(--gold2);font-size:clamp(38px,7vw,72px);line-height:.95;margin:7px 0 12px}.lead{color:var(--muted);line-height:1.7;max-width:720px;margin:0}.hero-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}.grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:16px;align-items:start}.card{border:1px solid var(--line);border-radius:26px;background:linear-gradient(180deg,rgba(34,22,11,.94),rgba(12,7,4,.96));box-shadow:var(--shadow);padding:24px}.profile-card{display:grid;gap:20px}.profile-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}.avatar{width:78px;height:78px;border-radius:24px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(180deg,#fbe29a,#b77b27);color:#170c04;font-family:Georgia,serif;font-size:34px;font-weight:950;border:1px solid rgba(255,240,187,.3)}.avatar img{width:100%;height:100%;object-fit:cover}.status-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.dot{width:11px;height:11px;border-radius:99px;background:#765f35}.dot.ok{background:var(--ok);box-shadow:0 0 18px rgba(159,240,178,.48)}.dot.err{background:var(--danger)}.status-title{font-weight:950;color:var(--gold2);font-size:22px}.email{color:var(--muted);word-break:break-word;margin-top:6px;font-weight:750}.pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:rgba(245,217,130,.07);border-radius:999px;padding:7px 11px;color:var(--gold);font-size:12px;font-weight:900}.msg{color:var(--muted);line-height:1.7;margin:0}.actions{display:flex;flex-wrap:wrap;gap:10px}.btn,button{border:1px solid rgba(245,217,130,.42);border-radius:999px;padding:12px 16px;min-height:44px;background:rgba(255,235,160,.05);color:var(--gold);font-weight:950;text-decoration:none;cursor:pointer;text-align:center}button.primary,.btn.primary{background:linear-gradient(180deg,#f8df91,#bd832c);color:#170c04;border-color:transparent}.btn.soft,button.soft{background:rgba(159,240,178,.08);border-color:rgba(159,240,178,.32);color:#c9ffd2}.btn.warn,button.warn{color:var(--danger);border-color:rgba(255,177,153,.38);background:rgba(255,177,153,.06)}button:disabled{opacity:.55;cursor:not-allowed}.mini-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.mini{border:1px solid rgba(245,217,130,.16);border-radius:18px;padding:14px;background:rgba(255,235,160,.035)}.mini b{display:block;color:var(--gold2);margin-bottom:5px}.mini span{color:var(--muted);font-size:13px;line-height:1.5}.section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.section-title h2{margin:0;color:var(--gold);font-size:18px}.stack{display:grid;gap:16px}.list{display:grid;gap:10px}.item{display:block;border:1px solid rgba(245,217,130,.16);border-radius:18px;padding:14px;background:rgba(255,235,160,.035);text-decoration:none}.item h3{margin:0 0 5px;color:var(--gold2);font-size:16px}.item p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}.empty{border:1px dashed rgba(245,217,130,.22);border-radius:18px;padding:18px;text-align:center;color:var(--muted);line-height:1.6;background:rgba(255,235,160,.025)}.auth-slot{margin-top:12px;display:grid;place-items:center}.profile-modal{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;padding:18px}.profile-modal.show{display:flex}.profile-box{width:min(720px,100%);max-height:88vh;overflow:auto;border:1px solid var(--line2);border-radius:24px;background:#100905;box-shadow:var(--shadow);padding:18px}.profile-box-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.profile-box-head h2{margin:0;color:var(--gold2)}.small{font-size:12px;color:var(--soft);line-height:1.5}.hidden{display:none!important}@media(max-width:820px){.hero{grid-template-columns:1fr}.hero-actions{justify-content:flex-start}.grid{grid-template-columns:1fr}.mini-grid{grid-template-columns:1fr}}@media(max-width:560px){.top{align-items:flex-start;flex-direction:column}.wrap{width:min(100% - 22px,1120px);padding-top:28px}.card{border-radius:20px;padding:18px}.profile-row{grid-template-columns:1fr;text-align:center}.avatar{margin:0 auto}.status-line,.actions{justify-content:center}.actions .btn,.actions button{width:100%}.nav{width:100%;justify-content:space-between}.nav a{font-size:13px;padding:8px}}
   </style>
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="/">◯ Cổ học</a>
+    <a class="brand" href="/"><span class="brand-mark">古</span><span>Cổ Học</span></a>
     <nav class="nav" aria-label="Điều hướng">
       <a href="/nguthuat">☯ Ngũ thuật</a>
       <a href="/nguthuat/menh/tutru/">Tứ Trụ</a>
       <a href="/history">Lịch sử</a>
+      <a class="active" href="/account/">Tài khoản</a>
     </nav>
   </header>
 
   <main class="wrap">
     <section class="hero">
-      <div class="eyebrow">Tài khoản</div>
-      <h1>Phiên đăng nhập</h1>
-      <p class="lead">Đăng nhập một lần, các app nhỏ sẽ dùng chung token đã được làm mới từ Clerk trước khi gọi API.</p>
+      <div>
+        <div class="eyebrow">Trung tâm tài khoản</div>
+        <h1>Tài khoản Cổ Học</h1>
+        <p class="lead">Quản lý đăng nhập, hồ sơ, lịch sử tra cứu và dữ liệu trên thiết bị trong một màn hình gọn gàng.</p>
+      </div>
+      <div class="hero-actions">
+        <a class="btn" href="/history">Lịch sử</a>
+        <a id="nextBtn" class="btn soft hidden" href="#">Quay lại app</a>
+      </div>
     </section>
 
-    <section class="card" aria-live="polite">
-      <div class="profile">
-        <div id="avatar" class="avatar">?</div>
-        <div>
-          <div class="status-row"><span id="dot" class="dot"></span><span id="statusText" class="status-title">Đang kiểm tra...</span></div>
-          <div id="email" class="email"></div>
-          <p id="message" class="msg">Đang tải phiên đăng nhập.</p>
-        </div>
+    <section class="grid" aria-live="polite">
+      <div class="stack">
+        <article class="card profile-card">
+          <div class="profile-row">
+            <div id="avatar" class="avatar">古</div>
+            <div>
+              <div class="status-line"><span id="dot" class="dot"></span><span id="statusText" class="status-title">Đang kiểm tra</span></div>
+              <div id="email" class="email">Đang tải phiên đăng nhập...</div>
+              <p id="message" class="msg">Một lát nữa thôi, đang mở cửa thư phòng tài khoản.</p>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="signInBtn" class="primary" type="button" disabled>Đăng nhập</button>
+            <button id="manageBtn" type="button" disabled>Quản lý hồ sơ</button>
+            <button id="signOutBtn" class="warn" type="button" disabled>Đăng xuất</button>
+            <a class="btn soft" href="/nguthuat/menh/tutru/">Mở Tứ Trụ</a>
+          </div>
+          <div id="authSlot" class="auth-slot"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title"><h2>Lịch sử tra cứu gần đây</h2><a class="pill" href="/history">Xem tất cả</a></div>
+          <div id="historyList" class="list"><div class="empty">Đăng nhập để xem lịch sử tra cứu gần đây.</div></div>
+        </article>
       </div>
 
-      <div class="actions">
-        <button id="signInBtn" class="primary" type="button" disabled>Đăng nhập</button>
-        <a id="nextBtn" class="btn soft hidden" href="#">Quay lại app đang dùng</a>
-        <a class="btn primary" href="/nguthuat/menh/tutru/">Vào Tứ Trụ</a>
-        <a class="btn" href="/history">Lịch sử</a>
-        <button id="signOutBtn" type="button" disabled>Đăng xuất</button>
-      </div>
+      <aside class="stack">
+        <article class="card">
+          <div class="section-title"><h2>Hồ sơ</h2><span id="profileState" class="pill">Chưa đăng nhập</span></div>
+          <div class="mini-grid">
+            <div class="mini"><b>Tên hiển thị</b><span id="displayName">Chưa có</span></div>
+            <div class="mini"><b>Email</b><span id="profileEmail">Chưa có</span></div>
+            <div class="mini"><b>Quyền truy cập</b><span id="planState">Bản cơ bản</span></div>
+            <div class="mini"><b>Ứng dụng</b><span id="appState">Đang kiểm tra</span></div>
+          </div>
+        </article>
 
-      <div class="info-grid">
-        <div class="info"><b>API base</b><span id="apiBase">/api</span></div>
-        <div class="info"><b>Token</b><span id="tokenState">Đang kiểm tra</span></div>
-        <div class="info"><b>Điều hướng</b><span id="nextState">Không có next</span></div>
-      </div>
-      <div id="hint" class="small"></div>
+        <article class="card">
+          <div class="section-title"><h2>Dữ liệu đã lưu</h2><span class="pill">Trên máy này</span></div>
+          <div id="savedList" class="list"><div class="empty">Chưa thấy mục đã lưu trên thiết bị này.</div></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title"><h2>Bảo mật & thiết bị</h2><span class="pill">Riêng tư</span></div>
+          <p class="msg">Có thể xoá dữ liệu cục bộ trên máy này mà không xoá tài khoản Clerk.</p>
+          <div class="actions">
+            <button id="clearLocalBtn" class="warn" type="button">Xoá dữ liệu máy này</button>
+            <button id="reloadBtn" type="button">Tải lại app</button>
+          </div>
+          <p id="securityHint" class="small">Không hiển thị token hoặc dữ liệu phiên kỹ thuật trên giao diện.</p>
+        </article>
+      </aside>
     </section>
   </main>
+
+  <div id="profileModal" class="profile-modal" role="dialog" aria-modal="true" aria-label="Quản lý hồ sơ">
+    <div class="profile-box">
+      <div class="profile-box-head"><h2>Quản lý hồ sơ</h2><button id="closeProfileBtn" type="button">Đóng</button></div>
+      <div id="profileMount"></div>
+    </div>
+  </div>
 
   <script>
     const $ = (id) => document.getElementById(id);
     const params = new URLSearchParams(location.search);
-    const nextPath = params.get('next') || '';
-    const state = { clerk: null, ready: false, token: '' };
+    const nextUrl = safeNext(params.get('next') || '');
+    const state = { clerk: null, ready: false, token: '', historyLoaded: false };
 
     function safeNext(value) {
-      if (!value || !value.startsWith('/') || value.startsWith('//')) return '';
-      return value;
+      return value && value.startsWith('/') && !value.startsWith('//') ? value : '';
     }
 
-    const nextUrl = safeNext(nextPath);
-
-    function initials(email, name) {
-      const text = (name || email || '?').trim();
-      if (!text) return '?';
-      const parts = text.replace(/@.*/, '').split(/[\s._-]+/).filter(Boolean);
-      return (parts[0]?.[0] || '?').toUpperCase();
-    }
+    function text(id, value) { $(id).textContent = value || ''; }
+    function setBusy(isBusy) { $('signInBtn').disabled = isBusy || !state.ready || isSignedIn(); $('signOutBtn').disabled = isBusy || !state.ready || !isSignedIn(); $('manageBtn').disabled = isBusy || !state.ready || !isSignedIn(); }
+    function isSignedIn() { return Boolean(state.clerk && state.clerk.user && state.clerk.session); }
+    function primaryEmail(user) { return user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || ''; }
+    function displayName(user) { return user?.fullName || user?.username || [user?.firstName, user?.lastName].filter(Boolean).join(' ') || primaryEmail(user) || 'Tài khoản Cổ Học'; }
+    function initials(email, name) { const raw = String(name || email || 'CH').replace(/@.*/, '').trim(); const parts = raw.split(/[\s._-]+/).filter(Boolean); return ((parts[0]?.[0] || 'C') + (parts[1]?.[0] || 'H')).slice(0,2).toUpperCase(); }
 
     function setAvatar(user) {
-      const img = user?.imageUrl;
-      const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || '';
-      const name = user?.fullName || user?.username || '';
-      $('avatar').innerHTML = img ? `<img src="${img}" alt="Avatar">` : initials(email, name);
-    }
-
-    function setUi(kind, text, message, email = '') {
-      $('statusText').textContent = text;
-      $('message').textContent = message;
-      $('email').textContent = email;
-      $('dot').className = 'dot' + (kind === 'ok' ? ' ok' : kind === 'err' ? ' err' : '');
-      $('signInBtn').disabled = !state.ready || kind === 'ok';
-      $('signOutBtn').disabled = !state.ready || kind !== 'ok';
-      $('apiBase').textContent = localStorage.getItem('hontho_api_base') || '/api';
-      $('tokenState').textContent = state.token ? 'Đã lưu token mới' : 'Chưa có token';
-      if (nextUrl) {
-        $('nextBtn').href = nextUrl;
-        $('nextBtn').classList.remove('hidden');
-        $('nextState').textContent = nextUrl;
+      const avatar = $('avatar');
+      avatar.innerHTML = '';
+      if (user?.imageUrl) {
+        const img = document.createElement('img');
+        img.src = user.imageUrl;
+        img.alt = 'Avatar';
+        avatar.appendChild(img);
       } else {
-        $('nextBtn').classList.add('hidden');
-        $('nextState').textContent = 'Không có next';
+        avatar.textContent = initials(primaryEmail(user), displayName(user));
       }
     }
 
-    function clerkDomainFromPublishableKey(key) {
-      const encoded = String(key || '').replace(/^pk_(test|live)_/, '').trim();
-      if (!encoded) throw new Error('Thiếu Clerk publishable key.');
-      const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
-      const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
-      return atob(padded).replace(/\$$/, '');
+    function setState(kind, title, message) {
+      text('statusText', title);
+      text('message', message);
+      $('dot').className = 'dot' + (kind === 'ok' ? ' ok' : kind === 'err' ? ' err' : '');
+      setBusy(false);
+    }
+
+    function storeProfile(user) {
+      const email = primaryEmail(user);
+      const name = displayName(user);
+      localStorage.setItem('hontho_user_clerk_id', String(user?.id || ''));
+      localStorage.setItem('user-clerk-id', String(user?.id || ''));
+      localStorage.setItem('hontho_user_profile', JSON.stringify({ clerkUserId: String(user?.id || ''), name, email, imageUrl: user?.imageUrl || '' }));
+      localStorage.setItem('hontho_api_base', '/api');
+      text('displayName', name);
+      text('profileEmail', email || 'Chưa có email chính');
+      text('email', email || name);
+      text('profileState', 'Đã đăng nhập');
+      text('planState', localStorage.getItem('hontho_plan_name') || 'Bản cơ bản');
+    }
+
+    function clearSessionStorageOnly() {
+      localStorage.removeItem('hontho_user_token');
+      localStorage.removeItem('hontho_user_clerk_id');
+      localStorage.removeItem('user-clerk-id');
+      localStorage.removeItem('hontho_user_profile');
+    }
+
+    function renderSignedOut(message = 'Đăng nhập để đồng bộ lịch sử tra cứu, hồ sơ và các app nhỏ.') {
+      state.token = '';
+      clearSessionStorageOnly();
+      setAvatar(null);
+      text('email', 'Chưa đăng nhập');
+      text('displayName', 'Khách');
+      text('profileEmail', 'Chưa có');
+      text('profileState', 'Chưa đăng nhập');
+      text('planState', 'Bản cơ bản');
+      $('historyList').innerHTML = '<div class="empty">Đăng nhập để xem lịch sử tra cứu gần đây.</div>';
+      setState('idle', 'Chưa đăng nhập', message);
     }
 
     function loadScript(src, attrs = {}) {
@@ -116,86 +181,181 @@
         script.crossOrigin = 'anonymous';
         Object.entries(attrs).forEach(([k, v]) => script.setAttribute(k, v));
         script.onload = resolve;
-        script.onerror = () => reject(new Error('Không tải được ' + src));
+        script.onerror = () => reject(new Error('Không tải được đăng nhập.'));
         document.head.appendChild(script);
       });
     }
 
+    function clerkDomainFromPublishableKey(key) {
+      const encoded = String(key || '').replace(/^pk_(test|live)_/, '').trim();
+      if (!encoded) throw new Error('Chưa có cấu hình đăng nhập.');
+      const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+      return atob(padded).replace(/\$$/, '');
+    }
+
+    async function loadClerk() {
+      const cfg = await fetch('/api/admin/public-config', { cache: 'no-store' }).then((r) => r.json());
+      const key = String(cfg?.clerkPublishableKey || '');
+      const domain = clerkDomainFromPublishableKey(key);
+      await loadScript(`https://${domain}/npm/@clerk/ui@1/dist/ui.browser.js`);
+      await loadScript(`https://${domain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, { 'data-clerk-publishable-key': key });
+      const globalClerk = window.Clerk;
+      let clerk = globalClerk;
+      if (typeof globalClerk === 'function') {
+        clerk = new globalClerk(key);
+        await clerk.load();
+      } else if (globalClerk?.load) {
+        await globalClerk.load({ publishableKey: key });
+      } else {
+        throw new Error('Không khởi tạo được đăng nhập.');
+      }
+      return clerk;
+    }
+
     async function syncBackend(token) {
-      const res = await fetch('/api/auth/sync', {
-        method: 'POST',
-        headers: { Authorization: 'Bearer ' + token }
+      try {
+        await fetch('/api/auth/sync', { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+      } catch {
+        return;
+      }
+    }
+
+    async function fetchHistory(token) {
+      const endpoints = ['/api/user/history', '/api/history', '/api/me/history'];
+      for (const endpoint of endpoints) {
+        const res = await fetch(endpoint, { headers: { Authorization: 'Bearer ' + token, Accept: 'application/json' } });
+        if (res.status === 404) continue;
+        if (!res.ok) return [];
+        const raw = await res.json();
+        const source = Array.isArray(raw) ? raw : raw?.items || raw?.history || raw?.records || raw?.data || raw?.results || [];
+        return Array.isArray(source) ? source.slice(0, 5) : [];
+      }
+      return [];
+    }
+
+    function renderHistory(items) {
+      if (!items.length) {
+        $('historyList').innerHTML = '<div class="empty">Chưa có lịch sử tra cứu. Khi bạn xem Tứ Trụ hoặc các mục Cổ Học, dữ liệu sẽ hiện ở đây.</div>';
+        return;
+      }
+      $('historyList').innerHTML = '';
+      items.forEach((item, index) => {
+        const href = typeof (item.href || item.url || item.path) === 'string' && (item.href || item.url || item.path).startsWith('/') ? item.href || item.url || item.path : '/history';
+        const title = item.title || item.name || item.question || item.query || `Mục tra cứu #${index + 1}`;
+        const app = item.app || item.type || item.module || 'Cổ Học';
+        const summary = item.summary || item.description || item.note || 'Đã lưu một lần tra cứu.';
+        const a = document.createElement('a');
+        a.className = 'item';
+        a.href = href;
+        a.innerHTML = '<h3></h3><p></p><p></p>';
+        a.querySelector('h3').textContent = title;
+        a.querySelectorAll('p')[0].textContent = app;
+        a.querySelectorAll('p')[1].textContent = summary;
+        $('historyList').appendChild(a);
       });
-      if (!res.ok) throw new Error('Backend chưa nhận phiên Clerk.');
-      return res.json().catch(() => ({}));
+    }
+
+    function renderSavedItems() {
+      const keys = ['hontho_saved_items','hontho_saved_charts','tu_tru_saved_items','tutru_saved_items'];
+      const found = [];
+      for (const key of keys) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) continue;
+          const parsed = JSON.parse(raw);
+          const count = Array.isArray(parsed) ? parsed.length : Object.keys(parsed || {}).length;
+          if (count > 0) found.push({ key, count });
+        } catch {}
+      }
+      if (!found.length) return;
+      $('savedList').innerHTML = '';
+      found.forEach((item) => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = '<h3></h3><p></p>';
+        div.querySelector('h3').textContent = `${item.count} mục đã lưu`;
+        div.querySelector('p').textContent = 'Dữ liệu đang nằm trên thiết bị này.';
+        $('savedList').appendChild(div);
+      });
     }
 
     async function syncSession() {
       const clerk = state.clerk;
-      localStorage.setItem('hontho_api_base', '/api');
       if (!clerk || !clerk.user || !clerk.session) {
-        state.token = '';
-        localStorage.removeItem('hontho_user_token');
-        setAvatar(null);
-        setUi('idle', 'Chưa đăng nhập', 'Bấm Đăng nhập để tiếp tục. Nếu app Tứ Trụ báo hết hạn, hãy đăng nhập lại ở đây.');
+        renderSignedOut();
+        mountSignInBox();
         return;
       }
-
-      const token = await clerk.session.getToken();
-      if (!token) throw new Error('Clerk chưa cấp token phiên.');
-      state.token = token;
-      localStorage.setItem('hontho_user_token', token);
-      await syncBackend(token);
-      const email = clerk.user.primaryEmailAddress?.emailAddress || clerk.user.emailAddresses?.[0]?.emailAddress || '';
+      const token = await clerk.session.getToken().catch(() => '');
+      if (token) {
+        state.token = token;
+        localStorage.setItem('hontho_user_token', token);
+        await syncBackend(token);
+      }
+      storeProfile(clerk.user);
       setAvatar(clerk.user);
-      setUi('ok', 'Đã đăng nhập', nextUrl ? 'Phiên đã sẵn sàng. Có thể quay lại app đang dùng.' : 'Phiên đăng nhập đã sẵn sàng cho các app nhỏ.', email);
-      $('hint').textContent = 'Đã sync token vào localStorage và xác nhận với backend /api/auth/sync.';
+      setState('ok', 'Đã đăng nhập', nextUrl ? 'Phiên đã sẵn sàng. Có thể quay lại app đang dùng.' : 'Phiên tài khoản đã sẵn sàng cho các ứng dụng Cổ Học.');
+      if (!state.historyLoaded && token) {
+        state.historyLoaded = true;
+        renderHistory(await fetchHistory(token));
+      }
+      renderSavedItems();
+    }
+
+    function mountSignInBox() {
+      const box = $('authSlot');
+      box.innerHTML = '';
+      if (state.clerk?.mountSignIn && !isSignedIn()) {
+        state.clerk.mountSignIn(box, { routing: 'hash', afterSignInUrl: location.href, afterSignUpUrl: location.href });
+      }
     }
 
     async function boot() {
       try {
-        setUi('idle', 'Đang kiểm tra...', 'Đang tải Clerk và kiểm tra phiên.');
-        const cfg = await fetch('/api/admin/public-config').then((r) => r.json());
-        const key = cfg.clerkPublishableKey;
-        const domain = clerkDomainFromPublishableKey(key);
-        await loadScript(`https://${domain}/npm/@clerk/ui@1/dist/ui.browser.js`);
-        await loadScript(`https://${domain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, { 'data-clerk-publishable-key': key });
-        if (!window.Clerk) throw new Error('Không khởi tạo được Clerk.');
-        await window.Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
-        state.clerk = window.Clerk;
+        if (nextUrl) { $('nextBtn').href = nextUrl; $('nextBtn').classList.remove('hidden'); }
+        renderSavedItems();
+        text('appState', navigator.standalone || matchMedia('(display-mode: standalone)').matches ? 'Đang chạy như app' : 'Mở bằng trình duyệt');
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistration('/').then((reg) => text('appState', reg ? 'PWA đã sẵn sàng' : 'PWA đang chờ đăng ký')).catch(() => {});
+        }
+        state.clerk = await loadClerk();
         state.ready = true;
-        window.Clerk.addListener(() => syncSession().catch((error) => setUi('err', 'Lỗi phiên', error?.message || 'Không sync được phiên.')));
+        if (state.clerk?.addListener) state.clerk.addListener(() => syncSession().catch((err) => setState('err', 'Lỗi phiên', err?.message || 'Không đồng bộ được tài khoản.')));
         await syncSession();
       } catch (error) {
         state.ready = false;
         state.token = '';
-        localStorage.removeItem('hontho_user_token');
+        clearSessionStorageOnly();
         setAvatar(null);
-        setUi('err', 'Lỗi đăng nhập', error?.message || 'Không tải được đăng nhập.');
-        $('hint').textContent = 'Tải lại trang hoặc kiểm tra Clerk domain / CLERK_SECRET_KEY.';
+        setState('err', 'Không tải được tài khoản', error?.message || 'Vui lòng thử lại sau ít phút.');
       }
     }
 
     $('signInBtn').onclick = async () => {
-      try {
-        if (!state.clerk) return;
-        $('signInBtn').disabled = true;
-        const redirect = location.origin + '/account' + (nextUrl ? '?next=' + encodeURIComponent(nextUrl) : '');
-        if (state.clerk.openSignIn) state.clerk.openSignIn({ afterSignInUrl: redirect, afterSignUpUrl: redirect });
-        else if (state.clerk.redirectToSignIn) await state.clerk.redirectToSignIn({ redirectUrl: redirect });
-      } catch (error) {
-        setUi('err', 'Lỗi đăng nhập', error?.message || 'Không mở được đăng nhập.');
-      } finally {
-        $('signInBtn').disabled = false;
-      }
-    };
-
-    $('signOutBtn').onclick = async () => {
       if (!state.clerk) return;
-      await state.clerk.signOut();
-      state.token = '';
-      localStorage.removeItem('hontho_user_token');
-      await syncSession();
+      if (state.clerk.openSignIn) state.clerk.openSignIn({ afterSignInUrl: location.href, afterSignUpUrl: location.href });
+      else if (state.clerk.redirectToSignIn) await state.clerk.redirectToSignIn({ redirectUrl: location.href });
+    };
+    $('signOutBtn').onclick = async () => {
+      if (state.clerk?.signOut) await state.clerk.signOut();
+      renderSignedOut('Đã đăng xuất khỏi thiết bị này.');
+    };
+    $('manageBtn').onclick = () => {
+      if (state.clerk?.openUserProfile) return state.clerk.openUserProfile();
+      $('profileModal').classList.add('show');
+      const mount = $('profileMount');
+      mount.innerHTML = '';
+      if (state.clerk?.mountUserProfile) state.clerk.mountUserProfile(mount, { routing: 'hash' });
+    };
+    $('closeProfileBtn').onclick = () => { $('profileModal').classList.remove('show'); $('profileMount').innerHTML = ''; };
+    $('reloadBtn').onclick = () => location.reload();
+    $('clearLocalBtn').onclick = () => {
+      if (!confirm('Xoá dữ liệu cục bộ trên máy này? Tài khoản Clerk không bị xoá.')) return;
+      ['hontho_user_token','hontho_user_clerk_id','user-clerk-id','hontho_user_profile','hontho_saved_items','hontho_saved_charts','tu_tru_saved_items','tutru_saved_items'].forEach((key) => localStorage.removeItem(key));
+      renderSavedItems();
+      text('securityHint', 'Đã xoá dữ liệu cục bộ trên thiết bị này.');
+      syncSession().catch(() => null);
     };
 
     boot();
