@@ -1,7 +1,8 @@
-const CACHE_VERSION = "app-co-hoc-v3";
+const CACHE_VERSION = "app-co-hoc-v4";
 const APP_SHELL = [
   "/",
   "/index.html",
+  "/hontho-auth-bridge.js",
   "/account-stabilizer.js",
   "/manifest.webmanifest",
   "/mobile-polish.css",
