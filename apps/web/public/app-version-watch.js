@@ -2,23 +2,24 @@
   var KEY = "cohoc_app_version";
   var busy = false;
   var OLD_PHONG_THUY = "/nguthuat/son/phongthu";
-  var NEW_PHONG_THUY = "/nguthuat/son/phongthuy/";
+  var CANONICAL_PHONG_THUY = "/nguthuat/son/phongthuy";
+  var PHONG_THUY_ENTRY = "/nguthuat/son/phongthuy/index.html";
 
   function normalizePhongThuyHref(href){
-    return href === OLD_PHONG_THUY || href === OLD_PHONG_THUY + "/";
+    return href === OLD_PHONG_THUY || href === OLD_PHONG_THUY + "/" || href === CANONICAL_PHONG_THUY || href === CANONICAL_PHONG_THUY + "/";
   }
 
   function normalizePhongThuyLinks(){
     document.querySelectorAll("a[href]").forEach(function(link){
       if (normalizePhongThuyHref(link.getAttribute("href"))) {
-        link.setAttribute("href", NEW_PHONG_THUY);
+        link.setAttribute("href", PHONG_THUY_ENTRY);
       }
     });
   }
 
   function installPhongThuyRouteGuard(){
     if (normalizePhongThuyHref(window.location.pathname)) {
-      window.location.replace(NEW_PHONG_THUY + window.location.search + window.location.hash);
+      window.location.replace(PHONG_THUY_ENTRY + window.location.search + window.location.hash);
       return;
     }
 
@@ -26,7 +27,7 @@
       var target = event.target && event.target.closest ? event.target.closest("a[href]") : null;
       if (!target || !normalizePhongThuyHref(target.getAttribute("href"))) return;
       event.preventDefault();
-      window.location.assign(NEW_PHONG_THUY);
+      window.location.assign(PHONG_THUY_ENTRY);
     }, true);
 
     normalizePhongThuyLinks();
