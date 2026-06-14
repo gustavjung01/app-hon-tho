@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import "./accountHistory.css";
 
 declare global {
   interface Window {
@@ -10,6 +11,10 @@ declare global {
 
 function route() {
   return window.location.pathname.replace(/\/$/, "") || "/";
+}
+
+function navClass(activePage: string | undefined, page: string) {
+  return activePage === page ? "nav-active" : "";
 }
 
 function Shell({ children, activePage }: { children: React.ReactNode; activePage?: string }) {
@@ -23,14 +28,14 @@ function Shell({ children, activePage }: { children: React.ReactNode; activePage
           <span className="brand-short">Cổ học</span>
         </a>
         <div className="nav-links nav-desktop">
-          <a href="/nguthuat" className={activePage === "nguthuat" ? "nav-active" : ""}>
+          <a href="/nguthuat" className={navClass(activePage, "nguthuat")}>
             <span className="nav-icon">☯</span> Ngũ thuật
           </a>
-          <a href="/tam-thuc" className={activePage === "tamthuc" ? "nav-active" : ""}>
+          <a href="/tam-thuc" className={navClass(activePage, "tamthuc")}>
             <span className="nav-icon">◎</span> Tam thức
           </a>
-          <a href="/account" className={activePage === "account" ? "nav-active" : ""}><span className="nav-icon">👤</span> Tài khoản</a>
-          <a href="/history"><span className="nav-icon">🕐</span> Lịch sử</a>
+          <a href="/account" className={navClass(activePage, "account")}><span className="nav-icon">👤</span> Tài khoản</a>
+          <a href="/history" className={navClass(activePage, "history")}><span className="nav-icon">🕐</span> Lịch sử</a>
         </div>
         <button className="nav-hamburger" aria-label="Mở menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>
           <span className="ham-bar" />
@@ -40,10 +45,10 @@ function Shell({ children, activePage }: { children: React.ReactNode; activePage
       </nav>
       {menuOpen && (
         <div className="nav-dropdown" onClick={() => setMenuOpen(false)}>
-          <a href="/nguthuat" className={activePage === "nguthuat" ? "nav-active" : ""}><span className="nav-icon">☯</span> Ngũ thuật</a>
-          <a href="/tam-thuc" className={activePage === "tamthuc" ? "nav-active" : ""}><span className="nav-icon">◎</span> Tam thức</a>
-          <a href="/account" className={activePage === "account" ? "nav-active" : ""}><span className="nav-icon">👤</span> Tài khoản</a>
-          <a href="/history"><span className="nav-icon">🕐</span> Lịch sử</a>
+          <a href="/nguthuat" className={navClass(activePage, "nguthuat")}><span className="nav-icon">☯</span> Ngũ thuật</a>
+          <a href="/tam-thuc" className={navClass(activePage, "tamthuc")}><span className="nav-icon">◎</span> Tam thức</a>
+          <a href="/account" className={navClass(activePage, "account")}><span className="nav-icon">👤</span> Tài khoản</a>
+          <a href="/history" className={navClass(activePage, "history")}><span className="nav-icon">🕐</span> Lịch sử</a>
         </div>
       )}
       {children}
@@ -100,7 +105,7 @@ function Home() {
       <div className="home-cards-wrap">
         <div className="home-cards">
           <InfoCard image="/images/app-home/card-account.webp" title="Tài khoản" desc="Đăng nhập Clerk và lưu phiên làm việc cho các ứng dụng Cổ học." href="/account" />
-          <InfoCard image="/images/app-home/card-history.webp" title="Lịch sử tra cứu" desc="Xem lại các lần tra cứu, thực hành và ghi chú." />
+          <InfoCard image="/images/app-home/card-history.webp" title="Lịch sử tra cứu" desc="Xem lại các lần tra cứu, thực hành và ghi chú." href="/history" />
           <InfoCard image="/images/app-home/card-credits.webp" title="Tín dụng" desc="Quản lý tín dụng, gói dịch vụ và lịch sử giao dịch." />
         </div>
       </div>
@@ -158,12 +163,22 @@ function loadScript(src: string, attrs: Record<string, string> = {}) {
 }
 
 type AccountStatus = "loading" | "signed-in" | "signed-out" | "error";
+type HistoryStatus = "loading" | "ready" | "empty" | "error";
 
 interface AccountProfile {
   clerkUserId: string;
   name: string;
   email: string;
   imageUrl?: string;
+}
+
+interface HistoryRecord {
+  id: string;
+  title: string;
+  app: string;
+  summary: string;
+  createdAt?: string;
+  href?: string;
 }
 
 function readPrimaryEmail(user: any) {
@@ -188,74 +203,103 @@ function readAccountProfile(user: any): AccountProfile | null {
   };
 }
 
+function safeNextPath(fallback = "/") {
+  const raw = new URLSearchParams(window.location.search).get("next") || fallback;
+  if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
+  return fallback;
+}
+
+function redirectToAccount(next = window.location.pathname) {
+  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  window.location.replace(`/account?next=${encodeURIComponent(safeNext)}`);
+}
+
 function clearAccountSession() {
   localStorage.removeItem("hontho_user_token");
   localStorage.removeItem("hontho_user_clerk_id");
   localStorage.removeItem("user-clerk-id");
   localStorage.removeItem("hontho_user_profile");
-  localStorage.setItem("hontho_api_base", "/api");
 }
 
-function storeAccountSession(token: string, profile: AccountProfile) {
-  localStorage.setItem("hontho_user_token", token);
+function storeAccountProfile(profile: AccountProfile) {
+  localStorage.removeItem("hontho_user_token");
   localStorage.setItem("hontho_user_clerk_id", profile.clerkUserId);
   localStorage.setItem("user-clerk-id", profile.clerkUserId);
   localStorage.setItem("hontho_user_profile", JSON.stringify(profile));
   localStorage.setItem("hontho_api_base", "/api");
 }
 
+async function loadClerkClient() {
+  const cfg = await fetch("/api/admin/public-config").then((res) => res.json());
+  const publishableKey = String(cfg?.clerkPublishableKey || "");
+  if (!publishableKey) throw new Error("Chưa có cấu hình đăng nhập Clerk.");
+  const clerkDomain = decodePublishableKeyDomain(publishableKey);
+
+  await loadScript(`https://${clerkDomain}/npm/@clerk/ui@1/dist/ui.browser.js`);
+  await loadScript(`https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, {
+    "data-clerk-publishable-key": publishableKey
+  });
+
+  const globalClerk = window.Clerk;
+  let instance = globalClerk;
+  if (typeof globalClerk === "function") {
+    instance = new globalClerk(publishableKey);
+    await instance.load();
+  } else if (globalClerk?.load) {
+    await globalClerk.load({ publishableKey });
+  } else {
+    throw new Error("Clerk script đã tải nhưng không khởi tạo được.");
+  }
+
+  localStorage.removeItem("hontho_user_token");
+  return instance;
+}
+
 function AccountPage() {
+  const nextPath = safeNextPath("/nguthuat/menh/tutru/");
   const signInBoxRef = useRef<HTMLDivElement | null>(null);
-  const userBoxRef = useRef<HTMLDivElement | null>(null);
-  const mountedModeRef = useRef<"sign-in" | "user" | null>(null);
+  const userButtonRef = useRef<HTMLDivElement | null>(null);
+  const userProfileRef = useRef<HTMLDivElement | null>(null);
+  const mountedModeRef = useRef<"sign-in" | "user-button" | null>(null);
   const [status, setStatus] = useState<AccountStatus>("loading");
   const [message, setMessage] = useState("Đang nạp trang tài khoản...");
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [clerk, setClerk] = useState<any>(null);
+  const [profileManagerOpen, setProfileManagerOpen] = useState(false);
 
   function resetMounts() {
     if (signInBoxRef.current) signInBoxRef.current.innerHTML = "";
-    if (userBoxRef.current) userBoxRef.current.innerHTML = "";
+    if (userButtonRef.current) userButtonRef.current.innerHTML = "";
     mountedModeRef.current = null;
   }
 
   async function syncSession(instance: any) {
-    localStorage.setItem("hontho_api_base", "/api");
     const account = readAccountProfile(instance?.user);
     if (!instance?.session || !account) {
       clearAccountSession();
       setProfile(null);
       setStatus("signed-out");
-      setMessage("Đăng nhập để lưu phiên làm việc cho các ứng dụng Cổ học.");
+      setMessage("Đăng nhập để đồng bộ lịch sử tra cứu và quản lý tài khoản Cổ Học.");
       return null;
     }
 
-    const token = await instance.session.getToken().catch(() => "");
-    if (!token) {
-      clearAccountSession();
-      setProfile(account);
-      setStatus("signed-out");
-      setMessage("Chưa lấy được phiên đăng nhập. Hãy đăng nhập lại.");
-      return null;
-    }
-
-    storeAccountSession(token, account);
+    storeAccountProfile(account);
     setProfile(account);
     setStatus("signed-in");
-    setMessage("Đã đăng nhập. Phiên làm việc đã sẵn sàng cho Tứ Trụ và các ứng dụng Cổ học.");
+    setMessage("Đã đăng nhập. Phiên tài khoản đang hoạt động an toàn trên trình duyệt.");
     return account;
   }
 
   async function mountAccountUi(instance: any) {
-    if (!signInBoxRef.current || !userBoxRef.current) return;
+    if (!signInBoxRef.current || !userButtonRef.current) return;
     const signedIn = Boolean(instance?.user && instance?.session);
 
     if (signedIn) {
-      if (mountedModeRef.current !== "user") {
+      if (mountedModeRef.current !== "user-button") {
         resetMounts();
         if (typeof instance.mountUserButton === "function") {
-          instance.mountUserButton(userBoxRef.current, { afterSignOutUrl: "/account" });
-          mountedModeRef.current = "user";
+          instance.mountUserButton(userButtonRef.current, { afterSignOutUrl: "/account" });
+          mountedModeRef.current = "user-button";
         }
       }
       return;
@@ -266,8 +310,8 @@ function AccountPage() {
       if (typeof instance.mountSignIn === "function") {
         instance.mountSignIn(signInBoxRef.current, {
           routing: "hash",
-          afterSignInUrl: "/account",
-          afterSignUpUrl: "/account"
+          afterSignInUrl: nextPath,
+          afterSignUpUrl: nextPath
         });
         mountedModeRef.current = "sign-in";
       } else {
@@ -283,28 +327,7 @@ function AccountPage() {
 
     async function boot() {
       try {
-        localStorage.setItem("hontho_api_base", "/api");
-        const cfg = await fetch("/api/admin/public-config").then((res) => res.json());
-        const publishableKey = String(cfg?.clerkPublishableKey || "");
-        if (!publishableKey) throw new Error("Chưa có cấu hình đăng nhập Clerk.");
-        const clerkDomain = decodePublishableKeyDomain(publishableKey);
-
-        await loadScript(`https://${clerkDomain}/npm/@clerk/ui@1/dist/ui.browser.js`);
-        await loadScript(`https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, {
-          "data-clerk-publishable-key": publishableKey
-        });
-        if (cancelled) return;
-
-        const globalClerk = window.Clerk;
-        let instance = globalClerk;
-        if (typeof globalClerk === "function") {
-          instance = new globalClerk(publishableKey);
-          await instance.load();
-        } else if (globalClerk?.load) {
-          await globalClerk.load({ publishableKey });
-        } else {
-          throw new Error("Clerk script đã tải nhưng không khởi tạo được.");
-        }
+        const instance = await loadClerkClient();
         if (cancelled) return;
 
         setClerk(instance);
@@ -335,48 +358,278 @@ function AccountPage() {
       cancelled = true;
       if (unsubscribe) unsubscribe();
       resetMounts();
+      if (userProfileRef.current) userProfileRef.current.innerHTML = "";
     };
   }, []);
+
+  useEffect(() => {
+    if (!profileManagerOpen || !clerk || status !== "signed-in" || !userProfileRef.current) return;
+    userProfileRef.current.innerHTML = "";
+    if (typeof clerk.mountUserProfile === "function") {
+      clerk.mountUserProfile(userProfileRef.current, { routing: "hash" });
+    }
+    return () => {
+      if (userProfileRef.current) userProfileRef.current.innerHTML = "";
+    };
+  }, [profileManagerOpen, clerk, status]);
 
   async function handleSignOut() {
     if (clerk?.signOut) await clerk.signOut();
     clearAccountSession();
     setProfile(null);
+    setProfileManagerOpen(false);
     setStatus("signed-out");
-    setMessage("Đã đăng xuất. Phiên đăng nhập đã được xoá khỏi trình duyệt.");
+    setMessage("Đã đăng xuất. Dữ liệu phiên cũ đã được xoá khỏi trình duyệt.");
     await mountAccountUi(clerk);
+  }
+
+  function handleManageProfile() {
+    if (clerk?.openUserProfile) {
+      clerk.openUserProfile();
+      return;
+    }
+    setProfileManagerOpen((value) => !value);
   }
 
   return (
     <Shell activePage="account">
-      <div className="placeholder-hero">
+      <div className="account-hero">
         <div className="breadcrumb"><a href="/">🏠</a> / <span>Tài khoản</span></div>
         <div className="placeholder-icon">👤</div>
-        <h1>Tài khoản</h1>
-        <p className="lead">Đăng nhập để dùng ứng dụng Cổ học và lưu phiên làm việc.</p>
+        <h1>Tài khoản Cổ Học</h1>
+        <p className="lead">Đăng nhập, quản lý hồ sơ và giữ lịch sử tra cứu trong phiên Clerk an toàn.</p>
       </div>
-      <div className="placeholder-body">
-        <div className="placeholder-notice">
-          <strong>{status === "signed-in" ? "Tài khoản của bạn" : "Đăng nhập tài khoản"}</strong>
-          <p>{message}</p>
+
+      <div className="account-body">
+        <div className="account-grid">
+          <section className="account-card">
+            {status === "signed-in" && profile ? (
+              <>
+                <div className="account-profile-row">
+                  {profile.imageUrl ? (
+                    <img src={profile.imageUrl} alt="" className="account-avatar" />
+                  ) : (
+                    <div className="account-avatar account-avatar-fallback">👤</div>
+                  )}
+                  <div>
+                    <h2 className="account-name">{profile.name}</h2>
+                    <p className="account-email">{profile.email || "Chưa có email chính"}</p>
+                    <span className="status-pill"><span className="status-dot" /> Đang đăng nhập</span>
+                  </div>
+                </div>
+                <div ref={userButtonRef} className="account-user-button" />
+                <div className="account-actions">
+                  <button className="ph-btn-primary" type="button" onClick={handleManageProfile}>Quản lý hồ sơ</button>
+                  <a className="ph-btn-secondary" href="/history">Lịch sử tra cứu</a>
+                  <span className="ph-btn-secondary account-action-disabled">Tín dụng</span>
+                  <a className="ph-btn-secondary" href={nextPath}>Quay lại app đang dùng</a>
+                  <button className="ph-btn-secondary" type="button" onClick={handleSignOut}>Đăng xuất</button>
+                </div>
+                {profileManagerOpen ? <div ref={userProfileRef} className="account-manager" /> : null}
+              </>
+            ) : (
+              <>
+                <h2 className="account-name">{status === "loading" ? "Đang kiểm tra phiên đăng nhập" : "Đăng nhập tài khoản"}</h2>
+                <p className="account-muted">{message}</p>
+                <div ref={signInBoxRef} className="account-widget-wrap auth-widget" />
+                <div className="account-actions">
+                  <a className="ph-btn-secondary" href="/">Trang chủ</a>
+                  <a className="ph-btn-secondary" href="/nguthuat/menh/tutru/">Vào Tứ Trụ</a>
+                </div>
+              </>
+            )}
+          </section>
+
+          <aside className="account-panel">
+            <h2>Trạng thái phiên</h2>
+            <p className="account-muted">{message}</p>
+            <ul>
+              <li>✓ Không hiển thị dữ liệu phiên kỹ thuật trên giao diện.</li>
+              <li>✓ Không lưu chuỗi phiên đăng nhập vào localStorage.</li>
+              <li>✓ Quản lý hồ sơ bằng giao diện chính thức của Clerk.</li>
+            </ul>
+          </aside>
+        </div>
+      </div>
+    </Shell>
+  );
+}
+
+function normalizeHistoryPayload(raw: any): HistoryRecord[] {
+  const source = Array.isArray(raw)
+    ? raw
+    : raw?.items || raw?.history || raw?.records || raw?.data || raw?.results || [];
+
+  if (!Array.isArray(source)) return [];
+
+  return source.map((item: any, index: number) => {
+    const app = String(item?.app || item?.type || item?.module || "Cổ Học");
+    const title = String(item?.title || item?.name || item?.question || item?.query || `${app} #${index + 1}`);
+    const summary = String(item?.summary || item?.description || item?.note || item?.resultSummary || "Đã lưu một lần tra cứu.");
+    const createdAt = String(item?.createdAt || item?.created_at || item?.time || item?.timestamp || "");
+    const href = item?.href || item?.url || item?.path;
+    return {
+      id: String(item?.id || item?._id || item?.historyId || `${createdAt}-${index}`),
+      app,
+      title,
+      summary,
+      createdAt,
+      href: typeof href === "string" && href.startsWith("/") ? href : undefined
+    };
+  });
+}
+
+async function fetchHistoryRecords(token: string): Promise<HistoryRecord[]> {
+  const endpoints = ["/api/user/history", "/api/history", "/api/me/history"];
+  for (const endpoint of endpoints) {
+    const res = await fetch(endpoint, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json"
+      }
+    });
+
+    if (res.status === 404) continue;
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.");
+    }
+    if (!res.ok) {
+      throw new Error("Chưa tải được lịch sử tra cứu.");
+    }
+    return normalizeHistoryPayload(await res.json());
+  }
+  return [];
+}
+
+function formatHistoryDate(value?: string) {
+  if (!value) return "Chưa rõ thời gian";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
+
+function HistoryPage() {
+  const [status, setStatus] = useState<HistoryStatus>("loading");
+  const [message, setMessage] = useState("Đang kiểm tra phiên đăng nhập...");
+  const [records, setRecords] = useState<HistoryRecord[]>([]);
+  const [profile, setProfile] = useState<AccountProfile | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function boot() {
+      try {
+        const instance = await loadClerkClient();
+        if (cancelled) return;
+
+        const account = readAccountProfile(instance?.user);
+        if (!instance?.session || !account) {
+          redirectToAccount("/history");
+          return;
+        }
+
+        storeAccountProfile(account);
+        setProfile(account);
+        setMessage("Đang tải lịch sử tra cứu...");
+
+        const token = await instance.session.getToken().catch(() => "");
+        if (!token) {
+          redirectToAccount("/history");
+          return;
+        }
+
+        const items = await fetchHistoryRecords(token);
+        if (cancelled) return;
+
+        setRecords(items);
+        setStatus(items.length > 0 ? "ready" : "empty");
+        setMessage(items.length > 0 ? "Lịch sử tra cứu của bạn." : "Chưa có lịch sử tra cứu nào được lưu.");
+      } catch (error) {
+        if (cancelled) return;
+        setStatus("error");
+        setMessage(error instanceof Error ? error.message : "Không tải được lịch sử tra cứu.");
+      }
+    }
+
+    void boot();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <Shell activePage="history">
+      <div className="history-hero">
+        <div className="breadcrumb"><a href="/">🏠</a> / <span>Lịch sử tra cứu</span></div>
+        <div className="placeholder-icon">🕐</div>
+        <h1>Lịch sử tra cứu</h1>
+        <p className="lead">Phiên đăng nhập chỉ được dùng trong bộ nhớ khi tải dữ liệu, không hiển thị trên giao diện.</p>
+      </div>
+
+      <div className="history-body">
+        <section className="history-card">
           {profile ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 16 }}>
-              {profile.imageUrl ? <img src={profile.imageUrl} alt="" style={{ width: 44, height: 44, borderRadius: 999 }} /> : null}
-              <span>{profile.name}{profile.email ? ` · ${profile.email}` : ""}</span>
+            <p className="history-meta">Tài khoản: {profile.name}{profile.email ? ` · ${profile.email}` : ""}</p>
+          ) : null}
+
+          {status === "loading" ? (
+            <div className="history-empty">
+              <div className="history-empty-icon">⌛</div>
+              <h2>Đang nạp lịch sử</h2>
+              <p className="account-muted">{message}</p>
             </div>
           ) : null}
-        </div>
 
-        <div ref={signInBoxRef} style={{ display: status === "signed-in" ? "none" : "flex", justifyContent: "center", marginTop: 24 }} />
-        <div ref={userBoxRef} style={{ display: status === "signed-in" ? "flex" : "none", justifyContent: "center", marginTop: 24 }} />
-
-        <div className="placeholder-btn-row">
-          {status === "signed-in" ? (
-            <button className="ph-btn-secondary" type="button" onClick={handleSignOut}>Đăng xuất</button>
+          {status === "error" ? (
+            <div className="history-empty">
+              <div className="history-empty-icon">⚠️</div>
+              <h2>Chưa tải được lịch sử</h2>
+              <p className="account-muted">{message}</p>
+              <div className="history-actions center">
+                <a className="ph-btn-primary" href="/account?next=/history">Kiểm tra đăng nhập</a>
+                <a className="ph-btn-secondary" href="/">Trang chủ</a>
+              </div>
+            </div>
           ) : null}
-          <a className="ph-btn-primary" href="/nguthuat/menh/tutru/">Vào Tứ Trụ</a>
-          <a className="ph-btn-secondary" href="/">Trang chủ</a>
-        </div>
+
+          {status === "empty" ? (
+            <div className="history-empty">
+              <div className="history-empty-icon">🪶</div>
+              <h2>Chưa có lịch sử</h2>
+              <p className="account-muted">Khi bạn tra cứu trong các ứng dụng Cổ Học, các mục được lưu sẽ xuất hiện tại đây.</p>
+              <div className="history-actions center">
+                <a className="ph-btn-primary" href="/nguthuat/menh/tutru/">Bắt đầu với Tứ Trụ</a>
+                <a className="ph-btn-secondary" href="/account">Tài khoản</a>
+              </div>
+            </div>
+          ) : null}
+
+          {status === "ready" ? (
+            <>
+              <div className="history-list">
+                {records.map((item) => {
+                  const body = (
+                    <>
+                      <h3>{item.title}</h3>
+                      <p className="history-meta">{item.app} · {formatHistoryDate(item.createdAt)}</p>
+                      <p className="account-muted">{item.summary}</p>
+                    </>
+                  );
+                  return item.href ? (
+                    <a key={item.id} className="history-item" href={item.href}>{body}</a>
+                  ) : (
+                    <div key={item.id} className="history-item">{body}</div>
+                  );
+                })}
+              </div>
+              <div className="history-actions">
+                <a className="ph-btn-secondary" href="/nguthuat/menh/tutru/">Tra cứu thêm</a>
+                <a className="ph-btn-secondary" href="/account">Tài khoản</a>
+              </div>
+            </>
+          ) : null}
+        </section>
       </div>
     </Shell>
   );
@@ -580,7 +833,6 @@ const PLACEHOLDER_ROUTES: Record<string, PlaceholderConfig> = {
   "/tam-thuc/ky-mon": { title: "Kỳ Môn", subtitle: "Kỳ Môn Độn Giáp", icon: "🧭", desc: "Cục bàn thời không, trạch hướng, lựa chọn thời cơ và phương vị theo Kỳ Môn Độn Giáp.", parent: "Tam thức", parentHref: "/tam-thuc", grandParent: "Trang chủ", grandParentHref: "/" },
   "/tam-thuc/thai-at": { title: "Thái Ất", subtitle: "Thái Ất Thần Số", icon: "🌙", desc: "Dự đoán cát hung, thiên thời, nhân sự và vận hạn theo hệ thống Thái Ất. Tham khảo có kiểm soát.", parent: "Tam thức", parentHref: "/tam-thuc", grandParent: "Trang chủ", grandParentHref: "/" },
   "/tam-thuc/luc-nham": { title: "Lục Nhâm", subtitle: "Đại Lục Nhâm", icon: "⚖", desc: "Phán đoán sự việc, công việc, hành trình và các tình huống thực tế theo Đại Lục Nhâm.", parent: "Tam thức", parentHref: "/tam-thuc", grandParent: "Trang chủ", grandParentHref: "/" },
-  "/history": { title: "Lịch sử tra cứu", subtitle: "", icon: "🕐", desc: "Xem lại các lần tra cứu, thực hành và ghi chú. Tính năng đang được phát triển.", parent: "Trang chủ", parentHref: "/" },
 };
 
 function App() {
@@ -588,6 +840,7 @@ function App() {
   if (path === "/nguthuat") return <NguThuatHub />;
   if (path === "/tam-thuc") return <TamThucHub />;
   if (path === "/account") return <AccountPage />;
+  if (path === "/history") return <HistoryPage />;
   const nguThuatLanding = NGU_THUAT_BRANCH_LANDINGS[path];
   if (nguThuatLanding) return <NguThuatBranchLanding cfg={nguThuatLanding} />;
   if (path === "/nguthuat/menh/tutru") return <TuTruRedirect />;
