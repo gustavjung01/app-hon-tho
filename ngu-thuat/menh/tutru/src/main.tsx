@@ -1,7 +1,9 @@
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { setupPwaInstallBanner } from "./pwaInstall";
 import "./styles.css";
 import "./aiReply.css";
+import "./pwaInstall.css";
 
 function registerTuTruPwa() {
   if (!("serviceWorker" in navigator)) return;
@@ -20,3 +22,4 @@ function registerTuTruPwa() {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
 registerTuTruPwa();
+setupPwaInstallBanner();
