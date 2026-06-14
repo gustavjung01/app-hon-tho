@@ -1,5 +1,13 @@
-const CACHE_VERSION = "app-co-hoc-v1";
-const APP_SHELL = ["/", "/index.html", "/manifest.webmanifest", "/icons/app-icon.svg"];
+const CACHE_VERSION = "app-co-hoc-v2";
+const APP_SHELL = [
+  "/",
+  "/index.html",
+  "/manifest.webmanifest",
+  "/mobile-polish.css",
+  "/icons/app-icon.svg",
+  "/icons/app-icon-192.png",
+  "/icons/app-icon-512.png"
+];
 const STATIC_ASSET_RE = /\.(?:js|css|png|jpg|jpeg|svg|webp|gif|ico|woff2?)$/i;
 
 self.addEventListener("install", (event) => {
