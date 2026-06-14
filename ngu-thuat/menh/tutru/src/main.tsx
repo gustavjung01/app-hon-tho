@@ -3,6 +3,7 @@ import App from "./App";
 import { setupPwaInstallBanner } from "./pwaInstall";
 import "./styles.css";
 import "./aiReply.css";
+import "./followupMenu.css";
 import "./pwaInstall.css";
 
 function registerTuTruPwa() {
