@@ -1,0 +1,253 @@
+.account-hero,
+.history-hero {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--gold-soft);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(214, 180, 106, .16), transparent 38%),
+    linear-gradient(180deg, rgba(20, 12, 4, .92) 0%, #0d0905 100%);
+  text-align: center;
+  padding: 68px 24px 48px;
+}
+
+.account-hero h1,
+.history-hero h1 {
+  font-size: clamp(36px, 6vw, 66px);
+  margin: 0 0 14px;
+}
+
+.account-body,
+.history-body {
+  width: min(960px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 38px 0 58px;
+}
+
+.account-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(260px, .9fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.account-card,
+.history-card,
+.account-panel {
+  border: 1px solid var(--gold-soft);
+  border-radius: 18px;
+  background: var(--paper-card);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, .28);
+}
+
+.account-card,
+.history-card {
+  padding: 26px;
+}
+
+.account-panel {
+  padding: 22px;
+}
+
+.account-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  text-align: left;
+}
+
+.account-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  border: 1px solid var(--gold-border);
+  object-fit: cover;
+  background: rgba(214, 180, 106, .08);
+  flex: 0 0 auto;
+}
+
+.account-avatar-fallback {
+  display: grid;
+  place-items: center;
+  color: var(--gold);
+  font-size: 28px;
+}
+
+.account-name {
+  color: var(--text);
+  font-size: 22px;
+  line-height: 1.25;
+  margin-bottom: 6px;
+}
+
+.account-email,
+.history-meta,
+.account-muted {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--gold-soft);
+  color: var(--gold);
+  background: rgba(214, 180, 106, .08);
+  font-size: 13px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--gold);
+  box-shadow: 0 0 16px rgba(214, 180, 106, .8);
+}
+
+.account-actions,
+.history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.account-actions.center,
+.history-actions.center {
+  justify-content: center;
+}
+
+.account-action-disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.account-widget-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 22px;
+}
+
+.auth-widget {
+  max-width: 100%;
+}
+
+.account-user-button {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 16px;
+}
+
+.account-manager {
+  margin-top: 18px;
+  overflow: hidden;
+}
+
+.account-panel h2,
+.history-card h2 {
+  color: var(--gold);
+  font-size: 18px;
+  margin: 0 0 10px;
+}
+
+.account-panel ul {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.history-list {
+  display: grid;
+  gap: 12px;
+}
+
+.history-item {
+  display: block;
+  border: 1px solid var(--gold-soft);
+  border-radius: 14px;
+  padding: 16px 18px;
+  background: rgba(18, 12, 6, .62);
+  text-align: left;
+  transition: border-color .2s, transform .2s;
+}
+
+.history-item:hover {
+  border-color: var(--gold-border);
+  transform: translateY(-2px);
+}
+
+.history-item h3 {
+  color: var(--gold-bright);
+  font-size: 17px;
+  margin-bottom: 6px;
+}
+
+.history-empty {
+  text-align: center;
+  padding: 34px 22px;
+}
+
+.history-empty-icon {
+  font-size: 44px;
+  margin-bottom: 14px;
+  opacity: .78;
+}
+
+@media (max-width: 780px) {
+  .account-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-profile-row {
+    align-items: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .account-hero,
+  .history-hero {
+    padding: 48px 16px 34px;
+  }
+
+  .account-body,
+  .history-body {
+    width: min(100% - 24px, 960px);
+    padding: 24px 0 42px;
+  }
+
+  .account-card,
+  .history-card,
+  .account-panel {
+    padding: 18px;
+    border-radius: 15px;
+  }
+
+  .account-profile-row {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .account-actions,
+  .history-actions {
+    flex-direction: column;
+  }
+
+  .account-actions .ph-btn-primary,
+  .account-actions .ph-btn-secondary,
+  .history-actions .ph-btn-primary,
+  .history-actions .ph-btn-secondary {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .account-user-button {
+    justify-content: center;
+  }
+}
