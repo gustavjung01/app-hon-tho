@@ -1,0 +1,50 @@
+{
+  "name": "App Cổ Học - Tứ Trụ",
+  "short_name": "Cổ Học",
+  "description": "App Cổ Học Hồn Thơ: lập lá số Tứ Trụ, xem đại vận và hỏi cố vấn AI trên lá phiếu đã an.",
+  "id": "/nguthuat/menh/tutru/",
+  "start_url": "/nguthuat/menh/tutru/?source=pwa",
+  "scope": "/nguthuat/menh/tutru/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
+  "background_color": "#120d0a",
+  "theme_color": "#120d0a",
+  "orientation": "portrait",
+  "lang": "vi-VN",
+  "categories": ["lifestyle", "education", "productivity"],
+  "icons": [
+    {
+      "src": "/nguthuat/menh/tutru/icons/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/nguthuat/menh/tutru/icons/app-co-hoc-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/nguthuat/menh/tutru/icons/maskable-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mở Tứ Trụ",
+      "short_name": "Tứ Trụ",
+      "description": "Lập lá số Tứ Trụ và hỏi cố vấn AI.",
+      "url": "/nguthuat/menh/tutru/?source=pwa-shortcut",
+      "icons": [
+        {
+          "src": "/nguthuat/menh/tutru/icons/app-co-hoc-icon.svg",
+          "sizes": "512x512",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}
