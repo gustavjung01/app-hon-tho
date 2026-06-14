@@ -37,6 +37,18 @@
   color: rgba(247, 236, 212, 0.78);
 }
 
+.pwa-install-ios-steps {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(247, 236, 212, 0.72);
+}
+
+.pwa-install-ios-steps b,
+.pwa-install-ios-steps span {
+  color: #f7d78c;
+}
+
 .pwa-install-actions {
   display: flex;
   align-items: center;
@@ -45,7 +57,9 @@
 }
 
 .pwa-install-primary,
-.pwa-install-close {
+.pwa-install-close,
+.pwa-guide-x,
+.pwa-guide-done {
   border: 0;
   cursor: pointer;
   font: inherit;
@@ -57,7 +71,7 @@
   background: linear-gradient(135deg, #f2d08b, #a66d2e);
   color: #1b1008;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   white-space: nowrap;
 }
 
@@ -73,6 +87,241 @@
   line-height: 1;
 }
 
+.pwa-guide-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(12px);
+}
+
+.pwa-guide-sheet {
+  width: min(760px, 100%);
+  max-height: 88vh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid rgba(242, 208, 139, 0.45);
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(34, 22, 12, 0.98), rgba(9, 5, 3, 0.98));
+  box-shadow: 0 28px 92px rgba(0, 0, 0, 0.66);
+  color: #fff2cf;
+}
+
+.pwa-guide-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+  padding: 22px 22px 16px;
+  border-bottom: 1px solid rgba(242, 208, 139, 0.18);
+}
+
+.pwa-guide-eyebrow {
+  display: inline-block;
+  margin-bottom: 7px;
+  color: rgba(255, 232, 174, 0.74);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.pwa-guide-head h2 {
+  margin: 0 0 8px;
+  color: #ffe9a8;
+  font-family: Georgia, serif;
+  font-size: clamp(28px, 7vw, 46px);
+  line-height: 1.02;
+}
+
+.pwa-guide-head p,
+.pwa-guide-copy p,
+.pwa-guide-note {
+  margin: 0;
+  color: rgba(255, 242, 207, 0.78);
+  line-height: 1.62;
+}
+
+.pwa-guide-x {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff2cf;
+  font-size: 28px;
+}
+
+.pwa-guide-scroll {
+  overflow: auto;
+  padding: 18px 22px 20px;
+}
+
+.pwa-guide-note {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(159, 240, 178, 0.25);
+  border-radius: 18px;
+  background: rgba(159, 240, 178, 0.07);
+}
+
+.pwa-guide-note strong,
+.pwa-guide-note b,
+.pwa-guide-copy b {
+  color: #ffe9a8;
+}
+
+.pwa-guide-steps {
+  display: grid;
+  gap: 14px;
+}
+
+.pwa-guide-step {
+  display: grid;
+  grid-template-columns: 174px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid rgba(242, 208, 139, 0.18);
+  border-radius: 22px;
+  background: rgba(255, 238, 188, 0.035);
+}
+
+.pwa-guide-visual {
+  min-height: 152px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(242, 208, 139, 0.18);
+  border-radius: 20px;
+  background: rgba(10, 6, 3, 0.48);
+  overflow: hidden;
+}
+
+.phone-bar {
+  width: 54px;
+  height: 5px;
+  border-radius: 99px;
+  background: rgba(255, 242, 207, 0.25);
+}
+
+.phone-page {
+  width: 100%;
+  height: 74px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 232, 174, 0.18), rgba(255, 232, 174, 0.05));
+}
+
+.phone-bottom,
+.phone-top {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.phone-bottom span {
+  width: 74px;
+  height: 18px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.phone-bottom b,
+.share-row span {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: #f2d08b;
+  color: #1b1008;
+  font-weight: 900;
+}
+
+.share-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 242, 207, 0.1);
+  color: #fff2cf;
+  font-size: 13px;
+}
+
+.share-row.ghost {
+  opacity: 0.5;
+}
+
+.phone-top {
+  color: rgba(255, 242, 207, 0.72);
+  font-size: 13px;
+}
+
+.phone-top b {
+  color: #8ff0a7;
+}
+
+.app-icon {
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 66px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f8df91, #bd832c);
+  color: #1b1008;
+  font-family: Georgia, serif;
+  font-size: 36px;
+  font-weight: 900;
+}
+
+.final-add strong {
+  color: #fff2cf;
+}
+
+.pwa-step-no {
+  display: inline-flex;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(242, 208, 139, 0.12);
+  color: #f2d08b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.pwa-guide-copy h3 {
+  margin: 0 0 8px;
+  color: #ffe9a8;
+  font-size: 21px;
+}
+
+.pwa-guide-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid rgba(242, 208, 139, 0.18);
+}
+
+.pwa-guide-done {
+  min-height: 46px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f2d08b, #a66d2e);
+  color: #1b1008;
+  font-weight: 900;
+}
+
 @media (max-width: 560px) {
   .pwa-install-banner {
     align-items: stretch;
@@ -86,5 +335,39 @@
 
   .pwa-install-primary {
     flex: 1;
+  }
+
+  .pwa-guide-backdrop {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .pwa-guide-sheet {
+    max-height: 92vh;
+    border-radius: 24px;
+  }
+
+  .pwa-guide-head {
+    padding: 18px 16px 14px;
+  }
+
+  .pwa-guide-scroll {
+    padding: 14px 16px 16px;
+  }
+
+  .pwa-guide-step {
+    grid-template-columns: 1fr;
+  }
+
+  .pwa-guide-visual {
+    min-height: 142px;
+  }
+
+  .pwa-guide-footer {
+    padding: 12px 16px 16px;
+  }
+
+  .pwa-guide-done {
+    width: 100%;
   }
 }
