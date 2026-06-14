@@ -108,11 +108,15 @@ function writePng(fileName, size, maskable = false) {
     chunk("IDAT", zlib.deflateSync(data, { level: 9 })),
     chunk("IEND", Buffer.alloc(0))
   ]);
-  fs.writeFileSync(path.join(publicDir, fileName), png);
+  const outPath = path.join(publicDir, fileName);
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  fs.writeFileSync(outPath, png);
 }
 
 writePng("apple-touch-icon.png", 180);
 writePng("icon-192.png", 192);
 writePng("icon-512.png", 512);
 writePng("maskable-512.png", 512, true);
+writePng("icons/app-icon-192.png", 192);
+writePng("icons/app-icon-512.png", 512);
 console.log("Generated opaque iOS-safe PWA icons");
