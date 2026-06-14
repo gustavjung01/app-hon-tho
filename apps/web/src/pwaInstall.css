@@ -1,0 +1,90 @@
+.pwa-install-banner {
+  position: fixed;
+  left: max(16px, env(safe-area-inset-left));
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 14px 14px 14px 18px;
+  border: 1px solid rgba(216, 174, 91, 0.42);
+  border-radius: 20px;
+  background: rgba(19, 13, 8, 0.94);
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 240, 190, 0.08);
+  color: #f7ecd4;
+  backdrop-filter: blur(18px);
+}
+
+.pwa-install-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pwa-install-copy strong {
+  font-size: 15px;
+  color: #f7d78c;
+  letter-spacing: 0.02em;
+}
+
+.pwa-install-copy span {
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(247, 236, 212, 0.78);
+}
+
+.pwa-install-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.pwa-install-primary,
+.pwa-install-close {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.pwa-install-primary {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f2d08b, #a66d2e);
+  color: #1b1008;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pwa-install-close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f7ecd4;
+  font-size: 22px;
+  line-height: 1;
+}
+
+@media (max-width: 560px) {
+  .pwa-install-banner {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 14px;
+  }
+
+  .pwa-install-actions {
+    justify-content: flex-end;
+  }
+
+  .pwa-install-primary {
+    flex: 1;
+  }
+}
