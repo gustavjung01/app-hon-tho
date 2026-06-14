@@ -1,4 +1,4 @@
-const CACHE_VERSION = "app-co-hoc-v10";
+const CACHE_VERSION = "app-co-hoc-v11";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -16,14 +16,16 @@ const STATIC_ASSET_RE = /\.(?:js|css|png|jpg|jpeg|svg|webp|gif|ico|woff2?)$/i;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
+    caches.open(CACHE_VERSION)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_VERSION).map((key) => caches.delete(key))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -56,7 +58,7 @@ async function networkFirstNavigation(request) {
     const response = await fetch(request, { cache: "no-store" });
     if (response.ok) await cache.put(request, response.clone());
     return response;
-  } catch {
+  } catch (e) {
     const cached = await cache.match(request);
     return cached || cache.match("/");
   }
