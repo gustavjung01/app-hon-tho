@@ -1,0 +1,37 @@
+.chat-suggestion-shell {
+  padding: 0 20px 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.chat-suggest-toggle {
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: rgba(255, 235, 166, 0.08);
+  color: var(--gold-light);
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+.chat-suggestions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(255, 220, 137, 0.16);
+  border-radius: 18px;
+  background: rgba(5, 3, 2, 0.68);
+}
+
+.chat-suggestions button {
+  width: 100%;
+  text-align: left;
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+
+@media (max-width: 760px) {
+  .chat-suggestions {
+    grid-template-columns: 1fr;
+  }
+}
