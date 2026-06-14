@@ -11,12 +11,24 @@ let deferredPrompt: BeforeInstallPromptEvent | null = null;
 let banner: HTMLDivElement | null = null;
 
 function isStandalone() {
-  return window.matchMedia("(display-mode: standalone)").matches;
+  const nav = window.navigator as Navigator & { standalone?: boolean };
+  return window.matchMedia("(display-mode: standalone)").matches || nav.standalone === true;
+}
+
+function isAppleTouchDevice() {
+  const nav = window.navigator as Navigator & { maxTouchPoints?: number };
+  const ua = window.navigator.userAgent || "";
+  return /iPad|iPhone|iPod/.test(ua) || (nav.platform === "MacIntel" && Number(nav.maxTouchPoints || 0) > 1);
 }
 
 function recentlyDismissed() {
-  const dismissedAt = Number(localStorage.getItem(PWA_DISMISS_KEY) || 0);
+  let dismissedAt = 0;
+  try { dismissedAt = Number(localStorage.getItem(PWA_DISMISS_KEY) || 0); } catch { dismissedAt = 0; }
   return dismissedAt > 0 && Date.now() - dismissedAt < DISMISS_TTL_MS;
+}
+
+function dismissForNow() {
+  try { localStorage.setItem(PWA_DISMISS_KEY, String(Date.now())); } catch { return; }
 }
 
 function closeBanner() {
@@ -25,7 +37,10 @@ function closeBanner() {
 }
 
 function createInstallBanner() {
-  if (banner || !deferredPrompt || isStandalone() || recentlyDismissed()) return;
+  const appleInstall = isAppleTouchDevice();
+  const browserInstall = Boolean(deferredPrompt);
+  if (banner || isStandalone() || recentlyDismissed()) return;
+  if (!appleInstall && !browserInstall) return;
 
   const box = document.createElement("div");
   box.className = "pwa-install-banner";
@@ -35,15 +50,23 @@ function createInstallBanner() {
   const title = document.createElement("strong");
   title.textContent = "Cài App Cổ Học";
   const desc = document.createElement("span");
-  desc.textContent = "Mở nhanh toàn bộ Ngũ thuật, Tam thức và tài khoản như một ứng dụng.";
+  desc.textContent = appleInstall
+    ? "Trên iPhone, bấm Chia sẻ rồi chọn Thêm vào Màn hình chính."
+    : "Mở nhanh Ngũ thuật, Tam thức và tài khoản như một ứng dụng.";
   copy.append(title, desc);
+
+  const steps = document.createElement("div");
+  steps.className = "pwa-install-ios-steps";
+  steps.hidden = !appleInstall;
+  steps.innerHTML = "<b>iPhone:</b> bấm <span>Chia sẻ</span> trong Safari, rồi chọn <span>Thêm vào Màn hình chính</span>.";
+  copy.append(steps);
 
   const actions = document.createElement("div");
   actions.className = "pwa-install-actions";
   const installButton = document.createElement("button");
   installButton.className = "pwa-install-primary";
   installButton.type = "button";
-  installButton.textContent = "Cài app";
+  installButton.textContent = appleInstall ? "Cách cài" : "Cài app";
   const closeButton = document.createElement("button");
   closeButton.className = "pwa-install-close";
   closeButton.type = "button";
@@ -52,6 +75,11 @@ function createInstallBanner() {
   actions.append(installButton, closeButton);
 
   installButton.addEventListener("click", async () => {
+    if (appleInstall) {
+      steps.hidden = false;
+      installButton.textContent = "Đã rõ";
+      return;
+    }
     const promptEvent = deferredPrompt;
     if (!promptEvent) return;
     deferredPrompt = null;
@@ -61,7 +89,7 @@ function createInstallBanner() {
   });
 
   closeButton.addEventListener("click", () => {
-    localStorage.setItem(PWA_DISMISS_KEY, String(Date.now()));
+    dismissForNow();
     closeBanner();
   });
 
