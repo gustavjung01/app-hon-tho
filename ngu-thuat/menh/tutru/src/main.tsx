@@ -20,6 +20,22 @@ function registerTuTruPwa() {
   });
 }
 
-ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
-registerTuTruPwa();
-setupPwaInstallBanner();
+async function verifyStoredAuthSession() {
+  const token = localStorage.getItem("hontho_user_token")?.trim();
+  if (!token) return;
+  try {
+    const response = await fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+    if (response.status === 401 || response.status === 403) localStorage.removeItem("hontho_user_token");
+  } catch {
+    // Giữ nguyên token khi mạng lỗi, tránh tự đá phiên trong lúc offline/yếu mạng.
+  }
+}
+
+async function bootstrap() {
+  await verifyStoredAuthSession();
+  ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
+  registerTuTruPwa();
+  setupPwaInstallBanner();
+}
+
+bootstrap();
