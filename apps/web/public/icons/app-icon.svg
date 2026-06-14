@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="App Cổ Học">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="68%">
+      <stop offset="0" stop-color="#4b2414"/>
+      <stop offset="0.62" stop-color="#1a100b"/>
+      <stop offset="1" stop-color="#080604"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff1b8"/>
+      <stop offset="0.48" stop-color="#d5a84f"/>
+      <stop offset="1" stop-color="#7c4b1d"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="178" fill="none" stroke="url(#gold)" stroke-width="18"/>
+  <circle cx="256" cy="256" r="132" fill="none" stroke="#8b5a26" stroke-width="3" opacity="0.72"/>
+  <path d="M256 92c28 46 71 91 122 126-50 36-94 82-122 128-28-46-72-92-122-128 51-35 94-80 122-126Z" fill="none" stroke="url(#gold)" stroke-width="14" stroke-linejoin="round"/>
+  <path d="M256 168c14 24 36 47 62 65-26 18-48 42-62 66-14-24-36-48-62-66 26-18 48-41 62-65Z" fill="url(#gold)" opacity="0.92"/>
+  <text x="256" y="409" fill="#f6e7b6" font-family="serif" font-size="54" font-weight="700" text-anchor="middle">Cổ Học</text>
+</svg>
