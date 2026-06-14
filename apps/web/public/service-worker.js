@@ -1,4 +1,4 @@
-const CACHE_VERSION = "app-co-hoc-v4";
+const CACHE_VERSION = "app-co-hoc-v5";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -26,6 +26,12 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
@@ -46,7 +52,7 @@ self.addEventListener("fetch", (event) => {
 async function networkFirstNavigation(request) {
   const cache = await caches.open(CACHE_VERSION);
   try {
-    const response = await fetch(request);
+    const response = await fetch(request, { cache: "no-store" });
     if (response.ok) await cache.put(request, response.clone());
     return response;
   } catch {
@@ -58,9 +64,10 @@ async function networkFirstNavigation(request) {
 async function cacheFirst(request) {
   const cache = await caches.open(CACHE_VERSION);
   const cached = await cache.match(request);
-  if (cached) return cached;
+  const network = fetch(request).then((response) => {
+    if (response.ok) cache.put(request, response.clone());
+    return response;
+  }).catch(() => cached);
 
-  const response = await fetch(request);
-  if (response.ok) await cache.put(request, response.clone());
-  return response;
+  return cached || network;
 }
