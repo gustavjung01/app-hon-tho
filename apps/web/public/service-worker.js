@@ -1,4 +1,4 @@
-const CACHE_VERSION = "app-co-hoc-v20";
+const CACHE_VERSION = "app-co-hoc-v21";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -8,6 +8,7 @@ const APP_SHELL = [
   "/icon-512.png",
   "/maskable-512.png",
   "/hontho-auth-bridge.js",
+  "/hontho-global-login.js",
   "/account-stabilizer.js",
   "/app-version-watch.js",
   "/mobile-polish.css",
